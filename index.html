@@ -786,10 +786,19 @@ html.gate-locked body > *:not(#passwordGate){ display:none !important; }
 .cal-day.today{ border-color:var(--green); box-shadow:0 0 0 1px var(--green); }
 .cal-day.selected{ background:var(--sage-dim); border-color:var(--green); }
 .cal-day-num{ font-size:0.82rem; font-weight:700; color:var(--ink); }
-.cal-dots{ display:flex; flex-wrap:wrap; gap:3px; margin-top:auto; }
-.cal-dot{ width:7px; height:7px; border-radius:50%; }
-.cal-dot.me{ background:var(--green-deep); }
-.cal-dot.her{ background:#b86b7a; }
+.cal-dots{ display:flex; flex-wrap:wrap; gap:2px; margin-top:auto; align-items:center; }
+/* Marker shapes on the month grid — color = who (green me / pink her) */
+.cal-mark{
+  font-size:0.72rem; line-height:1; display:inline-flex; align-items:center; justify-content:center;
+}
+.cal-mark.me{ color:var(--green-deep); }
+.cal-mark.her{ color:#b86b7a; }
+.cal-mark.circle{
+  width:7px; height:7px; border-radius:50%;
+  background:currentColor; font-size:0;
+}
+.cal-mark.star, .cal-mark.heart{ font-size:0.78rem; }
+.cal-event-mark{ margin-right:4px; }
 .cal-day-panel{
   max-width:720px; margin:0 auto 28px; background:#fff; border-radius:var(--radius-md);
   padding:18px 20px; box-shadow:var(--shadow-tiny); border:1px solid rgba(43,38,34,0.06);
@@ -1508,6 +1517,14 @@ html.gate-locked body > *:not(#passwordGate){ display:none !important; }
             </select>
           </div>
           <div class="music-add-field">
+            <label for="calMarker">Icon</label>
+            <select id="calMarker">
+              <option value="circle">● Normal</option>
+              <option value="star">★ Important</option>
+              <option value="heart">♥ Special</option>
+            </select>
+          </div>
+          <div class="music-add-field">
             <label for="calStart">Start (optional)</label>
             <input type="time" id="calStart">
           </div>
@@ -2081,6 +2098,7 @@ const PT_TRANSLATIONS = {
   "Every week":"Toda semana", "Every month":"Todo mês", "Repeat until (optional)":"Repetir até (opcional)",
   "Event added.":"Evento adicionado.", "Event updated.":"Evento atualizado.", "Event deleted.":"Evento apagado.",
   "(repeats)":"(repete)",
+  "Icon":"Ícone", "● Normal":"● Normal", "★ Important":"★ Importante", "♥ Special":"♥ Especial",
 
   "Choose a photo":"Escolha uma foto", "Caption":"Legenda", "Date (optional)":"Data (opcional)", "Add Memory ♥":"Adicionar Lembrança ♥",
   "Converting & uploading...":"A converter e enviar...",
@@ -4878,15 +4896,28 @@ function calEventsForDay(key){
     .sort((a, b) => String(a.startTime || '').localeCompare(String(b.startTime || '')));
 }
 
-function calFilteredDots(key){
-  const people = new Set();
+// Markers for a day cell: { person, marker } — colors by person, shape by importance
+function calMarkersForDay(key){
+  const out = [];
+  const seen = new Set();
   calEvents.forEach(ev => {
     if(!calEventOccursOn(ev, key)) return;
     if(calState.filter === 'me' && ev.person !== 'me') return;
     if(calState.filter === 'her' && ev.person !== 'her') return;
-    people.add(ev.person === 'her' ? 'her' : 'me');
+    const person = ev.person === 'her' ? 'her' : 'me';
+    const marker = (ev.marker === 'star' || ev.marker === 'heart') ? ev.marker : 'circle';
+    const k = person + ':' + marker + ':' + (ev.id || '');
+    if(seen.has(k)) return;
+    seen.add(k);
+    out.push({ person, marker });
   });
-  return people;
+  return out;
+}
+
+function calMarkerChar(marker){
+  if(marker === 'star') return '★';
+  if(marker === 'heart') return '♥';
+  return ''; // circle is drawn with CSS
 }
 
 // Simple toast for calendar — same style as bucket, fixed text (no random "charm" lines)
@@ -4957,10 +4988,12 @@ function calBuildDayCell(y, m, d, other, todayKey){
   cell.innerHTML = `<span class="cal-day-num">${d}</span>`;
   const dots = document.createElement('div');
   dots.className = 'cal-dots';
-  calFilteredDots(key).forEach(p => {
-    const dot = document.createElement('span');
-    dot.className = 'cal-dot ' + p;
-    dots.appendChild(dot);
+  calMarkersForDay(key).forEach(({ person, marker }) => {
+    const el = document.createElement('span');
+    el.className = 'cal-mark ' + person + ' ' + marker;
+    el.textContent = calMarkerChar(marker);
+    el.title = (person === 'her' ? CONFIG.names.her : CONFIG.names.me) + (marker === 'star' ? ' ★' : marker === 'heart' ? ' ♥' : '');
+    dots.appendChild(el);
   });
   cell.appendChild(dots);
   cell.addEventListener('click', () => {
@@ -4991,10 +5024,12 @@ function renderCalDayPanel(){
     const row = document.createElement('div');
     row.className = 'cal-event';
     const who = ev.person === 'her' ? 'her' : 'me';
+    const marker = (ev.marker === 'star' || ev.marker === 'heart') ? ev.marker : 'circle';
     let timeStr = '';
     if(ev.startTime && ev.endTime) timeStr = ev.startTime + ' – ' + ev.endTime;
     else if(ev.startTime) timeStr = ev.startTime;
     else if(ev.endTime) timeStr = '– ' + ev.endTime;
+    const markChar = marker === 'star' ? '★ ' : marker === 'heart' ? '♥ ' : '';
     row.innerHTML = `
       <span class="cal-event-who ${who}">${calPersonLabel(who)}</span>
       <div class="cal-event-body">
@@ -5007,7 +5042,7 @@ function renderCalDayPanel(){
         <button type="button" class="bucket-icon-btn delete" data-act="del" aria-label="${tr('Delete')}">✕</button>
       </div>
     `;
-    row.querySelector('.cal-event-title').textContent = ev.title || '';
+    row.querySelector('.cal-event-title').textContent = markChar + (ev.title || '');
     if(ev.notes) row.querySelector('.cal-event-notes').textContent = ev.notes;
     row.querySelector('[data-act="edit"]').addEventListener('click', () => startEditCalEvent(ev));
     row.querySelector('[data-act="del"]').addEventListener('click', () => deleteCalEvent(ev));
@@ -5032,16 +5067,28 @@ function setCalFormMode(editing){
 }
 
 function clearCalForm(){
+  // Always exit edit mode first so the next save creates a NEW event
+  calEditingId = null;
   ['calTitle','calStart','calEnd','calNotes','calRepeatUntil'].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.value = '';
   });
   const rep = document.getElementById('calRepeat');
   if(rep) rep.value = 'none';
+  const marker = document.getElementById('calMarker');
+  if(marker) marker.value = 'circle';
+  const person = document.getElementById('calPerson');
+  if(person) person.value = 'me';
   const date = document.getElementById('calDate');
   if(date) date.value = calState.selected || '';
-  calEditingId = null;
   setCalFormMode(false);
+}
+
+function finishCalWrite(kind, dateKey){
+  if(dateKey) calState.selected = dateKey;
+  clearCalForm();
+  renderCalendar();
+  calNotify(kind);
 }
 
 function startEditCalEvent(ev){
@@ -5058,6 +5105,8 @@ function startEditCalEvent(ev){
   if(rep) rep.value = ev.repeat || 'none';
   const until = document.getElementById('calRepeatUntil');
   if(until) until.value = ev.repeatUntil || '';
+  const marker = document.getElementById('calMarker');
+  if(marker) marker.value = (ev.marker === 'star' || ev.marker === 'heart') ? ev.marker : 'circle';
   document.getElementById('calAddForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
@@ -5070,6 +5119,8 @@ function collectCalPayload(){
   const notes = (document.getElementById('calNotes')?.value || '').trim();
   const repeat = document.getElementById('calRepeat')?.value || 'none';
   const repeatUntil = (document.getElementById('calRepeatUntil')?.value || '').trim();
+  const rawMarker = document.getElementById('calMarker')?.value || 'circle';
+  const marker = (rawMarker === 'star' || rawMarker === 'heart') ? rawMarker : 'circle';
   const isPt = currentLanguage() === 'pt';
   if(!title){
     alert(isPt ? 'Escreve o que é o evento.' : 'Please enter what the event is.');
@@ -5083,55 +5134,46 @@ function collectCalPayload(){
     alert(isPt ? 'A data "até" tem de ser depois do início.' : 'Repeat-until must be on or after the start date.');
     return null;
   }
-  return { title, date, person, startTime, endTime, notes, repeat, repeatUntil };
+  return { title, date, person, startTime, endTime, notes, repeat, repeatUntil, marker };
 }
 
 function saveCalEvent(){
   const payload = collectCalPayload();
   if(!payload) return;
+  const editingId = calEditingId; // capture before any async clear
 
-  if(calEditingId){
-    if(calSyncLive && calDb && !String(calEditingId).startsWith('local-')){
-      calDb.collection('calendar').doc(calEditingId).update(payload)
-        .then(() => { calNotify('updated'); clearCalForm(); })
+  if(editingId){
+    if(calSyncLive && calDb && !String(editingId).startsWith('local-')){
+      // Clear form immediately so the user can add a new event right away
+      clearCalForm();
+      calDb.collection('calendar').doc(editingId).update(payload)
+        .then(() => finishCalWrite('updated', payload.date))
         .catch(() => {
-          const idx = calEvents.findIndex(e => e.id === calEditingId);
+          const idx = calEvents.findIndex(e => e.id === editingId);
           if(idx >= 0) calEvents[idx] = { ...calEvents[idx], ...payload };
-          clearCalForm();
-          calNotify('updated');
-          renderCalendar();
+          finishCalWrite('updated', payload.date);
         });
     } else {
-      const idx = calEvents.findIndex(e => e.id === calEditingId);
+      const idx = calEvents.findIndex(e => e.id === editingId);
       if(idx >= 0) calEvents[idx] = { ...calEvents[idx], ...payload };
-      clearCalForm();
-      calNotify('updated');
-      renderCalendar();
+      finishCalWrite('updated', payload.date);
     }
     return;
   }
 
   if(calSyncLive && calDb){
+    clearCalForm();
     calDb.collection('calendar').add({
       ...payload,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(() => {
-      calNotify('created');
-      clearCalForm();
-      calState.selected = payload.date;
-    }).catch(() => {
-      calEvents.push({ id: 'local-' + Date.now(), ...payload });
-      calNotify('created');
-      clearCalForm();
-      calState.selected = payload.date;
-      renderCalendar();
-    });
+    }).then(() => finishCalWrite('created', payload.date))
+      .catch(() => {
+        calEvents.push({ id: 'local-' + Date.now(), ...payload });
+        finishCalWrite('created', payload.date);
+      });
   } else {
     calEvents.push({ id: 'local-' + Date.now(), ...payload });
-    calNotify('created');
-    clearCalForm();
-    calState.selected = payload.date;
-    renderCalendar();
+    finishCalWrite('created', payload.date);
   }
 }
 
