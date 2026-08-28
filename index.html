@@ -2307,6 +2307,9 @@ function clearTabDot(tab){
 // Tabs that live under the ··· "More" menu (add future ones here)
 const MORE_TABS = ['calendar'];
 
+// Valid tab ids — used for URL hash routing (#album, #music, #calendar, …)
+const VALID_TABS = ['story','album','us','openwhen','bucketlist','quizzes','music','calendar'];
+
 function closeNavMore(){
   const menu = document.getElementById('navMoreMenu');
   const btn = document.getElementById('navMoreBtn');
@@ -2323,7 +2326,22 @@ function updateNavMoreActive(name){
   btn.classList.toggle('active-section', MORE_TABS.includes(name));
 }
 
-function switchTab(name){
+function tabFromHash(){
+  const raw = (location.hash || '').replace(/^#/, '').trim().toLowerCase();
+  if(VALID_TABS.includes(raw)) return raw;
+  return 'story';
+}
+
+// updateHash: write #tab to the URL (default true)
+// scroll: scroll to top (default true; false on first load from hash)
+function switchTab(name, opts){
+  opts = opts || {};
+  const updateHash = opts.updateHash !== false;
+  const scroll = opts.scroll !== false;
+
+  if(!VALID_TABS.includes(name)) name = 'story';
+  if(!document.getElementById('tab-' + name)) name = 'story';
+
   activeTab = name;
   clearTabDot(name);
   // Opening the tab marks everything currently loaded as "seen" for this device
@@ -2337,14 +2355,40 @@ function switchTab(name){
   updateNavMoreActive(name);
   closeNavMore();
   document.getElementById('mobileMenu').classList.remove('open');
-  window.scrollTo({top:0, behavior:'smooth'});
+  if(scroll) window.scrollTo({top:0, behavior:'smooth'});
   if(name === 'music') showMusicCopyrightBanner();
+
+  // Keep the URL in sync so refresh / share / back-button stay on this tab
+  if(updateHash){
+    const next = '#' + name;
+    if(location.hash !== next){
+      history.pushState({ tab: name }, '', next);
+    }
+  }
 }
 document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click', ()=>switchTab(b.dataset.tab)));
 document.getElementById('hamburgerBtn').addEventListener('click', ()=>{
   document.getElementById('mobileMenu').classList.toggle('open');
   closeNavMore();
 });
+
+// Restore tab from URL on load, and when the user uses Back/Forward
+(function initTabRouting(){
+  const initial = tabFromHash();
+  if(initial !== 'story'){
+    switchTab(initial, { updateHash: false, scroll: false });
+  } else if(!location.hash){
+    // Optional: normalize homepage to #story without cluttering history
+    // history.replaceState({ tab: 'story' }, '', '#story');
+  }
+  window.addEventListener('popstate', () => {
+    switchTab(tabFromHash(), { updateHash: false, scroll: true });
+  });
+  window.addEventListener('hashchange', () => {
+    const t = tabFromHash();
+    if(t !== activeTab) switchTab(t, { updateHash: false, scroll: true });
+  });
+})();
 
 // ··· More menu (desktop)
 (function initNavMore(){
