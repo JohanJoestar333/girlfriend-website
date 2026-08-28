@@ -32,7 +32,7 @@
 
    FIREBASE
    Optional. Fill CONFIG.firebase and publish Firestore rules for
-   collections "bucketlist" and "musicsongs". See firebase_setup docs.
+   collections "bucketlist", "musicsongs", "memories", and "calendar".
    ============================================================ */
 
 :root{
@@ -127,11 +127,12 @@ header.site-header{
   display:flex; align-items:center; justify-content:space-between;
 }
 .brand{font-family: var(--script); font-size:1.5rem; color: var(--green-deep);}
-nav.tabs{display:flex; gap: 6px;}
+nav.tabs{display:flex; gap: 6px; align-items:center; flex-wrap:nowrap;}
 .tab-btn{
   position: relative;
   padding: 9px 16px; border-radius: 999px; font-size:0.86rem; font-weight:600;
   color: var(--ink-soft); transition: all 0.25s ease; letter-spacing:0.02em;
+  white-space:nowrap;
 }
 .tab-btn:hover{ background: var(--cream-dim); color: var(--ink);}
 .tab-btn.active{ background: var(--green); color: var(--cream);}
@@ -145,7 +146,6 @@ nav.tabs{display:flex; gap: 6px;}
 }
 .tab-btn.active .tab-dot{ box-shadow: 0 0 0 2px var(--green); }
 .tab-dot[hidden]{ display: none !important; }
-/* Brief pulse when you add something while already on that tab */
 .tab-dot.flash{
   animation: tabDotFlash 2.4s ease-out forwards;
 }
@@ -156,6 +156,40 @@ nav.tabs{display:flex; gap: 6px;}
   100%{ opacity:0; transform: scale(0.6); }
 }
 .mobile-menu .tab-dot{ top: 10px; right: 12px; }
+
+/* More (···) menu — Calendar + future tools, keeps the top bar clean */
+.nav-more{ position:relative; flex-shrink:0; }
+.nav-more-btn{
+  position:relative;
+  width:38px; height:38px; border-radius:999px;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--ink-soft); font-size:1.15rem; letter-spacing:0.02em; font-weight:700;
+  transition: background 0.2s, color 0.2s;
+}
+.nav-more-btn:hover, .nav-more-btn.open{ background:var(--cream-dim); color:var(--ink); }
+.nav-more-btn.active-section{ background:var(--green); color:var(--cream); }
+.nav-more-btn .tab-dot{ top:6px; right:6px; }
+.nav-more-btn.active-section .tab-dot{ box-shadow:0 0 0 2px var(--green); }
+.nav-more-menu{
+  display:none; position:absolute; top:calc(100% + 8px); right:0;
+  min-width:190px; padding:8px; border-radius:var(--radius-md);
+  background:#fff; box-shadow:var(--shadow-soft);
+  border:1px solid rgba(43,38,34,0.08); z-index:80;
+  flex-direction:column; gap:2px;
+}
+.nav-more-menu.open{ display:flex; }
+.nav-more-menu .tab-btn{
+  width:100%; text-align:left; border-radius:var(--radius-sm); padding:10px 14px;
+}
+.nav-more-label{
+  font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em;
+  color:var(--ink-soft); padding:6px 12px 4px; font-weight:700;
+}
+.mobile-menu .mobile-more-label{
+  font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em;
+  color:var(--ink-soft); padding:12px 4px 4px; font-weight:700;
+}
+
 .hamburger{display:none; flex-direction:column; gap:5px; padding:8px;}
 .hamburger span{width:22px; height:2px; background: var(--ink); border-radius:2px;}
 .mobile-menu{
@@ -713,6 +747,76 @@ html.gate-locked body > *:not(#passwordGate){ display:none !important; }
 .quiz-toast.good{ background: var(--green-deep); }
 .quiz-toast.bad{ background:#6b3030; }
 
+/* -------- shared calendar -------- */
+.cal-sync-pill{ display:block; text-align:center; margin:0 auto 18px; max-width:520px; }
+.cal-toolbar{
+  display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px;
+  max-width:720px; margin:0 auto 18px;
+}
+.cal-nav{ display:flex; align-items:center; gap:10px; }
+.cal-nav button{
+  width:36px; height:36px; border-radius:50%; background:var(--cream-dim); color:var(--green-deep);
+  font-size:1.1rem; font-weight:700; transition:background 0.2s;
+}
+.cal-nav button:hover{ background:var(--sage-dim); }
+.cal-month-label{ font-family:var(--serif); font-size:1.35rem; color:var(--green-deep); min-width:160px; text-align:center; }
+.cal-filters{ display:flex; gap:6px; flex-wrap:wrap; }
+.cal-filter-btn{
+  padding:7px 14px; border-radius:999px; font-size:0.8rem; font-weight:700;
+  background:var(--cream-dim); color:var(--ink-soft); border:1px solid transparent;
+}
+.cal-filter-btn.active{ background:var(--green); color:var(--cream); }
+.cal-filter-btn.me.active{ background:var(--green-deep); }
+.cal-filter-btn.her.active{ background:#b86b7a; color:#fff; }
+.cal-grid{
+  display:grid; grid-template-columns:repeat(7,1fr); gap:6px;
+  max-width:720px; margin:0 auto 22px;
+}
+.cal-dow{
+  text-align:center; font-size:0.68rem; font-weight:700; letter-spacing:0.08em;
+  text-transform:uppercase; color:var(--ink-soft); padding:6px 0;
+}
+.cal-day{
+  min-height:72px; background:#fff; border-radius:var(--radius-sm); padding:6px;
+  border:1px solid rgba(43,38,34,0.06); cursor:pointer; transition:all 0.2s;
+  display:flex; flex-direction:column; gap:3px;
+}
+.cal-day:hover{ border-color:var(--sage); transform:translateY(-1px); }
+.cal-day.other{ opacity:0.35; }
+.cal-day.today{ border-color:var(--green); box-shadow:0 0 0 1px var(--green); }
+.cal-day.selected{ background:var(--sage-dim); border-color:var(--green); }
+.cal-day-num{ font-size:0.82rem; font-weight:700; color:var(--ink); }
+.cal-dots{ display:flex; flex-wrap:wrap; gap:3px; margin-top:auto; }
+.cal-dot{ width:7px; height:7px; border-radius:50%; }
+.cal-dot.me{ background:var(--green-deep); }
+.cal-dot.her{ background:#b86b7a; }
+.cal-day-panel{
+  max-width:720px; margin:0 auto 28px; background:#fff; border-radius:var(--radius-md);
+  padding:18px 20px; box-shadow:var(--shadow-tiny); border:1px solid rgba(43,38,34,0.06);
+}
+.cal-day-panel h3{ font-size:1.1rem; color:var(--green-deep); margin-bottom:12px; }
+.cal-event{
+  display:flex; gap:12px; align-items:flex-start; padding:12px 0;
+  border-bottom:1px dashed rgba(43,38,34,0.1);
+}
+.cal-event:last-child{ border-bottom:none; }
+.cal-event-who{
+  flex-shrink:0; font-size:0.72rem; font-weight:700; padding:4px 10px; border-radius:999px;
+  text-transform:uppercase; letter-spacing:0.04em;
+}
+.cal-event-who.me{ background:var(--sage-dim); color:var(--green-deep); }
+.cal-event-who.her{ background:var(--blush-soft); color:#8a4a3f; }
+.cal-event-body{ flex:1; min-width:0; }
+.cal-event-title{ font-weight:700; color:var(--ink); }
+.cal-event-time{ font-size:0.82rem; color:var(--ink-soft); margin-top:2px; }
+.cal-event-notes{ font-size:0.85rem; color:var(--ink-soft); margin-top:4px; }
+.cal-event-actions{ display:flex; gap:4px; flex-shrink:0; }
+.cal-empty{ color:var(--ink-soft); font-style:italic; font-size:0.92rem; padding:8px 0; }
+@media(max-width:560px){
+  .cal-day{ min-height:56px; padding:4px; }
+  .cal-day-num{ font-size:0.75rem; }
+}
+
 /* -------- music / playlist -------- */
 .music-playlist-nav{
   display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom:36px;
@@ -918,6 +1022,18 @@ html.gate-locked body > *:not(#passwordGate){ display:none !important; }
       <button class="tab-btn" data-tab="bucketlist">Bucket List<span class="tab-dot" data-dot-for="bucketlist" hidden></span></button>
       <button class="tab-btn" data-tab="quizzes">Quizzes</button>
       <button class="tab-btn" data-tab="music">Music<span class="tab-dot" data-dot-for="music" hidden></span></button>
+      <!-- Tools that would clutter the bar live under ··· (add future tabs here too) -->
+      <div class="nav-more" id="navMore">
+        <button type="button" class="nav-more-btn" id="navMoreBtn" aria-label="More" aria-haspopup="true" aria-expanded="false">
+          ···
+          <span class="tab-dot" data-dot-for="calendar" hidden></span>
+        </button>
+        <div class="nav-more-menu" id="navMoreMenu" role="menu">
+          <div class="nav-more-label">More</div>
+          <button class="tab-btn" data-tab="calendar" role="menuitem">Calendar<span class="tab-dot" data-dot-for="calendar" hidden></span></button>
+          <!-- Future: <button class="tab-btn" data-tab="whatever">Whatever</button> -->
+        </div>
+      </div>
     </nav>
     <div class="lang-switch" aria-label="Language selector">
       <button class="lang-btn" id="langEN" type="button" aria-label="Switch to English">EN</button>
@@ -939,6 +1055,8 @@ html.gate-locked body > *:not(#passwordGate){ display:none !important; }
     <button class="tab-btn" data-tab="bucketlist">Bucket List<span class="tab-dot" data-dot-for="bucketlist" hidden></span></button>
     <button class="tab-btn" data-tab="quizzes">Quizzes</button>
     <button class="tab-btn" data-tab="music">Music<span class="tab-dot" data-dot-for="music" hidden></span></button>
+    <div class="mobile-more-label">More</div>
+    <button class="tab-btn" data-tab="calendar">Calendar<span class="tab-dot" data-dot-for="calendar" hidden></span></button>
   </div>
 </header>
 
@@ -1333,6 +1451,91 @@ html.gate-locked body > *:not(#passwordGate){ display:none !important; }
         <div class="music-add-actions">
           <button class="btn outline" type="button" id="musicCancelEditBtn" style="display:none;">Cancel</button>
           <button class="btn" type="button" id="musicAddBtn">Add song ♥</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============================= TAB: CALENDAR ============================= -->
+<div class="tab-panel" id="tab-calendar">
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Our schedules</p>
+        <h2>Shared Calendar</h2>
+        <p>See each other's plans so we know when to text — and when to wait.</p>
+      </div>
+
+      <span class="bucket-sync-pill cal-sync-pill local" id="calSyncPill"></span>
+
+      <div class="cal-toolbar">
+        <div class="cal-nav">
+          <button type="button" id="calPrevMonth" aria-label="Previous month">‹</button>
+          <div class="cal-month-label" id="calMonthLabel">Month</div>
+          <button type="button" id="calNextMonth" aria-label="Next month">›</button>
+        </div>
+        <div class="cal-filters" id="calFilters">
+          <button type="button" class="cal-filter-btn active" data-filter="all">Both</button>
+          <button type="button" class="cal-filter-btn me" data-filter="me" id="calFilterMe">Thommy</button>
+          <button type="button" class="cal-filter-btn her" data-filter="her" id="calFilterHer">Fiel</button>
+        </div>
+      </div>
+
+      <div class="cal-grid" id="calGrid"></div>
+
+      <div class="cal-day-panel" id="calDayPanel">
+        <h3 id="calDayTitle">Select a day</h3>
+        <div id="calDayEvents"></div>
+      </div>
+
+      <div class="music-add-form" id="calAddForm" style="max-width:720px; margin:0 auto;">
+        <h3 id="calAddHeading">Add to the calendar ♥</h3>
+        <div class="music-add-grid">
+          <div class="music-add-field full">
+            <label for="calTitle">What</label>
+            <input type="text" id="calTitle" maxlength="120" placeholder="Class, work, study, date night…">
+          </div>
+          <div class="music-add-field">
+            <label for="calDate">Date</label>
+            <input type="date" id="calDate">
+          </div>
+          <div class="music-add-field">
+            <label for="calPerson">Who</label>
+            <select id="calPerson">
+              <option value="me">Thommy</option>
+              <option value="her">Fiel</option>
+            </select>
+          </div>
+          <div class="music-add-field">
+            <label for="calStart">Start (optional)</label>
+            <input type="time" id="calStart">
+          </div>
+          <div class="music-add-field">
+            <label for="calEnd">End (optional)</label>
+            <input type="time" id="calEnd">
+          </div>
+          <div class="music-add-field">
+            <label for="calRepeat">Repeat</label>
+            <select id="calRepeat">
+              <option value="none">Does not repeat</option>
+              <option value="daily">Every day</option>
+              <option value="weekly">Every week</option>
+              <option value="monthly">Every month</option>
+            </select>
+          </div>
+          <div class="music-add-field">
+            <label for="calRepeatUntil">Repeat until (optional)</label>
+            <input type="date" id="calRepeatUntil">
+          </div>
+          <div class="music-add-field full">
+            <label for="calNotes">Notes (optional)</label>
+            <textarea id="calNotes" maxlength="280" placeholder="Don't call during this, or free after…"></textarea>
+          </div>
+        </div>
+        <div class="music-add-actions">
+          <button type="button" class="btn outline" id="calCancelEditBtn" style="display:none;">Cancel</button>
+          <button type="button" class="btn" id="calAddBtn">Add event ♥</button>
         </div>
       </div>
     </div>
@@ -1866,6 +2069,19 @@ const PT_TRANSLATIONS = {
   "Add a photo ♥":"Adicionar uma foto ♥",
   "Choose which album it belongs to.":"Escolha a que álbum ela pertence.",
   "Album":"Álbum",
+  "Calendar":"Calendário", "More":"Mais", "Our schedules":"Nossas agendas", "Shared Calendar":"Calendário Compartilhado",
+  "See each other's plans so we know when to text — and when to wait.":"Veja os planos um do outro pra saber quando mandar mensagem — e quando esperar.",
+  "Both":"Os dois", "Add to the calendar ♥":"Adicionar ao calendário ♥", "What":"O quê", "Who":"Quem",
+  "Start (optional)":"Início (opcional)", "End (optional)":"Fim (opcional)", "Notes (optional)":"Notas (opcional)",
+  "Add event ♥":"Adicionar evento ♥", "Select a day":"Selecione um dia", "No plans this day.":"Nada agendado neste dia.",
+  "Class, work, study, date night…":"Aula, trabalho, estudo, date…",
+  "Don't call during this, or free after…":"Não ligar durante isso, ou livre depois…",
+  "Edit event ♥":"Editar evento ♥", "Save event ♥":"Salvar evento ♥",
+  "Repeat":"Repetir", "Does not repeat":"Não se repete", "Every day":"Todos os dias",
+  "Every week":"Toda semana", "Every month":"Todo mês", "Repeat until (optional)":"Repetir até (opcional)",
+  "Event added.":"Evento adicionado.", "Event updated.":"Evento atualizado.", "Event deleted.":"Evento apagado.",
+  "(repeats)":"(repete)",
+
   "Choose a photo":"Escolha uma foto", "Caption":"Legenda", "Date (optional)":"Data (opcional)", "Add Memory ♥":"Adicionar Lembrança ♥",
   "Converting & uploading...":"A converter e enviar...",
   "WebP is not allowed. Use JPEG or PNG (PNG is auto-converted to JPEG).":"WebP não é permitido. Usa JPEG ou PNG (PNG vira JPEG automaticamente).",
@@ -2070,16 +2286,38 @@ function clearTabDot(tab){
   });
 }
 
+// Tabs that live under the ··· "More" menu (add future ones here)
+const MORE_TABS = ['calendar'];
+
+function closeNavMore(){
+  const menu = document.getElementById('navMoreMenu');
+  const btn = document.getElementById('navMoreBtn');
+  if(menu) menu.classList.remove('open');
+  if(btn){
+    btn.classList.remove('open');
+    btn.setAttribute('aria-expanded', 'false');
+  }
+}
+
+function updateNavMoreActive(name){
+  const btn = document.getElementById('navMoreBtn');
+  if(!btn) return;
+  btn.classList.toggle('active-section', MORE_TABS.includes(name));
+}
+
 function switchTab(name){
   activeTab = name;
   clearTabDot(name);
   // Opening the tab marks everything currently loaded as "seen" for this device
   if(name === 'bucketlist') markTabSeen('bucketlist', typeof bucketItems !== 'undefined' ? bucketItems : []);
   if(name === 'music') markTabSeen('music', typeof musicSongs !== 'undefined' ? musicSongs : []);
+  if(name === 'calendar') markTabSeen('calendar', typeof calEvents !== 'undefined' ? calEvents : []);
 
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+  updateNavMoreActive(name);
+  closeNavMore();
   document.getElementById('mobileMenu').classList.remove('open');
   window.scrollTo({top:0, behavior:'smooth'});
   if(name === 'music') showMusicCopyrightBanner();
@@ -2087,7 +2325,27 @@ function switchTab(name){
 document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click', ()=>switchTab(b.dataset.tab)));
 document.getElementById('hamburgerBtn').addEventListener('click', ()=>{
   document.getElementById('mobileMenu').classList.toggle('open');
+  closeNavMore();
 });
+
+// ··· More menu (desktop)
+(function initNavMore(){
+  const btn = document.getElementById('navMoreBtn');
+  const menu = document.getElementById('navMoreMenu');
+  if(!btn || !menu) return;
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = menu.classList.toggle('open');
+    btn.classList.toggle('open', open);
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  document.addEventListener('click', (e) => {
+    if(!e.target.closest('#navMore')) closeNavMore();
+  });
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape') closeNavMore();
+  });
+})();
 
 // ---------- hero ----------
 document.getElementById('heroEyebrow').textContent = tr(CONFIG.hero.eyebrow);
@@ -2662,6 +2920,19 @@ const NOTIF_MESSAGES = {
     { en: "Deleted! Less clutter, more room for new favorites. 🎶", pt: "Apagada! Menos bagunça, mais espaço pra novas favoritas. 🎶" },
     { en: "Gone from the playlist. 👋", pt: "Saiu da playlist. 👋" }
   ],
+  calCreated: [
+    { en: "On the calendar — noted! 📅", pt: "No calendário — anotado! 📅" },
+    { en: "Schedule updated. We'll both see it. ♥", pt: "Agenda atualizada. Os dois vão ver. ♥" },
+    { en: "Added to the shared calendar.", pt: "Adicionado ao calendário compartilhado." }
+  ],
+  calUpdated: [
+    { en: "Event updated.", pt: "Evento atualizado." },
+    { en: "Schedule change saved.", pt: "Mudança na agenda salva." }
+  ],
+  calDeleted: [
+    { en: "Removed from the calendar.", pt: "Removido do calendário." },
+    { en: "That plan is off the board.", pt: "Esse plano saiu da agenda." }
+  ],
   memoryCreated: [
     { en: "New memory added! 📸", pt: "Nova lembrança adicionada! 📸" },
     { en: "Added to the collection. ♥", pt: "Adicionada à coleção. ♥" },
@@ -2710,6 +2981,7 @@ function notify(key){
   // Blue tab dots for new items (cleared automatically when that tab is opened)
   if(key === 'bucketCreated') setTabDot('bucketlist');
   if(key === 'songCreated') setTabDot('music');
+  if(key === 'calCreated') setTabDot('calendar');
 }
 
 function isFirebaseConfigured(){
@@ -4509,6 +4781,454 @@ document.getElementById('memoryUploadBtn').addEventListener('click', addMemory);
     memoriesSyncLive = false;
     setMemoriesSyncPill();
     renderMemories();
+  }
+})();
+
+// ================================================================
+// SHARED CALENDAR — month view + events for each person, synced
+// via Firestore collection "calendar". Blue tab dots use the same
+// last-seen system as Bucket List / Music.
+// ================================================================
+let calDb = null;
+let calSyncLive = false;
+let calEvents = [];
+let calEditingId = null;
+const calState = {
+  year: new Date().getFullYear(),
+  month: new Date().getMonth(), // 0-11
+  filter: 'all', // all | me | her
+  selected: null // 'YYYY-MM-DD'
+};
+
+function setCalSyncPill(){
+  const pill = document.getElementById('calSyncPill');
+  if(!pill) return;
+  if(calSyncLive){
+    pill.textContent = currentLanguage()==='pt'
+      ? '🟢 Sincronizado — a agenda dos dois aparece aqui'
+      : '🟢 Synced — both of your schedules show up here';
+    pill.className = 'bucket-sync-pill cal-sync-pill live';
+  } else {
+    pill.textContent = currentLanguage()==='pt'
+      ? '🟡 Ainda não sincronizado (só neste aparelho)'
+      : '🟡 Not synced yet (this device only)';
+    pill.className = 'bucket-sync-pill cal-sync-pill local';
+  }
+}
+
+function calPersonLabel(person){
+  if(person === 'her') return CONFIG.names.her;
+  return CONFIG.names.me;
+}
+
+function calPad(n){ return String(n).padStart(2, '0'); }
+
+function calDateKey(y, m, d){
+  return y + '-' + calPad(m + 1) + '-' + calPad(d);
+}
+
+function calFormatDayTitle(key){
+  if(!key) return tr('Select a day');
+  const [y, m, d] = key.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  const locale = currentLanguage() === 'pt' ? 'pt-BR' : 'en-US';
+  return dt.toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function calMonthName(y, m){
+  const locale = currentLanguage() === 'pt' ? 'pt-BR' : 'en-US';
+  return new Date(y, m, 1).toLocaleDateString(locale, { month: 'long', year: 'numeric' });
+}
+
+// Does this event occur on dayKey? Supports one-off + daily/weekly/monthly.
+function calEventOccursOn(ev, dayKey){
+  if(!ev || !ev.date || !dayKey) return false;
+  const repeat = ev.repeat || 'none';
+  if(repeat === 'none' || !repeat) return ev.date === dayKey;
+  if(dayKey < ev.date) return false;
+  if(ev.repeatUntil && dayKey > ev.repeatUntil) return false;
+
+  const [sy, sm, sd] = ev.date.split('-').map(Number);
+  const [dy, dm, dd] = dayKey.split('-').map(Number);
+  const start = new Date(sy, sm - 1, sd);
+  const day = new Date(dy, dm - 1, dd);
+  if(day < start) return false;
+
+  if(repeat === 'daily') return true;
+  if(repeat === 'weekly'){
+    const ms = day - start;
+    const days = Math.round(ms / 86400000);
+    return days % 7 === 0;
+  }
+  if(repeat === 'monthly'){
+    // Same day-of-month when possible (skip months that don't have that day)
+    return dd === sd;
+  }
+  return ev.date === dayKey;
+}
+
+function calEventsForDay(key){
+  return calEvents
+    .filter(ev => {
+      if(!calEventOccursOn(ev, key)) return false;
+      if(calState.filter === 'me') return ev.person === 'me';
+      if(calState.filter === 'her') return ev.person === 'her';
+      return true;
+    })
+    .sort((a, b) => String(a.startTime || '').localeCompare(String(b.startTime || '')));
+}
+
+function calFilteredDots(key){
+  const people = new Set();
+  calEvents.forEach(ev => {
+    if(!calEventOccursOn(ev, key)) return;
+    if(calState.filter === 'me' && ev.person !== 'me') return;
+    if(calState.filter === 'her' && ev.person !== 'her') return;
+    people.add(ev.person === 'her' ? 'her' : 'me');
+  });
+  return people;
+}
+
+// Simple toast for calendar — same style as bucket, fixed text (no random "charm" lines)
+function calNotify(kind){
+  const isPt = currentLanguage() === 'pt';
+  const messages = {
+    created: isPt ? 'Evento adicionado.' : 'Event added.',
+    updated: isPt ? 'Evento atualizado.' : 'Event updated.',
+    deleted: isPt ? 'Evento apagado.' : 'Event deleted.'
+  };
+  const toastKind = kind === 'deleted' ? 'deleted' : (kind === 'updated' ? 'updated' : 'created');
+  showToast(messages[kind] || messages.created, toastKind);
+  if(kind === 'created') setTabDot('calendar');
+}
+
+function renderCalendar(){
+  const grid = document.getElementById('calGrid');
+  const label = document.getElementById('calMonthLabel');
+  if(!grid || !label) return;
+
+  label.textContent = calMonthName(calState.year, calState.month);
+  grid.innerHTML = '';
+
+  const dows = currentLanguage() === 'pt'
+    ? ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
+    : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  dows.forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'cal-dow';
+    el.textContent = d;
+    grid.appendChild(el);
+  });
+
+  const first = new Date(calState.year, calState.month, 1);
+  const startPad = first.getDay(); // 0 Sun
+  const daysInMonth = new Date(calState.year, calState.month + 1, 0).getDate();
+  const prevDays = new Date(calState.year, calState.month, 0).getDate();
+  const today = new Date();
+  const todayKey = calDateKey(today.getFullYear(), today.getMonth(), today.getDate());
+
+  // leading days from previous month
+  for(let i = startPad - 1; i >= 0; i--){
+    const d = prevDays - i;
+    const y = calState.month === 0 ? calState.year - 1 : calState.year;
+    const m = calState.month === 0 ? 11 : calState.month - 1;
+    grid.appendChild(calBuildDayCell(y, m, d, true, todayKey));
+  }
+  for(let d = 1; d <= daysInMonth; d++){
+    grid.appendChild(calBuildDayCell(calState.year, calState.month, d, false, todayKey));
+  }
+  // trailing to fill weeks
+  const totalCells = startPad + daysInMonth;
+  const trailing = (7 - (totalCells % 7)) % 7;
+  for(let d = 1; d <= trailing; d++){
+    const y = calState.month === 11 ? calState.year + 1 : calState.year;
+    const m = calState.month === 11 ? 0 : calState.month + 1;
+    grid.appendChild(calBuildDayCell(y, m, d, true, todayKey));
+  }
+
+  renderCalDayPanel();
+}
+
+function calBuildDayCell(y, m, d, other, todayKey){
+  const key = calDateKey(y, m, d);
+  const cell = document.createElement('button');
+  cell.type = 'button';
+  cell.className = 'cal-day' + (other ? ' other' : '') + (key === todayKey ? ' today' : '') + (key === calState.selected ? ' selected' : '');
+  cell.innerHTML = `<span class="cal-day-num">${d}</span>`;
+  const dots = document.createElement('div');
+  dots.className = 'cal-dots';
+  calFilteredDots(key).forEach(p => {
+    const dot = document.createElement('span');
+    dot.className = 'cal-dot ' + p;
+    dots.appendChild(dot);
+  });
+  cell.appendChild(dots);
+  cell.addEventListener('click', () => {
+    calState.selected = key;
+    const dateInput = document.getElementById('calDate');
+    if(dateInput && !calEditingId) dateInput.value = key;
+    renderCalendar();
+  });
+  return cell;
+}
+
+function renderCalDayPanel(){
+  const title = document.getElementById('calDayTitle');
+  const list = document.getElementById('calDayEvents');
+  if(!title || !list) return;
+  title.textContent = calFormatDayTitle(calState.selected);
+  list.innerHTML = '';
+  if(!calState.selected){
+    list.innerHTML = `<p class="cal-empty">${tr('Select a day')}</p>`;
+    return;
+  }
+  const events = calEventsForDay(calState.selected);
+  if(!events.length){
+    list.innerHTML = `<p class="cal-empty">${tr('No plans this day.')}</p>`;
+    return;
+  }
+  events.forEach(ev => {
+    const row = document.createElement('div');
+    row.className = 'cal-event';
+    const who = ev.person === 'her' ? 'her' : 'me';
+    let timeStr = '';
+    if(ev.startTime && ev.endTime) timeStr = ev.startTime + ' – ' + ev.endTime;
+    else if(ev.startTime) timeStr = ev.startTime;
+    else if(ev.endTime) timeStr = '– ' + ev.endTime;
+    row.innerHTML = `
+      <span class="cal-event-who ${who}">${calPersonLabel(who)}</span>
+      <div class="cal-event-body">
+        <div class="cal-event-title"></div>
+        ${timeStr ? `<div class="cal-event-time">${timeStr}</div>` : ''}
+        ${ev.notes ? `<div class="cal-event-notes"></div>` : ''}
+      </div>
+      <div class="cal-event-actions">
+        <button type="button" class="bucket-icon-btn" data-act="edit" aria-label="${tr('Edit')}">✎</button>
+        <button type="button" class="bucket-icon-btn delete" data-act="del" aria-label="${tr('Delete')}">✕</button>
+      </div>
+    `;
+    row.querySelector('.cal-event-title').textContent = ev.title || '';
+    if(ev.notes) row.querySelector('.cal-event-notes').textContent = ev.notes;
+    row.querySelector('[data-act="edit"]').addEventListener('click', () => startEditCalEvent(ev));
+    row.querySelector('[data-act="del"]').addEventListener('click', () => deleteCalEvent(ev));
+    list.appendChild(row);
+  });
+}
+
+function setCalFormMode(editing){
+  const heading = document.getElementById('calAddHeading');
+  const btn = document.getElementById('calAddBtn');
+  const cancel = document.getElementById('calCancelEditBtn');
+  if(editing){
+    if(heading) heading.textContent = tr('Edit event ♥');
+    if(btn) btn.textContent = tr('Save event ♥');
+    if(cancel) cancel.style.display = '';
+  } else {
+    if(heading) heading.textContent = tr('Add to the calendar ♥');
+    if(btn) btn.textContent = tr('Add event ♥');
+    if(cancel) cancel.style.display = 'none';
+    calEditingId = null;
+  }
+}
+
+function clearCalForm(){
+  ['calTitle','calStart','calEnd','calNotes','calRepeatUntil'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+  const rep = document.getElementById('calRepeat');
+  if(rep) rep.value = 'none';
+  const date = document.getElementById('calDate');
+  if(date) date.value = calState.selected || '';
+  calEditingId = null;
+  setCalFormMode(false);
+}
+
+function startEditCalEvent(ev){
+  if(!ev) return;
+  calEditingId = ev.id;
+  setCalFormMode(true);
+  document.getElementById('calTitle').value = ev.title || '';
+  document.getElementById('calDate').value = ev.date || '';
+  document.getElementById('calPerson').value = ev.person === 'her' ? 'her' : 'me';
+  document.getElementById('calStart').value = ev.startTime || '';
+  document.getElementById('calEnd').value = ev.endTime || '';
+  document.getElementById('calNotes').value = ev.notes || '';
+  const rep = document.getElementById('calRepeat');
+  if(rep) rep.value = ev.repeat || 'none';
+  const until = document.getElementById('calRepeatUntil');
+  if(until) until.value = ev.repeatUntil || '';
+  document.getElementById('calAddForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function collectCalPayload(){
+  const title = (document.getElementById('calTitle')?.value || '').trim();
+  const date = (document.getElementById('calDate')?.value || '').trim();
+  const person = document.getElementById('calPerson')?.value === 'her' ? 'her' : 'me';
+  const startTime = (document.getElementById('calStart')?.value || '').trim();
+  const endTime = (document.getElementById('calEnd')?.value || '').trim();
+  const notes = (document.getElementById('calNotes')?.value || '').trim();
+  const repeat = document.getElementById('calRepeat')?.value || 'none';
+  const repeatUntil = (document.getElementById('calRepeatUntil')?.value || '').trim();
+  const isPt = currentLanguage() === 'pt';
+  if(!title){
+    alert(isPt ? 'Escreve o que é o evento.' : 'Please enter what the event is.');
+    return null;
+  }
+  if(!date){
+    alert(isPt ? 'Escolhe uma data.' : 'Please pick a date.');
+    return null;
+  }
+  if(repeatUntil && repeatUntil < date){
+    alert(isPt ? 'A data "até" tem de ser depois do início.' : 'Repeat-until must be on or after the start date.');
+    return null;
+  }
+  return { title, date, person, startTime, endTime, notes, repeat, repeatUntil };
+}
+
+function saveCalEvent(){
+  const payload = collectCalPayload();
+  if(!payload) return;
+
+  if(calEditingId){
+    if(calSyncLive && calDb && !String(calEditingId).startsWith('local-')){
+      calDb.collection('calendar').doc(calEditingId).update(payload)
+        .then(() => { calNotify('updated'); clearCalForm(); })
+        .catch(() => {
+          const idx = calEvents.findIndex(e => e.id === calEditingId);
+          if(idx >= 0) calEvents[idx] = { ...calEvents[idx], ...payload };
+          clearCalForm();
+          calNotify('updated');
+          renderCalendar();
+        });
+    } else {
+      const idx = calEvents.findIndex(e => e.id === calEditingId);
+      if(idx >= 0) calEvents[idx] = { ...calEvents[idx], ...payload };
+      clearCalForm();
+      calNotify('updated');
+      renderCalendar();
+    }
+    return;
+  }
+
+  if(calSyncLive && calDb){
+    calDb.collection('calendar').add({
+      ...payload,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => {
+      calNotify('created');
+      clearCalForm();
+      calState.selected = payload.date;
+    }).catch(() => {
+      calEvents.push({ id: 'local-' + Date.now(), ...payload });
+      calNotify('created');
+      clearCalForm();
+      calState.selected = payload.date;
+      renderCalendar();
+    });
+  } else {
+    calEvents.push({ id: 'local-' + Date.now(), ...payload });
+    calNotify('created');
+    clearCalForm();
+    calState.selected = payload.date;
+    renderCalendar();
+  }
+}
+
+async function deleteCalEvent(ev){
+  if(!ev) return;
+  const msg = currentLanguage() === 'pt'
+    ? `Tem certeza que quer apagar "${ev.title}"?`
+    : `Are you sure you want to delete "${ev.title}"?`;
+  const ok = await customConfirm(msg);
+  if(!ok) return;
+
+  if(calSyncLive && calDb && ev.id && !String(ev.id).startsWith('local-')){
+    calDb.collection('calendar').doc(ev.id).delete()
+      .then(() => calNotify('deleted'))
+      .catch(() => {
+        calEvents = calEvents.filter(e => e.id !== ev.id);
+        calNotify('deleted');
+        renderCalendar();
+      });
+  } else {
+    calEvents = calEvents.filter(e => e.id !== ev.id);
+    calNotify('deleted');
+    renderCalendar();
+  }
+}
+
+function initCalendarUI(){
+  // Person labels from CONFIG
+  const meName = CONFIG.names.me;
+  const herName = CONFIG.names.her;
+  const filterMe = document.getElementById('calFilterMe');
+  const filterHer = document.getElementById('calFilterHer');
+  if(filterMe) filterMe.textContent = meName;
+  if(filterHer) filterHer.textContent = herName;
+  const personSel = document.getElementById('calPerson');
+  if(personSel){
+    personSel.innerHTML = `
+      <option value="me">${meName}</option>
+      <option value="her">${herName}</option>
+    `;
+  }
+
+  document.getElementById('calPrevMonth')?.addEventListener('click', () => {
+    calState.month--;
+    if(calState.month < 0){ calState.month = 11; calState.year--; }
+    renderCalendar();
+  });
+  document.getElementById('calNextMonth')?.addEventListener('click', () => {
+    calState.month++;
+    if(calState.month > 11){ calState.month = 0; calState.year++; }
+    renderCalendar();
+  });
+  document.querySelectorAll('#calFilters .cal-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      calState.filter = btn.dataset.filter || 'all';
+      document.querySelectorAll('#calFilters .cal-filter-btn').forEach(b => b.classList.toggle('active', b === btn));
+      renderCalendar();
+    });
+  });
+  document.getElementById('calAddBtn')?.addEventListener('click', saveCalEvent);
+  document.getElementById('calCancelEditBtn')?.addEventListener('click', clearCalForm);
+
+  // Default selected = today
+  const t = new Date();
+  calState.selected = calDateKey(t.getFullYear(), t.getMonth(), t.getDate());
+  const dateInput = document.getElementById('calDate');
+  if(dateInput) dateInput.value = calState.selected;
+
+  setCalFormMode(false);
+  renderCalendar();
+}
+
+(function initCalendarSync(){
+  initCalendarUI();
+  const db = getSharedFirestore();
+  if(db){
+    try{
+      calDb = db;
+      calSyncLive = true;
+      setCalSyncPill();
+      const col = calDb.collection('calendar');
+      col.onSnapshot((snapshot) => {
+        calEvents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderCalendar();
+        refreshTabDotsFromData('calendar', calEvents);
+      }, () => {
+        calSyncLive = false;
+        setCalSyncPill();
+        renderCalendar();
+      });
+    }catch(e){
+      calSyncLive = false;
+      setCalSyncPill();
+    }
+  } else {
+    calSyncLive = false;
+    setCalSyncPill();
   }
 })();
 
