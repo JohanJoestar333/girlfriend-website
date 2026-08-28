@@ -126,7 +126,53 @@ header.site-header{
   max-width: 1080px; margin: 0 auto; padding: 16px 24px;
   display:flex; align-items:center; justify-content:space-between;
 }
-.brand{font-family: var(--script); font-size:1.5rem; color: var(--green-deep);}
+.brand{
+  font-family: var(--script); font-size:1.5rem; color: var(--green-deep);
+  cursor:pointer; user-select:none; border:none; background:none; padding:0;
+}
+.brand:focus-visible{ outline:2.5px solid var(--green); outline-offset:3px; border-radius:4px; }
+
+/* -------- brand secret card (click "us" 9×) -------- */
+.secret-card-overlay{
+  position:fixed; inset:0; z-index:12000;
+  background:rgba(20,17,15,0.55); backdrop-filter:blur(4px);
+  display:none; align-items:center; justify-content:center; padding:24px;
+}
+.secret-card-overlay.open{ display:flex; animation: fadeIn 0.35s ease; }
+.secret-card{
+  position:relative; max-width:420px; width:100%;
+  background: linear-gradient(165deg, #fff 0%, var(--cream) 55%, var(--blush-soft) 100%);
+  border-radius:var(--radius-lg); padding:36px 28px 28px;
+  box-shadow: var(--shadow-soft); border:1px solid rgba(43,38,34,0.08);
+  text-align:center; overflow:hidden;
+}
+.secret-card-locks{
+  position:absolute; inset:0; pointer-events:none; overflow:hidden; border-radius:inherit;
+}
+.secret-lock{
+  position:absolute; font-size:1rem; opacity:0.2; animation: secretLockFloat linear infinite;
+}
+@keyframes secretLockFloat{
+  0%{ transform: translateY(110%) rotate(0deg); opacity:0; }
+  10%{ opacity:0.28; }
+  90%{ opacity:0.22; }
+  100%{ transform: translateY(-30%) rotate(18deg); opacity:0; }
+}
+.secret-card-eyebrow{
+  font-size:0.7rem; text-transform:uppercase; letter-spacing:0.14em;
+  font-weight:700; color:var(--green); margin-bottom:8px; position:relative; z-index:1;
+}
+.secret-card-title{
+  font-family:var(--serif); font-size:1.55rem; color:var(--green-deep);
+  margin-bottom:14px; position:relative; z-index:1;
+}
+.secret-card-body{
+  font-family:var(--serif); font-size:1.08rem; font-style:italic;
+  color:var(--ink); line-height:1.7; margin-bottom:22px; position:relative; z-index:1;
+  white-space:pre-wrap;
+}
+.secret-card-close{ position:relative; z-index:1; }
+
 nav.tabs{display:flex; gap: 6px; align-items:center; flex-wrap:nowrap;}
 .tab-btn{
   position: relative;
@@ -1022,7 +1068,7 @@ html.gate-locked body > *:not(#passwordGate){ display:none !important; }
 
 <header class="site-header">
   <div class="nav-inner">
-    <div class="brand">us</div>
+    <button type="button" class="brand" id="brandSecret" aria-label="us">us</button>
     <nav class="tabs" id="tabsNav">
       <button class="tab-btn active" data-tab="story">Our Story</button>
       <button class="tab-btn" data-tab="album">Our Album</button>
@@ -1590,6 +1636,17 @@ html.gate-locked body > *:not(#passwordGate){ display:none !important; }
   </div>
 </div>
 
+<!-- Secret card: click the header "us" nine times. Edit text in CONFIG.brandSecret -->
+<div class="secret-card-overlay" id="brandSecretOverlay" role="dialog" aria-modal="true" aria-labelledby="brandSecretTitle">
+  <div class="secret-card">
+    <div class="secret-card-locks" id="brandSecretLocks" aria-hidden="true"></div>
+    <p class="secret-card-eyebrow" id="brandSecretEyebrow">You found it</p>
+    <h3 class="secret-card-title" id="brandSecretTitle">A little secret</h3>
+    <p class="secret-card-body" id="brandSecretBody"></p>
+    <button type="button" class="btn secret-card-close" id="brandSecretClose">Close</button>
+  </div>
+</div>
+
 <!-- ============================= FINAL SECTION ============================= -->
 <section class="section final-section">
   <div class="container">
@@ -1766,7 +1823,21 @@ const CONFIG = {
       text:"Hey, it’s me. I know you can’t hear my voice right now, but I want you to feel like I’m right here. I miss you, I think about you constantly, and I love everything about you... your laugh, your little expressions, the way the world feels safer with you in it. Even from far away, you’re still my favorite person. Consider this me saying hi, holding your hand, and reminding you that you’re deeply loved." }
   ],
 
+  // Footer ♥ secret (click the footer heart 5 times)
   secretMessage: "There's actually one more thing I wanted you to know... No matter how many pages I make, pictures I add, or words I write, none of them are enough to explain how happy I am that I met you.(Unfinished)",
+
+  // Header "us" secret card — click the brand 9 times to open.
+  // Edit title / body below (EN + PT). clicks: how many taps needed.
+  brandSecret: {
+    clicks: 9,
+    eyebrow: "You found it 🔓",
+    eyebrowPt: "Você encontrou 🔓",
+    title: "A little secret",
+    titlePt: "Um segredinho",
+    // Write your secret message here ↓
+    body: "Hey you.\n\nIf you're reading this, you were curious enough to poke around — I love that about you.\n\nThis whole site is just another way of saying: I'm glad it's us.\n\n(Replace this text in CONFIG.brandSecret.body)",
+    bodyPt: "Oi você.\n\nSe está a ler isto, foi curiosa o suficiente para explorar — eu adoro isso em ti.\n\nEste site inteiro é só outra forma de dizer: fico feliz que sejamos nós.\n\n(Substitui este texto em CONFIG.brandSecret.bodyPt)"
+  },
 
   // ---- Firebase (only for the Bucket List's cross-device sync) ----
   // Leave apiKey as "YOUR_API_KEY" and the bucket list still works, but
@@ -2882,7 +2953,7 @@ CONFIG.openWhen.forEach(item=>{
 document.getElementById('owModalClose').addEventListener('click', ()=> document.getElementById('owModal').classList.remove('open'));
 document.getElementById('owModal').addEventListener('click', (e)=>{ if(e.target.id==='owModal') document.getElementById('owModal').classList.remove('open'); });
 
-// ---------- secret interaction ----------
+// ---------- secret interaction (footer heart — 5 clicks) ----------
 let secretClicks = 0;
 document.getElementById('secretHeart').addEventListener('click', ()=>{
   secretClicks++;
@@ -2892,6 +2963,85 @@ document.getElementById('secretHeart').addEventListener('click', ()=>{
     reveal.classList.add('show');
   }
 });
+
+// ---------- brand secret card (header "us" — default 9 clicks) ----------
+// Edit the message in CONFIG.brandSecret (near the top of the script).
+(function initBrandSecret(){
+  const brand = document.getElementById('brandSecret');
+  const overlay = document.getElementById('brandSecretOverlay');
+  const closeBtn = document.getElementById('brandSecretClose');
+  const locksLayer = document.getElementById('brandSecretLocks');
+  if(!brand || !overlay) return;
+
+  const cfg = CONFIG.brandSecret || {};
+  const need = Math.max(1, cfg.clicks || 9);
+  let taps = 0;
+  let resetTimer = null;
+
+  function fillSecretCard(){
+    const pt = currentLanguage() === 'pt';
+    document.getElementById('brandSecretEyebrow').textContent =
+      pt ? (cfg.eyebrowPt || cfg.eyebrow || 'Você encontrou 🔓') : (cfg.eyebrow || 'You found it 🔓');
+    document.getElementById('brandSecretTitle').textContent =
+      pt ? (cfg.titlePt || cfg.title || 'Um segredinho') : (cfg.title || 'A little secret');
+    document.getElementById('brandSecretBody').textContent =
+      pt ? (cfg.bodyPt || cfg.body || '') : (cfg.body || '');
+  }
+
+  function spawnSecretLocks(){
+    if(!locksLayer) return;
+    locksLayer.innerHTML = '';
+    const emojis = ['🔒','🔓','🔐','🔏','🔑'];
+    for(let i = 0; i < 14; i++){
+      const el = document.createElement('span');
+      el.className = 'secret-lock';
+      el.textContent = emojis[i % emojis.length];
+      el.style.left = (Math.random() * 92 + 4) + '%';
+      el.style.animationDuration = (6 + Math.random() * 8) + 's';
+      el.style.animationDelay = (Math.random() * 5) + 's';
+      el.style.fontSize = (0.75 + Math.random() * 0.7) + 'rem';
+      locksLayer.appendChild(el);
+    }
+  }
+
+  function openBrandSecret(){
+    fillSecretCard();
+    spawnSecretLocks();
+    overlay.classList.add('open');
+    const pt = currentLanguage() === 'pt';
+    showToast(
+      pt
+        ? 'Conseguiste encontrar isto? 🔓✨'
+        : 'Did you really find this? 🔓✨',
+      'created'
+    );
+  }
+
+  function closeBrandSecret(){
+    overlay.classList.remove('open');
+  }
+
+  brand.addEventListener('click', (e) => {
+    // Don't navigate / select text — just count secret taps
+    e.preventDefault();
+    taps++;
+    if(resetTimer) clearTimeout(resetTimer);
+    // If they stop clicking, slowly forget the streak
+    resetTimer = setTimeout(() => { taps = 0; }, 2500);
+    if(taps >= need){
+      taps = 0;
+      openBrandSecret();
+    }
+  });
+
+  closeBtn?.addEventListener('click', closeBrandSecret);
+  overlay.addEventListener('click', (e) => {
+    if(e.target === overlay) closeBrandSecret();
+  });
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape' && overlay.classList.contains('open')) closeBrandSecret();
+  });
+})();
 
 // ---------- footer ----------
 // ---------- bucket list (add / edit / delete / check, synced via Firebase) ----------
