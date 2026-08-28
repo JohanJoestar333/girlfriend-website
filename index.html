@@ -479,7 +479,14 @@ nav.tabs{display:flex; gap: 6px;}
   flex:1; font-family:inherit; font-size:1rem; color: var(--ink); border:none; border-bottom: 1.5px solid var(--green);
   background:transparent; padding:2px 0;
 }
-.bucket-actions{ display:flex; gap:6px; flex-shrink:0; }
+.bucket-actions{ display:flex; gap:4px; flex-shrink:0; align-items:center; }
+.bucket-move-group{ display:flex; flex-direction:column; gap:0; }
+.bucket-move{
+  width:22px; height:18px; border-radius:6px; font-size:0.7rem; line-height:1;
+  color: var(--ink-soft); opacity:0.55; display:flex; align-items:center; justify-content:center;
+}
+.bucket-move:hover:not(:disabled){ opacity:1; background: var(--sage-dim); color: var(--green-deep); }
+.bucket-move:disabled{ opacity:0.15; cursor:default; }
 .bucket-icon-btn{
   width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center;
   color: var(--ink-soft); font-size:0.95rem; transition: all 0.2s ease;
@@ -2721,14 +2728,63 @@ function setBucketSyncPill(){
   }
 }
 
+// Sort bucket items by "order" (0,1,2…). Items without order fall after
+// ones that have it, using their array index so old data still sorts stably.
+function getSortedBucketItems(){
+  return bucketItems
+    .map((item, i) => ({ ...item, __idx: i }))
+    .sort((a, b) => {
+      const ao = (typeof a.order === 'number') ? a.order : (1000000 + a.__idx);
+      const bo = (typeof b.order === 'number') ? b.order : (1000000 + b.__idx);
+      return ao - bo;
+    });
+}
+
+// direction: -1 up, +1 down. Renumbers the whole list 0..n-1 so legacy
+// items without an order field never collide and get stuck.
+function moveBucketOrder(item, direction){
+  const sorted = getSortedBucketItems();
+  const idx = sorted.findIndex(s => s.id === item.id);
+  const swapIdx = idx + direction;
+  if(idx < 0 || swapIdx < 0 || swapIdx >= sorted.length) return;
+
+  const reordered = sorted.slice();
+  const [moved] = reordered.splice(idx, 1);
+  reordered.splice(swapIdx, 0, moved);
+  const updates = reordered.map((s, i) => ({ id: s.id, order: i }));
+
+  if(bucketSyncLive && bucketDb){
+    const batch = bucketDb.batch();
+    let wrote = 0;
+    updates.forEach(u => {
+      if(u.id && !String(u.id).startsWith('local-')){
+        batch.update(bucketDb.collection('bucketlist').doc(u.id), { order: u.order });
+        wrote++;
+      } else {
+        const local = bucketItems.find(s => s.id === u.id);
+        if(local) local.order = u.order;
+      }
+    });
+    if(wrote) batch.commit().catch(()=>{});
+    else renderBucketList();
+  } else {
+    updates.forEach(u => {
+      const local = bucketItems.find(s => s.id === u.id);
+      if(local) local.order = u.order;
+    });
+    renderBucketList();
+  }
+}
+
 function renderBucketList(){
   const wrap = document.getElementById('bucketList');
   wrap.innerHTML = '';
+  const sorted = getSortedBucketItems();
 
-  if(bucketItems.length === 0){
+  if(sorted.length === 0){
     wrap.innerHTML = `<p class="bucket-empty">${tr('Nothing here yet — add the first thing above.')}</p>`;
   } else {
-    bucketItems.forEach(item=>{
+    sorted.forEach((item, i)=>{
       const row = document.createElement('div');
       row.className = 'bucket-item' + (item.done ? ' done' : '');
 
@@ -2746,6 +2802,27 @@ function renderBucketList(){
       const actions = document.createElement('div');
       actions.className = 'bucket-actions';
 
+      const moveGroup = document.createElement('div');
+      moveGroup.className = 'bucket-move-group';
+      const upBtn = document.createElement('button');
+      upBtn.type = 'button';
+      upBtn.className = 'bucket-move';
+      upBtn.textContent = '↑';
+      upBtn.title = tr('Move up');
+      upBtn.setAttribute('aria-label', tr('Move up'));
+      upBtn.disabled = i === 0;
+      upBtn.addEventListener('click', () => moveBucketOrder(item, -1));
+      const downBtn = document.createElement('button');
+      downBtn.type = 'button';
+      downBtn.className = 'bucket-move';
+      downBtn.textContent = '↓';
+      downBtn.title = tr('Move down');
+      downBtn.setAttribute('aria-label', tr('Move down'));
+      downBtn.disabled = i === sorted.length - 1;
+      downBtn.addEventListener('click', () => moveBucketOrder(item, 1));
+      moveGroup.appendChild(upBtn);
+      moveGroup.appendChild(downBtn);
+
       const editBtn = document.createElement('button');
       editBtn.className = 'bucket-icon-btn';
       editBtn.type = 'button';
@@ -2760,6 +2837,7 @@ function renderBucketList(){
       delBtn.textContent = '✕';
       delBtn.addEventListener('click', ()=> deleteBucketItem(item));
 
+      actions.appendChild(moveGroup);
       actions.appendChild(editBtn);
       actions.appendChild(delBtn);
       row.appendChild(check);
@@ -2769,8 +2847,8 @@ function renderBucketList(){
     });
   }
 
-  const total = bucketItems.length;
-  const doneCount = bucketItems.filter(i=>i.done).length;
+  const total = sorted.length;
+  const doneCount = sorted.filter(i=>i.done).length;
   const progressWrap = document.getElementById('bucketProgress');
   if(total > 0){
     progressWrap.style.display = 'block';
@@ -2818,12 +2896,18 @@ function addBucketItem(){
   if(!val) return;
   input.value = '';
 
+  // New items go to the end of the ordered list
+  const sorted = getSortedBucketItems();
+  const maxOrder = sorted.reduce((max, s) => Math.max(max, (typeof s.order === 'number' ? s.order : -1)), -1);
+  const order = maxOrder + 1;
+
   if(bucketSyncLive){
     bucketDb.collection('bucketlist').add({
-      text: val, done: false, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      text: val, done: false, order,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }).then(()=> notify('bucketCreated')).catch(()=>{});
   } else {
-    bucketItems.push({ id: 'local-' + Date.now(), text: val, done: false });
+    bucketItems.push({ id: 'local-' + Date.now(), text: val, done: false, order });
     renderBucketList();
     notify('bucketCreated');
   }
@@ -2899,21 +2983,21 @@ function getSharedFirestore(){
       }, ()=>{
         bucketSyncLive = false;
         setBucketSyncPill();
-        bucketItems = JSON.parse(JSON.stringify(CONFIG.bucketList)).map((it,i)=>({ id:'local-'+i, ...it }));
+        bucketItems = JSON.parse(JSON.stringify(CONFIG.bucketList)).map((it,i)=>({ id:'local-'+i, order:i, ...it }));
         renderBucketList();
       });
 
       col.limit(1).get().then(snap=>{
         if(snap.empty){
-          CONFIG.bucketList.forEach(item=>{
-            col.add({ text: item.text, done: !!item.done, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+          CONFIG.bucketList.forEach((item, i)=>{
+            col.add({ text: item.text, done: !!item.done, order: i, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
           });
         }
       }).catch(()=>{});
     }catch(e){
       bucketSyncLive = false;
       setBucketSyncPill();
-      bucketItems = JSON.parse(JSON.stringify(CONFIG.bucketList)).map((it,i)=>({ id:'local-'+i, ...it }));
+      bucketItems = JSON.parse(JSON.stringify(CONFIG.bucketList)).map((it,i)=>({ id:'local-'+i, order:i, ...it }));
       renderBucketList();
     }
   } else {
