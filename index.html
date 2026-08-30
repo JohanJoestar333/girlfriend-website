@@ -2351,6 +2351,9 @@
       .cal-mark.her {
         color: #b86b7a;
       }
+      .cal-mark.both {
+        color: #3b82f6;
+      }
       .cal-mark.circle {
         width: 7px;
         height: 7px;
@@ -2405,6 +2408,14 @@
       .cal-event-who.her {
         background: var(--blush-soft);
         color: #8a4a3f;
+      }
+      .cal-event-who.both {
+        background: #dbeafe;
+        color: #1d4ed8;
+      }
+      .cal-filter-btn.both.active {
+        background: #3b82f6;
+        color: #fff;
       }
       .cal-event-body {
         flex: 1;
@@ -2920,7 +2931,9 @@
         </button>
         <nav class="tabs" id="tabsNav">
           <button class="tab-btn active" data-tab="story">Our Story</button>
-          <button class="tab-btn" data-tab="album">Our Album</button>
+          <button class="tab-btn" data-tab="album">
+            Our Album<span class="tab-dot" data-dot-for="album" hidden></span>
+          </button>
           <button class="tab-btn" data-tab="us">Us</button>
           <button class="tab-btn" data-tab="openwhen">Open When...</button>
           <button class="tab-btn" data-tab="bucketlist">
@@ -3002,7 +3015,9 @@
           </button>
         </div>
         <button class="tab-btn active" data-tab="story">Our Story</button>
-        <button class="tab-btn" data-tab="album">Our Album</button>
+        <button class="tab-btn" data-tab="album">
+          Our Album<span class="tab-dot" data-dot-for="album" hidden></span>
+        </button>
         <button class="tab-btn" data-tab="us">Us</button>
         <button class="tab-btn" data-tab="openwhen">Open When...</button>
         <button class="tab-btn" data-tab="bucketlist">
@@ -3712,6 +3727,14 @@
               >
                 Fiel
               </button>
+              <button
+                type="button"
+                class="cal-filter-btn both"
+                data-filter="both"
+                id="calFilterBoth"
+              >
+                Both
+              </button>
             </div>
           </div>
 
@@ -3747,6 +3770,7 @@
                 <select id="calPerson">
                   <option value="me">Thommy</option>
                   <option value="her">Fiel</option>
+                  <option value="both">Both of us</option>
                 </select>
               </div>
               <div class="music-add-field">
@@ -4790,6 +4814,8 @@
         Album: "Álbum",
         Calendar: "Calendário",
         More: "Mais",
+        Both: "Os dois",
+        "Both of us": "Os dois",
         "Our schedules": "Nossas agendas",
         "Shared Calendar": "Calendário Compartilhado",
         "See each other's plans so we know when to text — and when to wait.":
@@ -5221,6 +5247,11 @@
           markTabSeen(
             "calendar",
             typeof calEvents !== "undefined" ? calEvents : [],
+          );
+        if (name === "album")
+          markTabSeen(
+            "album",
+            typeof memoriesItems !== "undefined" ? memoriesItems : [],
           );
 
         document
@@ -6235,6 +6266,7 @@
         if (key === "bucketCreated") setTabDot("bucketlist");
         if (key === "songCreated") setTabDot("music");
         if (key === "calCreated") setTabDot("calendar");
+        if (key === "memoryCreated") setTabDot("album");
       }
 
       function isFirebaseConfigured() {
@@ -8706,6 +8738,7 @@
                   ...doc.data(),
                 }));
                 renderMemories();
+                refreshTabDotsFromData("album", memoriesItems);
               },
               () => {
                 memoriesSyncLive = false;
@@ -8760,8 +8793,16 @@
       }
 
       function calPersonLabel(person) {
+        if (person === "both") {
+          return currentLanguage() === "pt" ? "Os dois" : "Both of us";
+        }
         if (person === "her") return CONFIG.names.her;
         return CONFIG.names.me;
+      }
+
+      function calNormalizePerson(p) {
+        if (p === "her" || p === "both") return p;
+        return "me";
       }
 
       function calPad(n) {
@@ -8824,8 +8865,10 @@
         return calEvents
           .filter((ev) => {
             if (!calEventOccursOn(ev, key)) return false;
-            if (calState.filter === "me") return ev.person === "me";
-            if (calState.filter === "her") return ev.person === "her";
+            const who = calNormalizePerson(ev.person);
+            if (calState.filter === "me") return who === "me";
+            if (calState.filter === "her") return who === "her";
+            if (calState.filter === "both") return who === "both";
             return true;
           })
           .sort((a, b) =>
@@ -8833,15 +8876,17 @@
           );
       }
 
-      // Markers for a day cell: { person, marker } — colors by person, shape by importance
+      // Markers for a day cell: { person, marker } — colors by who, shape by importance
+      // green = me, pink = her, blue = both
       function calMarkersForDay(key) {
         const out = [];
         const seen = new Set();
         calEvents.forEach((ev) => {
           if (!calEventOccursOn(ev, key)) return;
-          if (calState.filter === "me" && ev.person !== "me") return;
-          if (calState.filter === "her" && ev.person !== "her") return;
-          const person = ev.person === "her" ? "her" : "me";
+          const person = calNormalizePerson(ev.person);
+          if (calState.filter === "me" && person !== "me") return;
+          if (calState.filter === "her" && person !== "her") return;
+          if (calState.filter === "both" && person !== "both") return;
           const marker =
             ev.marker === "star" || ev.marker === "heart"
               ? ev.marker
@@ -8953,7 +8998,7 @@
           el.className = "cal-mark " + person + " " + marker;
           el.textContent = calMarkerChar(marker);
           el.title =
-            (person === "her" ? CONFIG.names.her : CONFIG.names.me) +
+            calPersonLabel(person) +
             (marker === "star" ? " ★" : marker === "heart" ? " ♥" : "");
           dots.appendChild(el);
         });
@@ -8985,7 +9030,7 @@
         events.forEach((ev) => {
           const row = document.createElement("div");
           row.className = "cal-event";
-          const who = ev.person === "her" ? "her" : "me";
+          const who = calNormalizePerson(ev.person);
           const marker =
             ev.marker === "star" || ev.marker === "heart"
               ? ev.marker
@@ -9076,8 +9121,9 @@
         setCalFormMode(true);
         document.getElementById("calTitle").value = ev.title || "";
         document.getElementById("calDate").value = ev.date || "";
-        document.getElementById("calPerson").value =
-          ev.person === "her" ? "her" : "me";
+        document.getElementById("calPerson").value = calNormalizePerson(
+          ev.person,
+        );
         document.getElementById("calStart").value = ev.startTime || "";
         document.getElementById("calEnd").value = ev.endTime || "";
         document.getElementById("calNotes").value = ev.notes || "";
@@ -9099,8 +9145,9 @@
       function collectCalPayload() {
         const title = (document.getElementById("calTitle")?.value || "").trim();
         const date = (document.getElementById("calDate")?.value || "").trim();
-        const person =
-          document.getElementById("calPerson")?.value === "her" ? "her" : "me";
+        const person = calNormalizePerson(
+          document.getElementById("calPerson")?.value,
+        );
         const startTime = (
           document.getElementById("calStart")?.value || ""
         ).trim();
@@ -9237,10 +9284,18 @@
         if (filterHer) filterHer.textContent = herName;
         const personSel = document.getElementById("calPerson");
         if (personSel) {
+          const bothLabel =
+            currentLanguage() === "pt" ? "Os dois" : "Both of us";
           personSel.innerHTML = `
       <option value="me">${meName}</option>
       <option value="her">${herName}</option>
+      <option value="both">${bothLabel}</option>
     `;
+        }
+        const filterBoth = document.getElementById("calFilterBoth");
+        if (filterBoth) {
+          filterBoth.textContent =
+            currentLanguage() === "pt" ? "Os dois" : "Both";
         }
 
         document
