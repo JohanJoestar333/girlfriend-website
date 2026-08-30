@@ -35,7 +35,7 @@
 
    FIREBASE
    Optional. Fill CONFIG.firebase and publish Firestore rules for
-   collections "bucketlist", "musicsongs", "memories", and "calendar".
+   collections "bucketlist", "musicsongs", "memories", "albums", and "calendar".
    ============================================================ */
 
       :root {
@@ -1062,6 +1062,37 @@
         font-size: 1.3rem;
         margin-bottom: 16px;
         color: var(--green-deep);
+      }
+      .album-cat-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .album-cat-head h3 {
+        margin-bottom: 0;
+      }
+      .album-cat-empty {
+        font-size: 0.9rem;
+        color: var(--ink-soft);
+        font-style: italic;
+        padding: 8px 0 4px;
+      }
+      .album-del-btn {
+        flex-shrink: 0;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        color: var(--ink-soft);
+        font-size: 0.85rem;
+        opacity: 0.55;
+        transition: all 0.2s ease;
+      }
+      .album-del-btn:hover {
+        opacity: 1;
+        background: var(--blush-soft);
+        color: #a34a4a;
       }
       .photo-tile {
         position: relative;
@@ -3305,7 +3336,41 @@
             </div>
           </div>
 
-          <!-- Static CONFIG albums + live uploads appear here by category -->
+          <!-- Create a new album (synced via Firebase collection "albums") -->
+          <div
+            class="music-add-form"
+            id="albumCreateForm"
+            style="max-width: 560px; margin: 0 auto 36px"
+          >
+            <h3 style="font-family: var(--serif); font-size: 1.1rem; color: var(--green-deep); margin-bottom: 10px">
+              New album
+            </h3>
+            <p style="font-size: 0.85rem; color: var(--ink-soft); margin-bottom: 12px">
+              Create a folder for new memories — it appears in the list above when you upload.
+            </p>
+            <div class="music-add-grid">
+              <div class="music-add-field" style="grid-column: 1 / -1">
+                <label for="newAlbumNameInput">Album name</label>
+                <input
+                  type="text"
+                  id="newAlbumNameInput"
+                  maxlength="60"
+                  placeholder="e.g. Trip to the beach"
+                />
+              </div>
+            </div>
+            <div class="music-add-actions">
+              <span
+                id="newAlbumStatus"
+                style="font-size: 0.85rem; color: var(--ink-soft); align-self: center"
+              ></span>
+              <button type="button" class="btn" id="newAlbumBtn">
+                Add album ♥
+              </button>
+            </div>
+          </div>
+
+          <!-- Static CONFIG albums + custom albums + live uploads -->
           <div id="albumWrap"></div>
         </div>
       </section>
@@ -4816,6 +4881,12 @@
         More: "Mais",
         Both: "Os dois",
         "Both of us": "Os dois",
+        "New album": "Novo álbum",
+        "Create a folder for new memories — it appears in the list above when you upload.":
+          "Cria uma pasta para novas lembranças — aparece na lista quando enviares fotos.",
+        "Album name": "Nome do álbum",
+        "e.g. Trip to the beach": "ex.: Viagem à praia",
+        "Add album ♥": "Adicionar álbum ♥",
         "Our schedules": "Nossas agendas",
         "Shared Calendar": "Calendário Compartilhado",
         "See each other's plans so we know when to text — and when to wait.":
@@ -5703,16 +5774,41 @@
       });
 
       // ---------- album ----------
-      // Static photos live in CONFIG.album (by category). Live uploads from
-      // Firebase/Cloudinary also go into a category the user picks — they are
-      // merged into the same sections, never dumped in a separate pile at the bottom.
+      // Static photos: CONFIG.album (folder photos).
+      // Custom albums: Firebase collection "albums" { name, order, createdAt }
+      //   (or local-only if Firebase isn't set up).
+      // Live uploads: memories with a category matching either list.
       const albumWrap = document.getElementById("albumWrap");
       let allPhotos = [];
-      // memoriesItems is filled later by the memories sync; starts empty so first paint works
       let memoriesItems = [];
+      let customAlbums = []; // { id, name, order, createdAt }
+      let albumsDb = null;
+      let albumsSyncLive = false;
 
-      function getAlbumCategories() {
+      function getStaticAlbumNames() {
         return (CONFIG.album || []).map((c) => c.category);
+      }
+
+      function getCustomAlbumNames() {
+        return customAlbums
+          .slice()
+          .sort((a, b) => {
+            const ao = typeof a.order === "number" ? a.order : 1e9;
+            const bo = typeof b.order === "number" ? b.order : 1e9;
+            if (ao !== bo) return ao - bo;
+            return String(a.name || "").localeCompare(String(b.name || ""));
+          })
+          .map((a) => a.name)
+          .filter(Boolean);
+      }
+
+      // All album names for the upload dropdown (static + custom, unique)
+      function getAlbumCategories() {
+        const staticNames = getStaticAlbumNames();
+        const custom = getCustomAlbumNames().filter(
+          (n) => !staticNames.includes(n),
+        );
+        return staticNames.concat(custom);
       }
 
       function fillMemoryAlbumSelect() {
@@ -5720,13 +5816,14 @@
         if (!sel) return;
         const prev = sel.value;
         sel.innerHTML = "";
-        getAlbumCategories().forEach((cat) => {
+        const cats = getAlbumCategories();
+        cats.forEach((cat) => {
           const opt = document.createElement("option");
           opt.value = cat;
           opt.textContent = tr(cat);
           sel.appendChild(opt);
         });
-        if (prev && getAlbumCategories().includes(prev)) sel.value = prev;
+        if (prev && cats.includes(prev)) sel.value = prev;
       }
 
       // Normalize image identity so the same photo never shows twice
@@ -5788,13 +5885,33 @@
         return fig;
       }
 
+      function appendLivePhotosToMasonry(masonry, categoryName, seen) {
+        const liveInCat = (memoriesItems || []).filter(
+          (m) => (m.category || "") === categoryName,
+        );
+        liveInCat.forEach((m) => {
+          if (!m.url || albumAlreadyShown(seen, m.url)) return;
+          albumMarkShown(seen, m.url);
+          const idx = allPhotos.length;
+          allPhotos.push({
+            caption: m.caption || "",
+            date: m.date || "",
+            category: tr(categoryName),
+            img: m.url,
+          });
+          masonry.appendChild(makeLivePhotoTile(m, idx));
+        });
+        return liveInCat.length;
+      }
+
       function renderAlbum() {
         if (!albumWrap) return;
         albumWrap.innerHTML = "";
         allPhotos = [];
-        // Global de-dupe across the whole album tab
         const seen = { full: new Set(), files: new Set(), paths: new Set() };
+        const staticNames = getStaticAlbumNames();
 
+        // 1) Built-in CONFIG albums
         (CONFIG.album || []).forEach((cat) => {
           const catEl = document.createElement("div");
           catEl.className = "album-cat";
@@ -5802,7 +5919,6 @@
           const masonry = document.createElement("div");
           masonry.className = "masonry";
 
-          // 1) Static photos from CONFIG (source of truth for folder photos)
           (cat.items || []).forEach((item) => {
             if (item.img && albumAlreadyShown(seen, item.img)) return;
             if (item.img) albumMarkShown(seen, item.img);
@@ -5816,28 +5932,58 @@
             masonry.appendChild(makeStaticPhotoTile(item, idx));
           });
 
-          // 2) Live uploads for this category — skip if same image already shown
-          const liveInCat = (memoriesItems || []).filter(
-            (m) => (m.category || "") === cat.category,
-          );
-          liveInCat.forEach((m) => {
-            if (!m.url || albumAlreadyShown(seen, m.url)) return;
-            albumMarkShown(seen, m.url);
-            const idx = allPhotos.length;
-            allPhotos.push({
-              caption: m.caption || "",
-              date: m.date || "",
-              category: tr(cat.category),
-              img: m.url,
-            });
-            masonry.appendChild(makeLivePhotoTile(m, idx));
-          });
-
+          appendLivePhotosToMasonry(masonry, cat.category, seen);
           catEl.appendChild(masonry);
           albumWrap.appendChild(catEl);
         });
 
-        // Legacy uploads with no / unknown category — only if not already displayed above
+        // 2) Custom albums created on the site (not already in CONFIG)
+        customAlbums
+          .slice()
+          .sort((a, b) => {
+            const ao = typeof a.order === "number" ? a.order : 1e9;
+            const bo = typeof b.order === "number" ? b.order : 1e9;
+            if (ao !== bo) return ao - bo;
+            return String(a.name || "").localeCompare(String(b.name || ""));
+          })
+          .forEach((alb) => {
+            if (!alb.name || staticNames.includes(alb.name)) return;
+            const catEl = document.createElement("div");
+            catEl.className = "album-cat";
+            const head = document.createElement("div");
+            head.className = "album-cat-head";
+            const h3 = document.createElement("h3");
+            h3.textContent = alb.name;
+            const del = document.createElement("button");
+            del.type = "button";
+            del.className = "album-del-btn";
+            del.title =
+              currentLanguage() === "pt" ? "Apagar álbum" : "Delete album";
+            del.setAttribute("aria-label", del.title);
+            del.textContent = "✕";
+            del.addEventListener("click", () => deleteCustomAlbum(alb));
+            head.appendChild(h3);
+            head.appendChild(del);
+            catEl.appendChild(head);
+
+            const masonry = document.createElement("div");
+            masonry.className = "masonry";
+            const countBefore = masonry.children.length;
+            appendLivePhotosToMasonry(masonry, alb.name, seen);
+            if (masonry.children.length === countBefore) {
+              const empty = document.createElement("p");
+              empty.className = "album-cat-empty";
+              empty.textContent =
+                currentLanguage() === "pt"
+                  ? "Ainda sem fotos — escolhe este álbum ao enviar."
+                  : "No photos yet — pick this album when you upload.";
+              catEl.appendChild(empty);
+            }
+            catEl.appendChild(masonry);
+            albumWrap.appendChild(catEl);
+          });
+
+        // 3) Uploads with unknown category
         const cats = getAlbumCategories();
         const unsorted = (memoriesItems || []).filter((m) => {
           if (!m.url || albumAlreadyShown(seen, m.url)) return false;
@@ -5866,7 +6012,126 @@
             albumWrap.appendChild(catEl);
           }
         }
+
+        fillMemoryAlbumSelect();
       }
+
+      function addCustomAlbum() {
+        const input = document.getElementById("newAlbumNameInput");
+        const status = document.getElementById("newAlbumStatus");
+        const isPt = currentLanguage() === "pt";
+        const name = (input && input.value ? input.value : "").trim();
+        if (!name) {
+          if (status)
+            status.textContent = isPt
+              ? "Escreve o nome do álbum."
+              : "Enter an album name.";
+          return;
+        }
+        const existing = getAlbumCategories().map((c) => c.toLowerCase());
+        if (existing.includes(name.toLowerCase())) {
+          if (status)
+            status.textContent = isPt
+              ? "Esse álbum já existe."
+              : "That album already exists.";
+          return;
+        }
+        const maxOrder = customAlbums.reduce(
+          (m, a) => Math.max(m, typeof a.order === "number" ? a.order : -1),
+          -1,
+        );
+        const payload = {
+          name,
+          order: maxOrder + 1,
+        };
+
+        if (albumsSyncLive && albumsDb) {
+          albumsDb
+            .collection("albums")
+            .add({
+              ...payload,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            })
+            .then(() => {
+              if (input) input.value = "";
+              if (status) status.textContent = "";
+              showToast(
+                isPt ? "Álbum criado." : "Album created.",
+                "created",
+              );
+              setTabDot("album");
+            })
+            .catch(() => {
+              customAlbums.push({ id: "local-" + Date.now(), ...payload });
+              if (input) input.value = "";
+              if (status) status.textContent = "";
+              showToast(
+                isPt ? "Álbum criado." : "Album created.",
+                "created",
+              );
+              setTabDot("album");
+              renderAlbum();
+            });
+        } else {
+          customAlbums.push({ id: "local-" + Date.now(), ...payload });
+          if (input) input.value = "";
+          if (status) status.textContent = "";
+          showToast(isPt ? "Álbum criado." : "Album created.", "created");
+          setTabDot("album");
+          renderAlbum();
+        }
+      }
+
+      async function deleteCustomAlbum(alb) {
+        if (!alb) return;
+        const isPt = currentLanguage() === "pt";
+        const photoCount = (memoriesItems || []).filter(
+          (m) => (m.category || "") === alb.name,
+        ).length;
+        const msg =
+          photoCount > 0
+            ? isPt
+              ? `Apagar o álbum "${alb.name}"? As ${photoCount} foto(s) passam para "Sem álbum" (não são apagadas).`
+              : `Delete album "${alb.name}"? Its ${photoCount} photo(s) move to Unsorted (photos are kept).`
+            : isPt
+              ? `Apagar o álbum "${alb.name}"?`
+              : `Delete album "${alb.name}"?`;
+        const ok = await customConfirm(msg);
+        if (!ok) return;
+
+        if (
+          albumsSyncLive &&
+          albumsDb &&
+          alb.id &&
+          !String(alb.id).startsWith("local-")
+        ) {
+          albumsDb
+            .collection("albums")
+            .doc(alb.id)
+            .delete()
+            .then(() => {
+              showToast(isPt ? "Álbum apagado." : "Album deleted.", "deleted");
+            })
+            .catch(() => {
+              customAlbums = customAlbums.filter((a) => a.id !== alb.id);
+              showToast(isPt ? "Álbum apagado." : "Album deleted.", "deleted");
+              renderAlbum();
+            });
+        } else {
+          customAlbums = customAlbums.filter((a) => a.id !== alb.id);
+          showToast(isPt ? "Álbum apagado." : "Album deleted.", "deleted");
+          renderAlbum();
+        }
+      }
+
+      document
+        .getElementById("newAlbumBtn")
+        ?.addEventListener("click", addCustomAlbum);
+      document
+        .getElementById("newAlbumNameInput")
+        ?.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") addCustomAlbum();
+        });
 
       fillMemoryAlbumSelect();
       renderAlbum();
@@ -8755,6 +9020,34 @@
           memoriesSyncLive = false;
           setMemoriesSyncPill();
           renderMemories();
+        }
+      })();
+
+      // Custom album folders (collection "albums") — same Firestore app as memories
+      (function initCustomAlbums() {
+        const db = getSharedFirestore();
+        if (db) {
+          try {
+            albumsDb = db;
+            albumsSyncLive = true;
+            albumsDb.collection("albums").onSnapshot(
+              (snapshot) => {
+                customAlbums = snapshot.docs.map((doc) => ({
+                  id: doc.id,
+                  ...doc.data(),
+                }));
+                renderAlbum();
+                refreshTabDotsFromData("album", customAlbums);
+              },
+              () => {
+                albumsSyncLive = false;
+              },
+            );
+          } catch (e) {
+            albumsSyncLive = false;
+          }
+        } else {
+          albumsSyncLive = false;
         }
       })();
 
