@@ -895,6 +895,7 @@
         line-height: 1.35;
         display: -webkit-box;
         -webkit-line-clamp: 2;
+        line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
       }
@@ -910,6 +911,50 @@
         color: var(--ink-soft);
         text-align: center;
         font-style: italic;
+      }
+      .today-news-watch {
+        display: block;
+        margin-top: 10px;
+        padding: 9px 10px;
+        border-radius: var(--radius-sm);
+        background: var(--green);
+        color: var(--cream);
+        text-align: center;
+        text-decoration: none;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        transition: opacity 0.15s ease;
+      }
+      .today-news-watch:hover {
+        opacity: 0.88;
+      }
+      .today-onthisday-photo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        color: inherit;
+      }
+      .today-onthisday-photo img {
+        width: 64px;
+        height: 64px;
+        border-radius: var(--radius-sm);
+        object-fit: cover;
+        flex-shrink: 0;
+        box-shadow: var(--shadow-tiny);
+      }
+      .today-onthisday-photo .caption {
+        font-size: 0.86rem;
+        font-weight: 600;
+        color: var(--ink);
+        line-height: 1.35;
+      }
+      .today-onthisday-photo .sub {
+        margin-top: 3px;
+        font-size: 0.68rem;
+        color: var(--ink-soft);
+        font-weight: 600;
       }
       /* Day card full-width on desktop so quote + news share a row */
       @media (min-width: 641px) {
@@ -933,6 +978,7 @@
         flex: 1;
         display: -webkit-box;
         -webkit-line-clamp: 6;
+        line-clamp: 6;
         -webkit-box-orient: vertical;
         overflow: hidden;
       }
@@ -1089,6 +1135,7 @@
         color: var(--ink);
         display: -webkit-box;
         -webkit-line-clamp: 4;
+        line-clamp: 4;
         -webkit-box-orient: vertical;
         overflow: hidden;
       }
@@ -4060,6 +4107,11 @@
                   <p class="today-empty">Loading headlines…</p>
                 </div>
               </div>
+
+              <div class="today-card today-onthisday" id="todayOnThisDayCard" hidden>
+                <div class="today-card-label">On this day</div>
+                <div id="todayOnThisDayList"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -5836,6 +5888,7 @@
         "A little snapshot of us — news, mood, plans & notes.":
           "Um resumo de nós — notícias, frase do dia, mood, planos e notas.",
         "World news today": "Notícias do dia",
+        "On this day": "Nesse dia",
         "Quote of the day": "Frase do dia",
         "Loading quote…": "A carregar a frase…",
         "Unsave": "Tirar dos guardados",
@@ -6967,6 +7020,97 @@
           );
         });
       }
+      // ---- "On this day" photo (matches today's month/day against album dates) ----
+      function parseAlbumDateParts(dateStr) {
+        // Accepts "MM/DD/YYYY" (used across CONFIG.album and live memory dates).
+        if (!dateStr) return null;
+        const m = String(dateStr)
+          .trim()
+          .match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+        if (!m) return null;
+        const month = parseInt(m[1], 10);
+        const day = parseInt(m[2], 10);
+        if (!month || !day) return null;
+        return { month, day };
+      }
+
+      function findPhotosMatchingToday() {
+        const today = new Date();
+        const todayMonth = today.getMonth() + 1;
+        const todayDay = today.getDate();
+        const matches = [];
+        const seenImg = new Set();
+
+        function consider(item, categoryLabel) {
+          if (!item || !item.img) return;
+          const parts = parseAlbumDateParts(item.date);
+          if (!parts) return;
+          if (parts.month !== todayMonth || parts.day !== todayDay) return;
+          if (seenImg.has(item.img)) return;
+          seenImg.add(item.img);
+          matches.push({
+            img: item.img,
+            caption: item.caption || "",
+            date: item.date || "",
+            category: categoryLabel || "",
+          });
+        }
+
+        (CONFIG.album || []).forEach((cat) => {
+          (cat.items || []).forEach((item) => consider(item, cat.category));
+        });
+        if (typeof memoriesItems !== "undefined") {
+          (memoriesItems || []).forEach((m) =>
+            consider({ img: m.url, caption: m.caption, date: m.date }, m.category),
+          );
+        }
+        return matches;
+      }
+
+      function renderTodayOnThisDay() {
+        const card = document.getElementById("todayOnThisDayCard");
+        const list = document.getElementById("todayOnThisDayList");
+        if (!card || !list) return;
+        const isPt = currentLanguage() === "pt";
+        const matches = findPhotosMatchingToday();
+        if (!matches.length) {
+          card.hidden = true;
+          list.innerHTML = "";
+          return;
+        }
+        list.innerHTML = matches
+          .slice(0, 3)
+          .map(
+            () => `<a class="today-onthisday-photo" data-idx="0">
+              <img alt="">
+              <div>
+                <div class="caption"></div>
+                <div class="sub"></div>
+              </div>
+            </a>`,
+          )
+          .join("");
+        Array.from(list.querySelectorAll(".today-onthisday-photo")).forEach(
+          (el, i) => {
+            const m = matches[i];
+            const img = el.querySelector("img");
+            const cap = el.querySelector(".caption");
+            const sub = el.querySelector(".sub");
+            if (img) {
+              img.src = m.img;
+              img.alt = m.caption || "";
+            }
+            if (cap) cap.textContent = m.caption || (isPt ? "Uma lembrança" : "A memory");
+            if (sub)
+              sub.textContent = (isPt ? "Nesse dia · " : "On this day · ") + m.date;
+            el.addEventListener("click", () =>
+              switchTab("album", { updateHash: true, scroll: true }),
+            );
+          },
+        );
+        card.hidden = false;
+      }
+
       // ---- World news (automatic daily headlines) ----
       // Prefers CONFIG.newsBackendUrl (Cloudflare Worker). Falls back to RSS
       // via public CORS proxies. Client cache ~6h. Not affiliated with CNN10.
@@ -7153,6 +7297,14 @@
           ? "Resumo automático · " + metaLabel
           : "Automatic brief · " + metaLabel;
         box.appendChild(foot);
+
+        const watchLink = document.createElement("a");
+        watchLink.className = "today-news-watch";
+        watchLink.href = "https://www.youtube.com/@CNN10";
+        watchLink.target = "_blank";
+        watchLink.rel = "noopener noreferrer";
+        watchLink.textContent = isPt ? "▶ Assistir às notícias" : "▶ Watch the news";
+        box.appendChild(watchLink);
       }
 
       async function renderTodayNews() {
@@ -7347,6 +7499,7 @@
         renderTodayDaycard();
         renderTodayNews();
         renderTodayQuote();
+        renderTodayOnThisDay();
       }
       function initTodayToggle() {
         const btn = document.getElementById("todayToggle");
