@@ -1791,6 +1791,16 @@
         font-size: 0.95rem;
         transition: all 0.2s ease;
       }
+      .bucket-icon-btn svg {
+        width: 15px;
+        height: 15px;
+        display: block;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.75;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
       .bucket-icon-btn:hover {
         background: var(--cream-dim);
         color: var(--ink);
@@ -2645,6 +2655,21 @@
       .cal-filter-btn.both.active {
         background: #3b82f6;
         color: #fff;
+      }
+      .cal-bucket-badge {
+        display: inline-block;
+        margin-top: 4px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        background: var(--sage-dim);
+        color: var(--green-deep);
+      }
+      html[data-theme="dark"] .cal-bucket-badge {
+        background: var(--sage-dim);
+        color: var(--green-deep);
       }
 
       /* -------- day cards (24h notes to each other) -------- */
@@ -4253,6 +4278,12 @@
                   placeholder="Class, work, study, date night…"
                 />
               </div>
+              <div class="music-add-field full">
+                <label for="calBucketLink">From bucket list (optional)</label>
+                <select id="calBucketLink">
+                  <option value="">— None —</option>
+                </select>
+              </div>
               <div class="music-add-field">
                 <label for="calDate">Date</label>
                 <input type="date" id="calDate" />
@@ -5445,6 +5476,9 @@
         All: "Todos",
         Both: "Os dois",
         "Both of us": "Os dois",
+        "From bucket list (optional)": "Da bucket list (opcional)",
+        "— None —": "— Nenhum —",
+        "Add to calendar": "Agendar no calendário",
         "New album": "Novo álbum",
         "Create a folder for new memories — it appears in the list above when you upload.":
           "Cria uma pasta para novas lembranças — aparece na lista quando enviares fotos.",
@@ -7303,7 +7337,29 @@
             delBtn.textContent = "✕";
             delBtn.addEventListener("click", () => deleteBucketItem(item));
 
+            // Schedule on calendar (opens Calendar tab with form pre-filled)
+            const calBtn = document.createElement("button");
+            calBtn.className = "bucket-icon-btn";
+            calBtn.type = "button";
+            calBtn.setAttribute(
+              "aria-label",
+              currentLanguage() === "pt"
+                ? "Agendar no calendário"
+                : "Add to calendar",
+            );
+            calBtn.title =
+              currentLanguage() === "pt"
+                ? "Agendar no calendário"
+                : "Add to calendar";
+            // Monochrome calendar icon (matches ✎ / ✕ style)
+            calBtn.innerHTML =
+              '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4M16 3v4"/></svg>';
+            calBtn.addEventListener("click", () =>
+              scheduleBucketOnCalendar(item),
+            );
+
             actions.appendChild(moveGroup);
+            actions.appendChild(calBtn);
             actions.appendChild(editBtn);
             actions.appendChild(delBtn);
             row.appendChild(check);
@@ -7312,6 +7368,9 @@
             wrap.appendChild(row);
           });
         }
+
+        // Keep calendar dropdown in sync when bucket list changes
+        if (typeof fillCalBucketSelect === "function") fillCalBucketSelect();
 
         const total = sorted.length;
         const doneCount = sorted.filter((i) => i.done).length;
@@ -7325,6 +7384,50 @@
         } else {
           progressWrap.style.display = "none";
         }
+      }
+
+      // Bucket → Calendar: open calendar tab with this item linked in the form
+      function scheduleBucketOnCalendar(item) {
+        if (!item) return;
+        const isPt = currentLanguage() === "pt";
+        switchTab("calendar", { updateHash: true, scroll: true });
+        // Let the tab paint, then fill the form
+        setTimeout(() => {
+          clearCalForm();
+          if (typeof fillCalBucketSelect === "function") fillCalBucketSelect();
+          const titleEl = document.getElementById("calTitle");
+          const linkEl = document.getElementById("calBucketLink");
+          const personEl = document.getElementById("calPerson");
+          const dateEl = document.getElementById("calDate");
+          if (titleEl) titleEl.value = item.text || "";
+          if (linkEl) {
+            // Ensure option exists even if item is "done"
+            let opt = Array.from(linkEl.options).find(
+              (o) => o.value === String(item.id),
+            );
+            if (!opt && item.id) {
+              opt = document.createElement("option");
+              opt.value = item.id;
+              opt.textContent = item.text || item.id;
+              linkEl.appendChild(opt);
+            }
+            linkEl.value = item.id ? String(item.id) : "";
+          }
+          if (personEl) personEl.value = "both";
+          if (dateEl && !dateEl.value && calState && calState.selected) {
+            dateEl.value = calState.selected;
+          }
+          document
+            .getElementById("calAddForm")
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+          if (dateEl) dateEl.focus();
+          showToast(
+            isPt
+              ? "Escolhe a data e grava o evento ♥"
+              : "Pick a date and save the event ♥",
+            "created",
+          );
+        }, 80);
       }
 
       function startEditBucketItem(item, row) {
@@ -9962,10 +10065,14 @@
           else if (ev.endTime) timeStr = "– " + ev.endTime;
           const markChar =
             marker === "star" ? "★ " : marker === "heart" ? "♥ " : "";
+          const bucketBadge = ev.bucketId
+            ? `<span class="cal-bucket-badge" title="${currentLanguage() === "pt" ? "Da bucket list" : "From bucket list"}">☑ Bucket</span>`
+            : "";
           row.innerHTML = `
       <span class="cal-event-who ${who}">${calPersonLabel(who)}</span>
       <div class="cal-event-body">
         <div class="cal-event-title"></div>
+        ${bucketBadge}
         ${timeStr ? `<div class="cal-event-time">${timeStr}</div>` : ""}
         ${ev.notes ? `<div class="cal-event-notes"></div>` : ""}
       </div>
@@ -10004,6 +10111,40 @@
         }
       }
 
+      function fillCalBucketSelect(selectedId) {
+        const sel = document.getElementById("calBucketLink");
+        if (!sel) return;
+        const prev = selectedId != null ? String(selectedId) : sel.value;
+        const isPt = currentLanguage() === "pt";
+        sel.innerHTML = "";
+        const none = document.createElement("option");
+        none.value = "";
+        none.textContent = isPt ? "— Nenhum —" : "— None —";
+        sel.appendChild(none);
+        const items =
+          typeof bucketItems !== "undefined" && Array.isArray(bucketItems)
+            ? bucketItems
+            : [];
+        // Incomplete first, then done (so you can still link an old item)
+        const sorted = items.slice().sort((a, b) => {
+          if (!!a.done !== !!b.done) return a.done ? 1 : -1;
+          return String(a.text || "").localeCompare(String(b.text || ""));
+        });
+        sorted.forEach((item) => {
+          if (!item || !item.id) return;
+          const opt = document.createElement("option");
+          opt.value = String(item.id);
+          const label = (item.text || "").trim() || String(item.id);
+          opt.textContent = item.done
+            ? (isPt ? "✓ " : "✓ ") + label
+            : label;
+          sel.appendChild(opt);
+        });
+        if (prev && Array.from(sel.options).some((o) => o.value === prev)) {
+          sel.value = prev;
+        }
+      }
+
       function clearCalForm() {
         // Always exit edit mode first so the next save creates a NEW event
         calEditingId = null;
@@ -10025,6 +10166,8 @@
         if (person) person.value = "me";
         const date = document.getElementById("calDate");
         if (date) date.value = calState.selected || "";
+        const link = document.getElementById("calBucketLink");
+        if (link) link.value = "";
         setCalFormMode(false);
       }
 
@@ -10039,6 +10182,7 @@
         if (!ev) return;
         calEditingId = ev.id;
         setCalFormMode(true);
+        fillCalBucketSelect(ev.bucketId || "");
         document.getElementById("calTitle").value = ev.title || "";
         document.getElementById("calDate").value = ev.date || "";
         document.getElementById("calPerson").value = calNormalizePerson(
@@ -10057,6 +10201,8 @@
             ev.marker === "star" || ev.marker === "heart"
               ? ev.marker
               : "circle";
+        const link = document.getElementById("calBucketLink");
+        if (link && ev.bucketId) link.value = String(ev.bucketId);
         document
           .getElementById("calAddForm")
           ?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -10081,6 +10227,14 @@
           document.getElementById("calMarker")?.value || "circle";
         const marker =
           rawMarker === "star" || rawMarker === "heart" ? rawMarker : "circle";
+        const bucketId = (
+          document.getElementById("calBucketLink")?.value || ""
+        ).trim();
+        let bucketText = "";
+        if (bucketId && typeof bucketItems !== "undefined") {
+          const found = bucketItems.find((b) => String(b.id) === bucketId);
+          if (found) bucketText = found.text || "";
+        }
         const isPt = currentLanguage() === "pt";
         if (!title) {
           alert(
@@ -10112,6 +10266,8 @@
           repeat,
           repeatUntil,
           marker,
+          bucketId: bucketId || "",
+          bucketText: bucketText || "",
         };
       }
 
@@ -10256,6 +10412,21 @@
           .getElementById("calCancelEditBtn")
           ?.addEventListener("click", clearCalForm);
 
+        // Link a bucket-list item → fill title if empty
+        document
+          .getElementById("calBucketLink")
+          ?.addEventListener("change", () => {
+            const sel = document.getElementById("calBucketLink");
+            const titleEl = document.getElementById("calTitle");
+            if (!sel || !sel.value || !titleEl) return;
+            if (titleEl.value.trim()) return;
+            const found =
+              typeof bucketItems !== "undefined"
+                ? bucketItems.find((b) => String(b.id) === sel.value)
+                : null;
+            if (found && found.text) titleEl.value = found.text;
+          });
+
         // Default selected = today
         const t = new Date();
         calState.selected = calDateKey(
@@ -10266,6 +10437,7 @@
         const dateInput = document.getElementById("calDate");
         if (dateInput) dateInput.value = calState.selected;
 
+        fillCalBucketSelect();
         setCalFormMode(false);
         renderCalendar();
       }
