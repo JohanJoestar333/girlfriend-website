@@ -7132,33 +7132,44 @@
         const cached = readConcursosCache(uf);
         if (cached) return cached;
 
-        try {
-          const ctrl =
-            typeof AbortController !== "undefined"
-              ? new AbortController()
-              : null;
-          const timer = ctrl ? setTimeout(() => ctrl.abort(), 12000) : null;
-          const res = await fetch(
-            CONCURSOS_API_BASE + "/" + uf,
-            ctrl ? { signal: ctrl.signal } : {},
-          );
-          if (timer) clearTimeout(timer);
-          if (!res.ok) throw new Error("HTTP " + res.status);
-          const data = await res.json();
-          const payload = {
-            estado: data.estado || "",
-            abertos: Array.isArray(data.concursos_abertos)
-              ? data.concursos_abertos
-              : [],
-            previstos: Array.isArray(data.concursos_previstos)
-              ? data.concursos_previstos
-              : [],
-          };
-          writeConcursosCache(uf, payload);
-          return { uf, at: Date.now(), ...payload };
-        } catch (e) {
-          return null;
+        // The API doesn't send CORS headers, so a direct fetch from a
+        // different origin (like GitHub Pages) is blocked by the browser.
+        // Try direct first (works if that ever changes), then fall back
+        // to public CORS proxies — same approach as the news fallback.
+        const target = CONCURSOS_API_BASE + "/" + uf;
+        const attempts = [
+          target,
+          "https://api.allorigins.win/raw?url=" + encodeURIComponent(target),
+          "https://corsproxy.io/?" + encodeURIComponent(target),
+        ];
+
+        for (const url of attempts) {
+          try {
+            const ctrl =
+              typeof AbortController !== "undefined"
+                ? new AbortController()
+                : null;
+            const timer = ctrl ? setTimeout(() => ctrl.abort(), 12000) : null;
+            const res = await fetch(url, ctrl ? { signal: ctrl.signal } : {});
+            if (timer) clearTimeout(timer);
+            if (!res.ok) continue;
+            const data = await res.json();
+            const payload = {
+              estado: data.estado || "",
+              abertos: Array.isArray(data.concursos_abertos)
+                ? data.concursos_abertos
+                : [],
+              previstos: Array.isArray(data.concursos_previstos)
+                ? data.concursos_previstos
+                : [],
+            };
+            writeConcursosCache(uf, payload);
+            return { uf, at: Date.now(), ...payload };
+          } catch (e) {
+            // try next proxy
+          }
         }
+        return null;
       }
 
       // The API scrapes an HTML table, so column names can vary slightly —
