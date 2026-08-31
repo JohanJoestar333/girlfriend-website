@@ -5680,21 +5680,44 @@
         document
           .querySelectorAll(".tab-panel")
           .forEach((p) => p.classList.remove("active"));
-        document.getElementById("tab-" + name).classList.add("active");
+        const panel = document.getElementById("tab-" + name);
+        if (panel) panel.classList.add("active");
         document
           .querySelectorAll(".tab-btn")
           .forEach((b) => b.classList.toggle("active", b.dataset.tab === name));
         updateNavMoreActive(name);
         closeNavMore();
-        document.getElementById("mobileMenu").classList.remove("open");
-        if (scroll) window.scrollTo({ top: 0, behavior: "smooth" });
-        if (name === "music") showMusicCopyrightBanner();
+        const mobileMenu = document.getElementById("mobileMenu");
+        if (mobileMenu) mobileMenu.classList.remove("open");
+        if (scroll) {
+          try {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          } catch (e) {
+            window.scrollTo(0, 0);
+          }
+        }
+        // Only call when the music helpers have already been defined
+        if (
+          name === "music" &&
+          typeof showMusicCopyrightBanner === "function"
+        ) {
+          try {
+            showMusicCopyrightBanner();
+          } catch (e) {}
+        }
 
         // Keep the URL in sync so refresh / share / back-button stay on this tab
         if (updateHash) {
           const next = "#" + name;
           if (location.hash !== next) {
-            history.pushState({ tab: name }, "", next);
+            try {
+              history.pushState({ tab: name }, "", next);
+            } catch (e) {
+              // file:// or strict browsers may block pushState — fall back
+              try {
+                location.hash = name;
+              } catch (e2) {}
+            }
           }
         }
       }
@@ -5703,29 +5726,14 @@
         .forEach((b) =>
           b.addEventListener("click", () => switchTab(b.dataset.tab)),
         );
-      document.getElementById("hamburgerBtn").addEventListener("click", () => {
-        document.getElementById("mobileMenu").classList.toggle("open");
+      document.getElementById("hamburgerBtn")?.addEventListener("click", () => {
+        document.getElementById("mobileMenu")?.classList.toggle("open");
         closeNavMore();
       });
 
-      // Restore tab from URL on load, and when the user uses Back/Forward
-      (function initTabRouting() {
-        const initial = tabFromHash();
-        if (initial !== "story") {
-          switchTab(initial, { updateHash: false, scroll: false });
-        } else if (!location.hash) {
-          // Optional: normalize homepage to #story without cluttering history
-          // history.replaceState({ tab: 'story' }, '', '#story');
-        }
-        window.addEventListener("popstate", () => {
-          switchTab(tabFromHash(), { updateHash: false, scroll: true });
-        });
-        window.addEventListener("hashchange", () => {
-          const t = tabFromHash();
-          if (t !== activeTab)
-            switchTab(t, { updateHash: false, scroll: true });
-        });
-      })();
+      // Tab routing from the URL is initialized at the END of this script
+      // (see initTabRouting) so every helper already exists — avoids freezes
+      // on refresh when the hash points at Music / Calendar / Day Cards.
 
       // ··· More menu (desktop)
       (function initNavMore() {
@@ -10588,6 +10596,36 @@
 
       // Translate static labels and headings after the page has been rendered.
       translateStaticDOM();
+
+      // Restore tab from URL AFTER all features are defined (prevents refresh freezes)
+      (function initTabRouting() {
+        try {
+          const initial = tabFromHash();
+          if (initial && initial !== "story") {
+            switchTab(initial, { updateHash: false, scroll: false });
+          } else if (initial === "story" && location.hash === "#story") {
+            // already on story — ensure panel is active
+            switchTab("story", { updateHash: false, scroll: false });
+          }
+        } catch (e) {
+          console.warn("Tab restore failed:", e);
+          try {
+            switchTab("story", { updateHash: false, scroll: false });
+          } catch (e2) {}
+        }
+        window.addEventListener("popstate", () => {
+          try {
+            switchTab(tabFromHash(), { updateHash: false, scroll: true });
+          } catch (e) {}
+        });
+        window.addEventListener("hashchange", () => {
+          try {
+            const t = tabFromHash();
+            if (t !== activeTab)
+              switchTab(t, { updateHash: false, scroll: true });
+          } catch (e) {}
+        });
+      })();
     </script>
   </body>
 </html>
