@@ -1801,6 +1801,8 @@
         stroke-linecap: round;
         stroke-linejoin: round;
       }
+
+
       .bucket-icon-btn:hover {
         background: var(--cream-dim);
         color: var(--ink);
@@ -2001,19 +2003,34 @@
         justify-content: center;
         background: linear-gradient(
           160deg,
-          var(--cream) 0%,
-          var(--blush-soft) 55%,
-          var(--sage-dim) 100%
+          #faf6f0 0%,
+          #f2d9d6 55%,
+          #dce6d8 100%
         );
         font-family: var(--body);
         overflow: hidden;
+        color: #2b2622;
+      }
+      /* Lock screen has its own dark look (not the inverted page tokens) */
+      html[data-theme="dark"] #passwordGate {
+        background: linear-gradient(
+          165deg,
+          #0f141a 0%,
+          #1a222c 45%,
+          #243028 100%
+        );
+        color: #f2ebe3;
       }
       #passwordGate .gate-particle {
         position: absolute;
-        color: var(--sage);
+        color: #8ca88a;
         opacity: 0.22;
         font-size: 14px;
         animation: gateFloat linear infinite;
+      }
+      html[data-theme="dark"] #passwordGate .gate-particle {
+        color: #7ea882;
+        opacity: 0.18;
       }
       @keyframes gateFloat {
         0% {
@@ -2034,21 +2051,29 @@
       #passwordGate .gate-card {
         position: relative;
         z-index: 2;
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.6);
+        background: rgba(255, 255, 255, 0.88);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.65);
         border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-soft);
+        box-shadow: 0 16px 48px -12px rgba(43, 38, 34, 0.22);
         padding: 48px 38px;
         max-width: 380px;
         width: calc(100% - 48px);
         text-align: center;
       }
+      html[data-theme="dark"] #passwordGate .gate-card {
+        background: rgba(28, 35, 46, 0.92);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 18px 50px -12px rgba(0, 0, 0, 0.55);
+      }
       #passwordGate .gate-heart {
         font-size: 2rem;
-        color: var(--green);
+        color: #4f6f52;
         margin-bottom: 10px;
         animation: gateBeat 2.4s ease-in-out infinite;
+      }
+      html[data-theme="dark"] #passwordGate .gate-heart {
+        color: #9bb89a;
       }
       @keyframes gateBeat {
         0%,
@@ -2063,14 +2088,20 @@
         font-family: var(--script);
         font-weight: 600;
         font-size: 2.1rem;
-        color: var(--green-deep);
+        color: #35502f;
         margin: 0 0 8px;
       }
+      html[data-theme="dark"] #passwordGate h1 {
+        color: #c5ddc6;
+      }
       #passwordGate p.gate-sub {
-        color: var(--ink-soft);
+        color: #5c534b;
         font-size: 0.92rem;
         margin: 0 0 26px;
         line-height: 1.5;
+      }
+      html[data-theme="dark"] #passwordGate p.gate-sub {
+        color: #a39b90;
       }
       #passwordGate input[type="password"] {
         width: 100%;
@@ -2081,21 +2112,29 @@
         font-size: 1.1rem;
         letter-spacing: 0.3em;
         text-align: center;
-        color: var(--ink);
+        color: #2b2622;
         margin-bottom: 16px;
         box-sizing: border-box;
         font-family: var(--body);
       }
+      html[data-theme="dark"] #passwordGate input[type="password"] {
+        background: #12161c;
+        border-color: rgba(255, 255, 255, 0.12);
+        color: #f2ebe3;
+      }
       #passwordGate input[type="password"]:focus {
         outline: none;
-        border-color: var(--green);
+        border-color: #4f6f52;
+      }
+      html[data-theme="dark"] #passwordGate input[type="password"]:focus {
+        border-color: #7ea882;
       }
       #passwordGate button {
         width: 100%;
         padding: 14px 20px;
         border: none;
         border-radius: 999px;
-        background: var(--green);
+        background: #4f6f52;
         color: #fff;
         font-weight: 700;
         font-size: 0.95rem;
@@ -2105,9 +2144,13 @@
           transform 0.2s ease,
           box-shadow 0.2s ease;
       }
+      html[data-theme="dark"] #passwordGate button {
+        background: #7ea882;
+        color: #0f1410;
+      }
       #passwordGate button:hover {
         transform: translateY(-2px);
-        box-shadow: var(--shadow-soft);
+        box-shadow: 0 12px 28px -10px rgba(43, 38, 34, 0.35);
       }
       #passwordGate .gate-error {
         color: #a34a4a;
@@ -2115,6 +2158,9 @@
         margin-top: 14px;
         min-height: 1.2em;
         font-style: italic;
+      }
+      html[data-theme="dark"] #passwordGate .gate-error {
+        color: #e8a0a0;
       }
       #passwordGate .gate-input-row {
         position: relative;
@@ -2132,8 +2178,8 @@
         width: 22px;
         height: 22px;
         border-radius: 50%;
-        background: var(--sage-dim);
-        color: var(--green-deep);
+        background: #dce6d8;
+        color: #35502f;
         font-size: 0.72rem;
         font-weight: 700;
         display: flex;
@@ -2143,12 +2189,16 @@
         user-select: none;
         z-index: 3;
       }
+      html[data-theme="dark"] #passwordGate .gate-hint {
+        background: #2a3530;
+        color: #b5d0b7;
+      }
       #passwordGate .gate-hint-bubble {
         position: absolute;
         bottom: calc(100% + 10px);
         right: -8px;
-        background: var(--night-deep);
-        color: var(--stars);
+        background: #0f1522;
+        color: #f4efe0;
         font-size: 0.78rem;
         font-style: normal;
         line-height: 1.4;
@@ -2156,7 +2206,7 @@
         border-radius: var(--radius-sm);
         width: 200px;
         text-align: left;
-        box-shadow: var(--shadow-soft);
+        box-shadow: 0 12px 28px -10px rgba(0, 0, 0, 0.4);
         opacity: 0;
         visibility: hidden;
         transform: translateY(4px);
@@ -2170,7 +2220,7 @@
         top: 100%;
         right: 14px;
         border: 6px solid transparent;
-        border-top-color: var(--night-deep);
+        border-top-color: #0f1522;
       }
       #passwordGate .gate-hint:hover .gate-hint-bubble,
       #passwordGate .gate-hint:focus .gate-hint-bubble {
@@ -3718,7 +3768,6 @@
             <h2>Our Little Collection</h2>
             <p>Some of my favorite memories of us.</p>
           </div>
-
           <!-- Upload form: pick an album, then the photo lands in that section -->
           <div
             class="music-add-form"
@@ -4364,7 +4413,6 @@
               hours — unless you save them.
             </p>
           </div>
-
           <span
             class="bucket-sync-pill"
             id="daycardsSyncPill"
@@ -5479,6 +5527,7 @@
         "From bucket list (optional)": "Da bucket list (opcional)",
         "— None —": "— Nenhum —",
         "Add to calendar": "Agendar no calendário",
+
         "New album": "Novo álbum",
         "Create a folder for new memories — it appears in the list above when you upload.":
           "Cria uma pasta para novas lembranças — aparece na lista quando enviares fotos.",
