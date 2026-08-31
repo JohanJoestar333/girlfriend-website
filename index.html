@@ -2084,7 +2084,6 @@
         stroke-linejoin: round;
       }
 
-
       .bucket-icon-btn:hover {
         background: var(--cream-dim);
         color: var(--ink);
@@ -3870,10 +3869,7 @@
           <p class="sub" id="heroSubtitle"></p>
           <p class="msg" id="heroMessage"></p>
           <a href="#todayWidget" class="btn">Today ♥</a>
-          <a
-            href="#counterSection"
-            class="btn outline"
-            style="margin-left: 8px"
+          <a href="#counterSection" class="btn outline" style="margin-left: 8px"
             >Explore Our Story</a
           >
         </div>
@@ -4209,11 +4205,25 @@
             id="albumCreateForm"
             style="max-width: 560px; margin: 0 auto 36px"
           >
-            <h3 style="font-family: var(--serif); font-size: 1.1rem; color: var(--green-deep); margin-bottom: 10px">
+            <h3
+              style="
+                font-family: var(--serif);
+                font-size: 1.1rem;
+                color: var(--green-deep);
+                margin-bottom: 10px;
+              "
+            >
               New album
             </h3>
-            <p style="font-size: 0.85rem; color: var(--ink-soft); margin-bottom: 12px">
-              Create a folder for new memories — it appears in the list above when you upload.
+            <p
+              style="
+                font-size: 0.85rem;
+                color: var(--ink-soft);
+                margin-bottom: 12px;
+              "
+            >
+              Create a folder for new memories — it appears in the list above
+              when you upload.
             </p>
             <div class="music-add-grid">
               <div class="music-add-field" style="grid-column: 1 / -1">
@@ -4229,7 +4239,11 @@
             <div class="music-add-actions">
               <span
                 id="newAlbumStatus"
-                style="font-size: 0.85rem; color: var(--ink-soft); align-self: center"
+                style="
+                  font-size: 0.85rem;
+                  color: var(--ink-soft);
+                  align-self: center;
+                "
               ></span>
               <button type="button" class="btn" id="newAlbumBtn">
                 Add album ♥
@@ -5042,7 +5056,6 @@
         // e.g. "https://gf-news.YOUR_SUBDOMAIN.workers.dev"  (no trailing slash)
         // Leave "" to use public CORS proxies as fallback.
         newsBackendUrl: "",
-
 
         thingsIMiss: [
           {
@@ -6678,9 +6691,12 @@
         const herM = document.getElementById("todayMoodHerMeaning");
         const pickHint =
           currentLanguage() === "pt" ? "Escolhe um humor" : "Pick a mood";
-        if (meM) meM.textContent = moodState.me ? moodLabel(moodState.me) : pickHint;
+        if (meM)
+          meM.textContent = moodState.me ? moodLabel(moodState.me) : pickHint;
         if (herM)
-          herM.textContent = moodState.her ? moodLabel(moodState.her) : pickHint;
+          herM.textContent = moodState.her
+            ? moodLabel(moodState.her)
+            : pickHint;
         ["me", "her"].forEach((who) => {
           const pick = document.getElementById(
             who === "me" ? "todayMoodMePick" : "todayMoodHerPick",
@@ -6702,8 +6718,7 @@
             const em = btn.dataset.emoji || btn.textContent;
             btn.classList.toggle("active", moodState[who] === em);
             const opt = MOOD_OPTIONS.find((o) => o.emoji === em);
-            if (opt)
-              btn.title = currentLanguage() === "pt" ? opt.pt : opt.en;
+            if (opt) btn.title = currentLanguage() === "pt" ? opt.pt : opt.en;
           });
         });
       }
@@ -6734,11 +6749,7 @@
         const today = new Date();
         const key =
           typeof calDateKey === "function"
-            ? calDateKey(
-                today.getFullYear(),
-                today.getMonth(),
-                today.getDate(),
-              )
+            ? calDateKey(today.getFullYear(), today.getMonth(), today.getDate())
             : [
                 today.getFullYear(),
                 String(today.getMonth() + 1).padStart(2, "0"),
@@ -6909,9 +6920,7 @@
               ""
             ).trim();
             const pub =
-              (
-                item.querySelector("pubDate")?.textContent || ""
-              ).trim() || "";
+              (item.querySelector("pubDate")?.textContent || "").trim() || "";
             if (title) out.push({ title, link, pub });
           });
         } catch (e) {}
@@ -6970,13 +6979,8 @@
                 typeof AbortController !== "undefined"
                   ? new AbortController()
                   : null;
-              const timer = ctrl
-                ? setTimeout(() => ctrl.abort(), 12000)
-                : null;
-              const res = await fetch(
-                url,
-                ctrl ? { signal: ctrl.signal } : {},
-              );
+              const timer = ctrl ? setTimeout(() => ctrl.abort(), 12000) : null;
+              const res = await fetch(url, ctrl ? { signal: ctrl.signal } : {});
               if (timer) clearTimeout(timer);
               if (!res.ok) continue;
               const text = await res.text();
@@ -7005,8 +7009,7 @@
           }</p>`;
           return;
         }
-        const metaLabel =
-          source || (isPt ? "BBC Português" : "BBC World");
+        const metaLabel = source || (isPt ? "BBC Português" : "BBC World");
         box.innerHTML = items
           .map((it) => {
             const href = it.link
@@ -7081,7 +7084,9 @@
           setOpen(btn.getAttribute("aria-expanded") !== "true");
         });
         document.querySelectorAll('a[href="#todayWidget"]').forEach((a) => {
-          a.addEventListener("click", () => setTimeout(() => setOpen(true), 50));
+          a.addEventListener("click", () =>
+            setTimeout(() => setOpen(true), 50),
+          );
         });
         setOpen(false);
       }
@@ -7638,20 +7643,14 @@
             .then(() => {
               if (input) input.value = "";
               if (status) status.textContent = "";
-              showToast(
-                isPt ? "Álbum criado." : "Album created.",
-                "created",
-              );
+              showToast(isPt ? "Álbum criado." : "Album created.", "created");
               setTabDot("album");
             })
             .catch(() => {
               customAlbums.push({ id: "local-" + Date.now(), ...payload });
               if (input) input.value = "";
               if (status) status.textContent = "";
-              showToast(
-                isPt ? "Álbum criado." : "Album created.",
-                "created",
-              );
+              showToast(isPt ? "Álbum criado." : "Album created.", "created");
               setTabDot("album");
               renderAlbum();
             });
@@ -11058,9 +11057,7 @@
           const opt = document.createElement("option");
           opt.value = String(item.id);
           const label = (item.text || "").trim() || String(item.id);
-          opt.textContent = item.done
-            ? (isPt ? "✓ " : "✓ ") + label
-            : label;
+          opt.textContent = item.done ? (isPt ? "✓ " : "✓ ") + label : label;
           sel.appendChild(opt);
         });
         if (prev && Array.from(sel.options).some((o) => o.value === prev)) {
@@ -11455,9 +11452,7 @@
         const isPt = currentLanguage() === "pt";
         const secs = Math.max(1, Math.round(blob.size / 16000)); // rough hint only
         setDaycardAudioStatus(
-          isPt
-            ? "Áudio pronto para enviar ♥"
-            : "Audio ready to send ♥",
+          isPt ? "Áudio pronto para enviar ♥" : "Audio ready to send ♥",
           true,
         );
       }
@@ -11503,7 +11498,10 @@
       async function toggleDaycardRecording() {
         const btn = document.getElementById("daycardRecBtn");
         const isPt = currentLanguage() === "pt";
-        if (daycardMediaRecorder && daycardMediaRecorder.state === "recording") {
+        if (
+          daycardMediaRecorder &&
+          daycardMediaRecorder.state === "recording"
+        ) {
           daycardMediaRecorder.stop();
           return;
         }
@@ -11635,9 +11633,7 @@
         const h = Math.floor(left / 3600000);
         const m = Math.floor((left % 3600000) / 60000);
         if (h > 0)
-          return isPt
-            ? `Expira em ${h}h ${m}m`
-            : `Expires in ${h}h ${m}m`;
+          return isPt ? `Expira em ${h}h ${m}m` : `Expires in ${h}h ${m}m`;
         return isPt ? `Expira em ${m}m` : `Expires in ${m}m`;
       }
 
@@ -11668,7 +11664,11 @@
               c.id &&
               !String(c.id).startsWith("local-")
             ) {
-              daycardsDb.collection("daycards").doc(c.id).delete().catch(() => {});
+              daycardsDb
+                .collection("daycards")
+                .doc(c.id)
+                .delete()
+                .catch(() => {});
             }
           } else {
             keep.push(c);
@@ -11685,14 +11685,12 @@
         const visible = dayCards
           .filter((c) => !daycardIsExpired(c))
           .sort(
-            (a, b) =>
-              daycardTimeMs(b.createdAt) - daycardTimeMs(a.createdAt),
+            (a, b) => daycardTimeMs(b.createdAt) - daycardTimeMs(a.createdAt),
           );
         if (empty) empty.hidden = visible.length > 0;
         visible.forEach((card) => {
           const who = card.from === "her" ? "her" : "me";
-          const name =
-            who === "her" ? CONFIG.names.her : CONFIG.names.me;
+          const name = who === "her" ? CONFIG.names.her : CONFIG.names.me;
           const el = document.createElement("article");
           el.className =
             "daycard" +
@@ -11824,7 +11822,12 @@
       function saveDaycard(card) {
         if (!card) return;
         const isPt = currentLanguage() === "pt";
-        if (daycardsSyncLive && daycardsDb && card.id && !String(card.id).startsWith("local-")) {
+        if (
+          daycardsSyncLive &&
+          daycardsDb &&
+          card.id &&
+          !String(card.id).startsWith("local-")
+        ) {
           daycardsDb
             .collection("daycards")
             .doc(card.id)
@@ -11848,9 +11851,7 @@
         if (!card) return;
         const isPt = currentLanguage() === "pt";
         const ok = await customConfirm(
-          isPt
-            ? "Apagar este cartão?"
-            : "Delete this card?",
+          isPt ? "Apagar este cartão?" : "Delete this card?",
         );
         if (!ok) return;
         if (

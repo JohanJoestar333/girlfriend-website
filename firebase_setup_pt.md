@@ -164,7 +164,7 @@ const firebaseConfig = {
   projectId: "girlfriend-website-c0de",
   storageBucket: "SEU_BUCKET",
   messagingSenderId: "123456789012",
-  appId: "1:123456789012:web:abc123def456"
+  appId: "1:123456789012:web:abc123def456",
 };
 ```
 
@@ -181,13 +181,13 @@ index.html
 Procure pela configuração:
 
 ```javascript
-CONFIG
+CONFIG;
 ```
 
 e dentro dela:
 
 ```javascript
-firebase
+firebase;
 ```
 
 Ela deve ter estes seis valores:
@@ -214,14 +214,14 @@ Firebase Console
 
 ### Os seis valores importantes
 
-| Campo | O que é |
-|---|---|
-| `apiKey` | Identifica o aplicativo Firebase |
-| `authDomain` | Domínio de autenticação do projeto |
-| `projectId` | ID do projeto Firebase |
-| `storageBucket` | Bucket associado ao projeto |
+| Campo               | O que é                              |
+| ------------------- | ------------------------------------ |
+| `apiKey`            | Identifica o aplicativo Firebase     |
+| `authDomain`        | Domínio de autenticação do projeto   |
+| `projectId`         | ID do projeto Firebase               |
+| `storageBucket`     | Bucket associado ao projeto          |
 | `messagingSenderId` | ID usado pelos serviços de mensagens |
-| `appId` | Identificador do aplicativo Web |
+| `appId`             | Identificador do aplicativo Web      |
 
 Não invente esses valores. Copie exatamente o `firebaseConfig` fornecido pelo Firebase.
 
@@ -479,7 +479,7 @@ qualquer pessoa poderá potencialmente interagir com essas coleções.
 O código do site utiliza ordenação por:
 
 ```javascript
-orderBy('createdAt')
+orderBy("createdAt");
 ```
 
 Dependendo da consulta usada pelo código, o Firestore pode pedir a criação de um índice.
