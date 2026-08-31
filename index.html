@@ -4,6 +4,22 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>For You</title>
+    <!-- Apply theme before paint to avoid a white flash on load -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("gfTheme");
+          if (
+            t === "dark" ||
+            (t !== "light" &&
+              window.matchMedia &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches)
+          ) {
+            document.documentElement.setAttribute("data-theme", "dark");
+          }
+        } catch (e) {}
+      })();
+    </script>
     <link rel="icon" type="image/jpeg" href="photos/icon.jpeg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
@@ -64,6 +80,31 @@
         --radius-sm: 10px;
         --shadow-soft: 0 12px 40px -12px rgba(43, 38, 34, 0.18);
         --shadow-tiny: 0 4px 16px -6px rgba(43, 38, 34, 0.15);
+        --surface: #ffffff;
+        --header-bg: rgba(250, 246, 240, 0.86);
+      }
+
+      /* -------- dark / night mode -------- */
+      html[data-theme="dark"] {
+        color-scheme: dark;
+        --cream: #12161c;
+        --cream-dim: #1a2029;
+        --ink: #f2ebe3;
+        --ink-soft: #a39b90;
+        --blush: #d4a0a2;
+        --blush-soft: #3a282a;
+        --sage: #9bb89a;
+        --sage-dim: #243028;
+        --green: #7ea882;
+        --green-deep: #b5d0b7;
+        --gold: #d4b87a;
+        --night: #0a0e14;
+        --night-deep: #05070a;
+        --stars: #e8e4d8;
+        --shadow-soft: 0 14px 44px -12px rgba(0, 0, 0, 0.55);
+        --shadow-tiny: 0 4px 18px -6px rgba(0, 0, 0, 0.4);
+        --surface: #1c232e;
+        --header-bg: rgba(18, 22, 28, 0.92);
       }
 
       * {
@@ -80,6 +121,9 @@
         color: var(--ink);
         line-height: 1.6;
         overflow-x: hidden;
+        transition:
+          background-color 0.35s ease,
+          color 0.35s ease;
       }
       @media (prefers-reduced-motion: reduce) {
         * {
@@ -169,7 +213,7 @@
         }
       }
 
-      /* -------- language toggle -------- */
+      /* -------- language + theme toggles -------- */
       .lang-switch {
         display: flex;
         align-items: center;
@@ -179,6 +223,10 @@
         border: 1px solid rgba(43, 38, 34, 0.1);
         border-radius: 999px;
         background: rgba(250, 246, 240, 0.75);
+      }
+      html[data-theme="dark"] .lang-switch {
+        background: rgba(28, 35, 46, 0.85);
+        border-color: rgba(255, 255, 255, 0.1);
       }
       .lang-btn {
         padding: 5px 8px;
@@ -192,6 +240,32 @@
         background: var(--green);
         color: var(--cream);
       }
+      .theme-btn {
+        width: 36px;
+        height: 36px;
+        margin-left: 6px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.05rem;
+        color: var(--ink-soft);
+        border: 1px solid rgba(43, 38, 34, 0.1);
+        background: rgba(250, 246, 240, 0.75);
+        transition:
+          background 0.2s ease,
+          color 0.2s ease,
+          transform 0.2s ease;
+      }
+      .theme-btn:hover {
+        color: var(--ink);
+        background: var(--cream-dim);
+        transform: scale(1.05);
+      }
+      html[data-theme="dark"] .theme-btn {
+        background: rgba(28, 35, 46, 0.85);
+        border-color: rgba(255, 255, 255, 0.1);
+      }
       @media (max-width: 760px) {
         .lang-switch {
           margin-left: auto;
@@ -204,9 +278,133 @@
         position: sticky;
         top: 0;
         z-index: 50;
-        background: rgba(250, 246, 240, 0.86);
+        background: var(--header-bg);
         backdrop-filter: blur(10px);
         border-bottom: 1px solid rgba(43, 38, 34, 0.07);
+      }
+      html[data-theme="dark"] header.site-header {
+        border-bottom-color: rgba(255, 255, 255, 0.06);
+      }
+
+      /* Surfaces that were hard-coded white → follow theme */
+      html[data-theme="dark"] .nav-more-menu,
+      html[data-theme="dark"] .modal-box,
+      html[data-theme="dark"] .confirm-box,
+      html[data-theme="dark"] .daycard,
+      html[data-theme="dark"] .daycard-compose,
+      html[data-theme="dark"] .music-add-form,
+      html[data-theme="dark"] .bucket-item,
+      html[data-theme="dark"] .track-row,
+      html[data-theme="dark"] .quiz-menu-card,
+      html[data-theme="dark"] .quiz-select-card,
+      html[data-theme="dark"] .quiz-q-card,
+      html[data-theme="dark"] .quiz-result,
+      html[data-theme="dark"] .cal-day-panel,
+      html[data-theme="dark"] .cal-day,
+      html[data-theme="dark"] .cal-event,
+      html[data-theme="dark"] .cal-toolbar,
+      html[data-theme="dark"] .glass-card,
+      html[data-theme="dark"] .miss-card,
+      html[data-theme="dark"] .ow-card,
+      html[data-theme="dark"] .fav-item,
+      html[data-theme="dark"] .fact-card,
+      html[data-theme="dark"] .better-block,
+      html[data-theme="dark"] .photo-tile figcaption,
+      html[data-theme="dark"] .count-unit,
+      html[data-theme="dark"] .city-pill {
+        background: var(--surface) !important;
+        color: var(--ink);
+        border-color: rgba(255, 255, 255, 0.08);
+      }
+      html[data-theme="dark"] .miss-card .extra {
+        border-top-color: rgba(255, 255, 255, 0.12);
+        color: var(--ink-soft);
+      }
+      html[data-theme="dark"] .ow-card:hover {
+        background: var(--green) !important;
+        color: #fff !important;
+      }
+
+      /* Quiz: options slightly lighter than the question card (not the same flat block) */
+      html[data-theme="dark"] .quiz-play {
+        background: transparent !important;
+      }
+      html[data-theme="dark"] .quiz-opt {
+        background: var(--cream-dim) !important;
+        color: var(--ink) !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+      }
+      html[data-theme="dark"] .quiz-opt:hover:not(:disabled) {
+        background: #2a3340 !important;
+        border-color: var(--sage) !important;
+      }
+      html[data-theme="dark"] .quiz-opt.correct {
+        background: var(--sage-dim) !important;
+        border-color: var(--green) !important;
+        color: var(--green-deep) !important;
+      }
+      html[data-theme="dark"] .quiz-opt.wrong {
+        background: var(--blush-soft) !important;
+        border-color: #c97a7a !important;
+        color: #f0c4c4 !important;
+      }
+      html[data-theme="dark"] .quiz-progress-bar {
+        background: #2a3340;
+      }
+      html[data-theme="dark"] .quiz-feedback {
+        background: var(--cream-dim) !important;
+        color: var(--ink);
+      }
+
+      /* Calendar filters: must keep colored active states visible in dark mode */
+      html[data-theme="dark"] .cal-filter-btn {
+        background: var(--cream-dim) !important;
+        color: var(--ink-soft) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      }
+      html[data-theme="dark"] .cal-filter-btn.active {
+        background: var(--green) !important;
+        color: #0f1410 !important;
+        border-color: transparent !important;
+      }
+      html[data-theme="dark"] .cal-filter-btn.me.active {
+        background: var(--green-deep) !important;
+        color: #0f1410 !important;
+      }
+      html[data-theme="dark"] .cal-filter-btn.her.active {
+        background: #b86b7a !important;
+        color: #fff !important;
+      }
+      html[data-theme="dark"] .cal-filter-btn.both.active {
+        background: #3b82f6 !important;
+        color: #fff !important;
+      }
+      html[data-theme="dark"] .cal-day.other {
+        opacity: 0.45;
+      }
+      html[data-theme="dark"] .cal-day.today {
+        box-shadow: inset 0 0 0 2px var(--green);
+      }
+      html[data-theme="dark"] .cal-event-who.both {
+        background: #1e3a5f !important;
+        color: #93c5fd !important;
+      }
+      html[data-theme="dark"] input,
+      html[data-theme="dark"] textarea,
+      html[data-theme="dark"] select {
+        background: var(--cream-dim);
+        color: var(--ink);
+        border-color: rgba(255, 255, 255, 0.12);
+      }
+      html[data-theme="dark"] .hamburger span {
+        background: var(--ink);
+      }
+      html[data-theme="dark"] .tab-btn:hover {
+        background: var(--cream-dim);
+      }
+      html[data-theme="dark"] .btn.outline {
+        color: var(--green-deep);
+        border-color: var(--green);
       }
       .nav-inner {
         max-width: 1080px;
@@ -902,7 +1100,7 @@
         }
       }
       .miss-card {
-        background: #fff;
+        background: var(--surface);
         border-radius: var(--radius-md);
         padding: 24px 20px;
         box-shadow: var(--shadow-tiny);
@@ -1197,7 +1395,7 @@
         }
       }
       .fav-item {
-        background: #fff;
+        background: var(--surface);
         border-radius: var(--radius-sm);
         padding: 16px 18px;
         box-shadow: var(--shadow-tiny);
@@ -1303,7 +1501,7 @@
         }
       }
       .ow-card {
-        background: #fff;
+        background: var(--surface);
         border-radius: var(--radius-md);
         padding: 26px 18px;
         text-align: center;
@@ -2006,7 +2204,7 @@
         }
       }
       .quiz-select-card {
-        background: #fff;
+        background: var(--surface);
         border-radius: var(--radius-lg);
         padding: 36px 22px;
         text-align: center;
@@ -2067,7 +2265,7 @@
         font-weight: 600;
       }
       .quiz-q-card {
-        background: #fff;
+        background: var(--surface);
         border-radius: var(--radius-lg);
         padding: 32px 26px;
         box-shadow: var(--shadow-soft);
@@ -2331,7 +2529,7 @@
       }
       .cal-day {
         min-height: 72px;
-        background: #fff;
+        background: var(--surface);
         border-radius: var(--radius-sm);
         padding: 6px;
         border: 1px solid rgba(43, 38, 34, 0.06);
@@ -3229,6 +3427,15 @@
             PT
           </button>
         </div>
+        <button
+          type="button"
+          class="theme-btn"
+          id="themeToggle"
+          aria-label="Toggle dark mode"
+          title="Dark mode"
+        >
+          🌙
+        </button>
         <button class="hamburger" id="hamburgerBtn" aria-label="Open menu">
           <span></span><span></span><span></span>
         </button>
@@ -3252,6 +3459,16 @@
             PT
           </button>
         </div>
+        <button
+          type="button"
+          class="theme-btn"
+          id="themeToggleMobile"
+          aria-label="Toggle dark mode"
+          title="Dark mode"
+          style="margin: 8px 0 4px"
+        >
+          🌙
+        </button>
         <button class="tab-btn active" data-tab="story">Our Story</button>
         <button class="tab-btn" data-tab="album">
           Our Album<span class="tab-dot" data-dot-for="album" hidden></span>
@@ -3984,7 +4201,7 @@
                 class="cal-filter-btn active"
                 data-filter="all"
               >
-                Both
+                All
               </button>
               <button
                 type="button"
@@ -5225,6 +5442,7 @@
         Record: "Gravar",
 
         More: "Mais",
+        All: "Todos",
         Both: "Os dois",
         "Both of us": "Os dois",
         "New album": "Novo álbum",
@@ -5464,6 +5682,54 @@
       document
         .getElementById("langPTMobile")
         ?.addEventListener("click", () => setLanguage("pt"));
+
+      // ---------- dark / night mode ----------
+      // Preference stored in localStorage key "gfTheme" = "light" | "dark"
+      function currentTheme() {
+        const t = localStorage.getItem("gfTheme");
+        if (t === "light" || t === "dark") return t;
+        try {
+          if (
+            window.matchMedia &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches
+          ) {
+            return "dark";
+          }
+        } catch (e) {}
+        return "light";
+      }
+      function applyTheme(theme) {
+        const dark = theme === "dark";
+        if (dark) document.documentElement.setAttribute("data-theme", "dark");
+        else document.documentElement.removeAttribute("data-theme");
+        const label = dark
+          ? currentLanguage() === "pt"
+            ? "Modo claro"
+            : "Light mode"
+          : currentLanguage() === "pt"
+            ? "Modo noturno"
+            : "Dark mode";
+        const icon = dark ? "☀️" : "🌙";
+        ["themeToggle", "themeToggleMobile"].forEach((id) => {
+          const btn = document.getElementById(id);
+          if (!btn) return;
+          btn.textContent = icon;
+          btn.title = label;
+          btn.setAttribute("aria-label", label);
+        });
+      }
+      function toggleTheme() {
+        const next = currentTheme() === "dark" ? "light" : "dark";
+        localStorage.setItem("gfTheme", next);
+        applyTheme(next);
+      }
+      applyTheme(currentTheme());
+      document
+        .getElementById("themeToggle")
+        ?.addEventListener("click", toggleTheme);
+      document
+        .getElementById("themeToggleMobile")
+        ?.addEventListener("click", toggleTheme);
 
       /* ================================================================
    Below this line is the site logic. You shouldn't need to touch
