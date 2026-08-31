@@ -918,7 +918,7 @@
       }
       .today-news-watch {
         display: block;
-        margin-top: 10px;
+        margin-top: 8px;
         padding: 9px 10px;
         border-radius: var(--radius-sm);
         background: var(--green);
@@ -933,74 +933,116 @@
       .today-news-watch:hover {
         opacity: 0.88;
       }
+      .today-news-watch.alt {
+        background: var(--cream-dim);
+        color: var(--green-deep);
+        border: 1px solid rgba(79, 111, 82, 0.22);
+      }
+      html[data-theme="dark"] .today-news-watch.alt {
+        background: var(--cream-dim);
+        color: var(--green-deep);
+        border-color: rgba(255, 255, 255, 0.12);
+      }
+      /* Quote + On this day stacked to match news column height */
+      .today-quote-photo-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 0;
+      }
+      @media (min-width: 641px) {
+        .today-quote-photo-stack {
+          height: 100%;
+        }
+        .today-card.today-news {
+          min-height: 280px;
+        }
+      }
       .today-onthisday-photo {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 14px;
         text-decoration: none;
         color: inherit;
       }
       .today-onthisday-photo img {
-        width: 64px;
-        height: 64px;
+        width: 96px;
+        height: 96px;
         border-radius: var(--radius-sm);
         object-fit: cover;
         flex-shrink: 0;
         box-shadow: var(--shadow-tiny);
       }
       .today-onthisday-photo .caption {
-        font-size: 0.86rem;
+        font-size: 0.9rem;
         font-weight: 600;
         color: var(--ink);
         line-height: 1.35;
       }
       .today-onthisday-photo .sub {
-        margin-top: 3px;
-        font-size: 0.68rem;
+        margin-top: 4px;
+        font-size: 0.7rem;
         color: var(--ink-soft);
         font-weight: 600;
       }
-      /* Day card full-width on desktop so quote + news share a row */
+      /* Day card full-width on desktop so quote+photo stack & news share a row */
       @media (min-width: 641px) {
         .today-card.today-note {
           grid-column: 1 / -1;
         }
       }
-      /* ---- daily quote (Today widget) ---- */
+      /* ---- daily quote (Today widget) — compact so photo fits below ---- */
       .today-quote-card {
         display: flex;
         flex-direction: column;
-        min-height: 140px;
+        min-height: 0;
+        flex: 0 0 auto;
+        padding-bottom: 12px;
+      }
+      .today-quote-card .today-card-label {
+        margin-bottom: 8px;
       }
       .today-quote-body {
         font-family: var(--serif);
         font-style: italic;
-        font-size: 1.02rem;
-        line-height: 1.5;
+        font-size: 0.88rem;
+        line-height: 1.4;
         color: var(--ink);
-        margin: 4px 0 10px;
-        flex: 1;
+        margin: 2px 0 6px;
+        flex: 0 1 auto;
         display: -webkit-box;
-        -webkit-line-clamp: 6;
-        line-clamp: 6;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
       }
       .today-quote-author {
-        font-size: 0.78rem;
+        font-size: 0.7rem;
         font-weight: 700;
         color: var(--green-deep);
         text-align: right;
         font-style: normal;
         font-family: var(--body);
-        margin-top: auto;
+        margin-top: 0;
       }
       .today-quote-source {
-        margin-top: 6px;
-        font-size: 0.65rem;
+        margin-top: 4px;
+        font-size: 0.6rem;
         color: var(--ink-soft);
         text-align: center;
         font-style: italic;
+      }
+      .today-card.today-onthisday {
+        flex: 1 1 auto;
+        min-height: 120px;
+        display: flex;
+        flex-direction: column;
+      }
+      .today-card.today-onthisday #todayOnThisDayList {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
       }
       .today-quote-refresh {
         border: 1px solid rgba(80, 120, 90, 0.25);
@@ -4484,16 +4526,23 @@
                 </div>
               </div>
 
-              <div class="today-card today-quote-card">
-                <div class="today-card-label" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-                  <span>Quote of the day</span>
-                  <button type="button" id="todayQuoteRefresh" class="today-quote-refresh" title="Refresh quote">↻</button>
+              <div class="today-quote-photo-stack">
+                <div class="today-card today-quote-card">
+                  <div class="today-card-label" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                    <span>Quote of the day</span>
+                    <button type="button" id="todayQuoteRefresh" class="today-quote-refresh" title="Refresh quote">↻</button>
+                  </div>
+                  <div id="todayQuoteBody" class="today-quote-body">
+                    <p class="today-empty">Loading quote…</p>
+                  </div>
+                  <div id="todayQuoteAuthor" class="today-quote-author"></div>
+                  <p id="todayQuoteSource" class="today-quote-source"></p>
                 </div>
-                <div id="todayQuoteBody" class="today-quote-body">
-                  <p class="today-empty">Loading quote…</p>
+
+                <div class="today-card today-onthisday" id="todayOnThisDayCard" hidden>
+                  <div class="today-card-label">On this day</div>
+                  <div id="todayOnThisDayList"></div>
                 </div>
-                <div id="todayQuoteAuthor" class="today-quote-author"></div>
-                <p id="todayQuoteSource" class="today-quote-source"></p>
               </div>
 
               <div class="today-card today-news">
@@ -4501,11 +4550,6 @@
                 <div id="todayNewsList" class="today-news-list">
                   <p class="today-empty">Loading headlines…</p>
                 </div>
-              </div>
-
-              <div class="today-card today-onthisday" id="todayOnThisDayCard" hidden>
-                <div class="today-card-label">On this day</div>
-                <div id="todayOnThisDayList"></div>
               </div>
             </div>
           </div>
@@ -7672,7 +7716,7 @@
           return;
         }
         list.innerHTML = matches
-          .slice(0, 3)
+          .slice(0, 1)
           .map(
             () => `<a class="today-onthisday-photo" data-idx="0">
               <img alt="">
@@ -7891,13 +7935,21 @@
           : "Automatic brief · " + metaLabel;
         box.appendChild(foot);
 
-        const watchLink = document.createElement("a");
-        watchLink.className = "today-news-watch";
-        watchLink.href = "https://www.youtube.com/@CNN10";
-        watchLink.target = "_blank";
-        watchLink.rel = "noopener noreferrer";
-        watchLink.textContent = isPt ? "▶ Assistir às notícias" : "▶ Watch the news";
-        box.appendChild(watchLink);
+        const watchCnn = document.createElement("a");
+        watchCnn.className = "today-news-watch";
+        watchCnn.href = "https://www.youtube.com/@CNN10";
+        watchCnn.target = "_blank";
+        watchCnn.rel = "noopener noreferrer";
+        watchCnn.textContent = isPt ? "▶ CNN10" : "▶ CNN10";
+        box.appendChild(watchCnn);
+
+        const watchWorld = document.createElement("a");
+        watchWorld.className = "today-news-watch alt";
+        watchWorld.href = "https://www.youtube.com/@TheWorldAtoZ/videos";
+        watchWorld.target = "_blank";
+        watchWorld.rel = "noopener noreferrer";
+        watchWorld.textContent = isPt ? "▶ TheWorldAtoZ" : "▶ TheWorldAtoZ";
+        box.appendChild(watchWorld);
       }
 
       async function renderTodayNews() {
