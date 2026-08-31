@@ -71,6 +71,8 @@
         --night: #1b2333;
         --night-deep: #0f1522;
         --stars: #f4efe0;
+        --amber: #c98b4b;
+        --plum: #6f5b8a;
 
         --serif: "Cormorant Garamond", "Georgia", serif;
         --script: "Dancing Script", cursive;
@@ -102,6 +104,8 @@
         --night: #0a0e14;
         --night-deep: #05070a;
         --stars: #e8e4d8;
+        --amber: #d9a15f;
+        --plum: #9884b8;
         --shadow-soft: 0 14px 44px -12px rgba(0, 0, 0, 0.55);
         --shadow-tiny: 0 4px 18px -6px rgba(0, 0, 0, 0.4);
         --surface: #1c232e;
@@ -1701,10 +1705,10 @@
       .photo-tile {
         position: relative;
       }
-      .photo-tile .memory-del {
+      .photo-tile .memory-del,
+      .photo-tile .memory-edit {
         position: absolute;
         top: 8px;
-        right: 8px;
         z-index: 2;
         width: 26px;
         height: 26px;
@@ -1718,11 +1722,21 @@
         opacity: 0;
         transition: all 0.2s ease;
       }
-      .photo-tile:hover .memory-del {
+      .photo-tile .memory-del {
+        right: 8px;
+      }
+      .photo-tile .memory-edit {
+        right: 40px;
+      }
+      .photo-tile:hover .memory-del,
+      .photo-tile:hover .memory-edit {
         opacity: 1;
       }
       .photo-tile .memory-del:hover {
         background: #a34a4a;
+      }
+      .photo-tile .memory-edit:hover {
+        background: var(--green);
       }
       .memory-upload-status.error {
         color: #a34a4a;
@@ -3764,6 +3778,382 @@
         position: relative;
         height: 166px;
       }
+
+      /* ============================================================
+         OUR GAMES — five-deck card game system
+         ============================================================ */
+      .games-view {
+        max-width: 760px;
+        margin: 0 auto;
+      }
+      .games-hub-actions {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 28px;
+      }
+      .games-daily-card {
+        background: var(--surface);
+        border: 1px solid rgba(43, 38, 34, 0.08);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-tiny);
+        padding: 18px 20px;
+        text-align: center;
+        margin-bottom: 28px;
+      }
+      .games-daily-label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-weight: 700;
+        color: var(--green);
+        margin-bottom: 8px;
+      }
+      .games-daily-q {
+        font-family: var(--serif);
+        font-size: 1.15rem;
+        color: var(--ink);
+      }
+      .games-daily-sub {
+        margin-top: 6px;
+        font-size: 0.76rem;
+        color: var(--ink-soft);
+      }
+      .games-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 32px;
+      }
+      .games-tile {
+        background: var(--surface);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-tiny);
+        padding: 24px 18px;
+        text-align: center;
+        cursor: pointer;
+        border: 2px solid transparent;
+        border-top: 4px solid var(--tile-accent, var(--green));
+        transition:
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+      .games-tile:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-soft);
+      }
+      .games-tile .g-emoji {
+        font-size: 2.1rem;
+        margin-bottom: 8px;
+      }
+      .games-tile h3 {
+        font-size: 1.15rem;
+        margin-bottom: 4px;
+      }
+      .games-tile .g-sub {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 700;
+        color: var(--tile-accent, var(--green));
+        margin-bottom: 8px;
+      }
+      .games-tile .g-desc {
+        font-size: 0.84rem;
+        color: var(--ink-soft);
+        line-height: 1.4;
+      }
+      .games-tile .g-count {
+        margin-top: 10px;
+        font-size: 0.72rem;
+        color: var(--ink-soft);
+        font-style: italic;
+      }
+      .games-stats {
+        background: var(--cream-dim);
+        border-radius: var(--radius-md);
+        padding: 18px 20px;
+      }
+      .games-stats-title {
+        font-family: var(--serif);
+        font-weight: 600;
+        margin-bottom: 10px;
+        text-align: center;
+      }
+      .games-stats-rows {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px 22px;
+        font-size: 0.86rem;
+      }
+      .games-stats-total {
+        margin-top: 10px;
+        text-align: center;
+        font-weight: 700;
+        color: var(--green);
+      }
+      .games-back-btn {
+        margin-bottom: 18px;
+      }
+      .games-subhead {
+        text-align: center;
+        margin-bottom: 16px;
+      }
+      .games-fav-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .games-fav-item {
+        background: var(--surface);
+        border-radius: var(--radius-sm);
+        box-shadow: var(--shadow-tiny);
+        padding: 14px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+      .games-fav-item .txt {
+        font-size: 0.88rem;
+      }
+      .games-fav-item .tag {
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+        letter-spacing: 0.06em;
+      }
+      .games-lobby-head {
+        text-align: center;
+        margin-bottom: 24px;
+      }
+      .games-lobby-emoji {
+        font-size: 2.4rem;
+      }
+      .games-lobby-count {
+        font-size: 0.8rem;
+        color: var(--ink-soft);
+        font-style: italic;
+      }
+      .games-lobby-block {
+        margin-bottom: 20px;
+      }
+      .games-lobby-label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 700;
+        color: var(--ink-soft);
+        margin-bottom: 8px;
+      }
+      .games-chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .games-chip {
+        padding: 7px 14px;
+        border-radius: 999px;
+        border: 1.5px solid rgba(43, 38, 34, 0.15);
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--ink-soft);
+        background: var(--surface);
+        transition: all 0.15s ease;
+      }
+      .games-chip.active {
+        background: var(--green);
+        border-color: var(--green);
+        color: var(--cream);
+      }
+      .games-start-btn {
+        display: block;
+        width: 100%;
+        max-width: 320px;
+        margin: 8px auto 0;
+      }
+      .games-play-bar {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 22px;
+      }
+      .games-progress-wrap {
+        flex: 1;
+      }
+      .games-progress-bar {
+        height: 6px;
+        border-radius: 999px;
+        background: var(--cream-dim);
+        overflow: hidden;
+      }
+      .games-progress-fill {
+        height: 100%;
+        background: var(--green);
+        width: 0%;
+        transition: width 0.25s ease;
+      }
+      .games-progress-label {
+        display: block;
+        margin-top: 4px;
+        font-size: 0.72rem;
+        color: var(--ink-soft);
+      }
+      .games-card-stage {
+        perspective: 1200px;
+        margin-bottom: 22px;
+      }
+      .games-card {
+        background: var(--surface);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-soft);
+        padding: 40px 30px;
+        min-height: 220px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        border-top: 6px solid var(--card-accent, var(--green));
+        animation: gameCardIn 0.35s ease;
+      }
+      @keyframes gameCardIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px) scale(0.98);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      .games-card-top {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+      .games-card-emoji {
+        font-size: 1.4rem;
+      }
+      .games-card-cat {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-weight: 700;
+        color: var(--card-accent, var(--green));
+      }
+      .games-card-rare {
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: var(--gold);
+      }
+      .games-card-q {
+        font-family: var(--serif);
+        font-size: 1.4rem;
+        line-height: 1.4;
+        color: var(--ink);
+      }
+      .games-card-followup {
+        margin-top: 14px;
+        font-size: 0.92rem;
+        color: var(--ink-soft);
+        font-style: italic;
+      }
+      .games-wyr-row,
+      .games-chaos-row {
+        text-align: center;
+        margin-bottom: 18px;
+      }
+      .games-wyr-reveal {
+        margin-top: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        font-size: 0.86rem;
+      }
+      .games-chaos-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .games-chaos-hint {
+        font-size: 0.86rem;
+        color: var(--ink-soft);
+        width: 100%;
+        margin-bottom: 4px;
+      }
+      .games-action-row {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .games-icon-btn {
+        width: 44px;
+        padding: 10px 0;
+        font-size: 1.1rem;
+      }
+      .games-icon-btn.is-fav {
+        color: var(--blush);
+        border-color: var(--blush);
+      }
+      .games-end-row {
+        text-align: center;
+        margin-top: 16px;
+      }
+      .games-link-btn {
+        border: none;
+        text-decoration: underline;
+        font-size: 0.8rem;
+        color: var(--ink-soft);
+        background: none;
+      }
+      .games-end-card {
+        background: var(--surface);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-soft);
+        padding: 40px 30px;
+        text-align: center;
+      }
+      .games-end-emoji {
+        font-size: 2.4rem;
+        margin-bottom: 8px;
+      }
+      .games-end-stats {
+        margin: 14px 0;
+        font-size: 0.92rem;
+        color: var(--ink-soft);
+        line-height: 1.7;
+      }
+      .games-future-summary {
+        margin: 18px 0;
+        padding: 16px 18px;
+        background: var(--sage-dim);
+        border-radius: var(--radius-md);
+        font-family: var(--serif);
+        font-size: 1.05rem;
+        line-height: 1.5;
+      }
+      .games-end-actions {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+      [data-tile="deep"] { --tile-accent: var(--green); }
+      [data-tile="wyr"] { --tile-accent: var(--gold); }
+      [data-tile="flirty"] { --tile-accent: var(--blush); }
+      [data-tile="chaos"] { --tile-accent: var(--amber); }
+      [data-tile="future"] { --tile-accent: var(--plum); }
     </style>
     <!-- Firebase — only used for the Bucket List's cross-device sync.
      Nothing loads or runs unless CONFIG.firebase below is filled in. -->
@@ -3895,6 +4285,7 @@
               ···
               <span class="tab-dot" data-dot-for="calendar" hidden></span>
               <span class="tab-dot" data-dot-for="daycards" hidden></span>
+              <span class="tab-dot" data-dot-for="games" hidden></span>
             </button>
             <div class="nav-more-menu" id="navMoreMenu" role="menu">
               <div class="nav-more-label">More</div>
@@ -3911,6 +4302,9 @@
                   data-dot-for="daycards"
                   hidden
                 ></span>
+              </button>
+              <button class="tab-btn" data-tab="games" role="menuitem">
+                Our Games
               </button>
             </div>
           </div>
@@ -3999,6 +4393,7 @@
         <button class="tab-btn" data-tab="daycards">
           Day Cards<span class="tab-dot" data-dot-for="daycards" hidden></span>
         </button>
+        <button class="tab-btn" data-tab="games">Our Games</button>
       </div>
     </header>
 
@@ -4357,6 +4752,14 @@
                   align-self: center;
                 "
               ></span>
+              <button
+                type="button"
+                class="btn outline"
+                id="memoryCancelEditBtn"
+                style="display: none"
+              >
+                Cancel
+              </button>
               <button type="button" class="btn" id="memoryUploadBtn">
                 Add Memory ♥
               </button>
@@ -4954,7 +5357,7 @@
             <h2>Day Cards</h2>
             <p>
               Write each other something during the day. Cards expire after 24
-              hours — unless you save them.
+              hours.
             </p>
           </div>
           <span
@@ -5054,6 +5457,131 @@
               </p>
             </div>
           </details>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============================= TAB: OUR GAMES ============================= -->
+    <div class="tab-panel" id="tab-games">
+      <section class="section">
+        <div class="container">
+          <div class="section-head">
+            <p class="eyebrow">A little collection, just for us</p>
+            <h2>🎴 Our Games</h2>
+            <p>Five decks, five different feelings. Pick one and draw a card.</p>
+          </div>
+
+          <!-- ---------- HUB ---------- -->
+          <div id="gamesHub" class="games-view">
+            <div class="games-hub-actions">
+              <button type="button" class="btn" id="gamesSurpriseBtn">🎲 Random</button>
+            </div>
+
+            <div id="gamesDailyCard" class="games-daily-card" hidden>
+              <div class="games-daily-label">💌 Card of the Day</div>
+              <div class="games-daily-q" id="gamesDailyQ"></div>
+              <div class="games-daily-sub" id="gamesDailySub"></div>
+            </div>
+
+            <div id="gamesGrid" class="games-grid"></div>
+
+            <div class="games-stats" id="gamesStats">
+              <div class="games-stats-title">Our Game Stats</div>
+              <div class="games-stats-rows" id="gamesStatsRows"></div>
+              <div class="games-stats-total" id="gamesStatsTotal"></div>
+            </div>
+          </div>
+
+          <!-- ---------- LOBBY ---------- -->
+          <div id="gamesLobby" class="games-view" hidden>
+            <button type="button" class="btn outline games-back-btn" data-games-back="hub">← Back to Our Games</button>
+            <div class="games-lobby-head">
+              <div class="games-lobby-emoji" id="lobbyEmoji"></div>
+              <h3 id="lobbyTitle"></h3>
+              <p id="lobbySubtitle"></p>
+              <p class="games-lobby-count" id="lobbyCount"></p>
+            </div>
+
+            <div class="games-lobby-block">
+              <div class="games-lobby-label">Categories</div>
+              <div class="games-chip-row" id="lobbyCategories"></div>
+            </div>
+
+            <div class="games-lobby-block">
+              <div class="games-lobby-label">Rounds</div>
+              <div class="games-chip-row" id="lobbyRounds">
+                <button type="button" class="games-chip" data-rounds="5">5</button>
+                <button type="button" class="games-chip" data-rounds="10">10</button>
+                <button type="button" class="games-chip" data-rounds="20">20</button>
+                <button type="button" class="games-chip active" data-rounds="0">∞ Endless</button>
+              </div>
+            </div>
+
+            <button type="button" class="btn games-start-btn" id="lobbyStartBtn">Start Game</button>
+          </div>
+
+          <!-- ---------- PLAY ---------- -->
+          <div id="gamesPlay" class="games-view" hidden>
+            <div class="games-play-bar">
+              <button type="button" class="btn outline games-back-btn" data-games-back="hub" id="gamesExitBtn">✕ Exit</button>
+              <div class="games-progress-wrap">
+                <div class="games-progress-bar"><div class="games-progress-fill" id="gamesProgressFill"></div></div>
+                <span class="games-progress-label" id="gamesProgressLabel"></span>
+              </div>
+            </div>
+
+            <div class="games-card-stage">
+              <div class="games-card" id="gamesCard">
+                <div class="games-card-top">
+                  <span class="games-card-emoji" id="cardEmoji"></span>
+                  <span class="games-card-cat" id="cardCategory"></span>
+                  <span class="games-card-rare" id="cardRare" hidden>⭐ Special</span>
+                </div>
+                <p class="games-card-q" id="cardQuestion"></p>
+                <p class="games-card-followup" id="cardFollowup"></p>
+              </div>
+            </div>
+
+            <!-- Would You Rather: prediction flow -->
+            <div class="games-wyr-row" id="wyrRow" hidden>
+              <button type="button" class="btn outline" id="wyrPredictBtn">🔮 Predict my answer first</button>
+              <div class="games-wyr-reveal" id="wyrRevealRow" hidden>
+                <span>Did the prediction match?</span>
+                <button type="button" class="btn" data-predict="yes">✔ Yes</button>
+                <button type="button" class="btn outline" data-predict="no">✘ No</button>
+              </div>
+            </div>
+
+            <!-- Chaos: match / disaster flow -->
+            <div class="games-chaos-row" id="chaosRow" hidden>
+              <span class="games-chaos-hint">Both answered — did you match?</span>
+              <button type="button" class="btn" data-chaos="match">🎯 Match!</button>
+              <button type="button" class="btn outline" data-chaos="disaster">😂 Disaster!</button>
+            </div>
+
+            <div class="games-action-row">
+              <button type="button" class="btn outline" id="cardSkipBtn">Skip</button>
+              <button type="button" class="btn" id="cardNextBtn">Next Card →</button>
+            </div>
+
+            <div class="games-end-row">
+              <button type="button" class="btn outline games-link-btn" id="cardEndBtn">End game & see summary</button>
+            </div>
+          </div>
+
+          <!-- ---------- END / SUMMARY ---------- -->
+          <div id="gamesEnd" class="games-view" hidden>
+            <div class="games-end-card">
+              <div class="games-end-emoji" id="endEmoji"></div>
+              <h3 id="endTitle"></h3>
+              <div id="endStats" class="games-end-stats"></div>
+              <div id="futureSummary" class="games-future-summary" hidden></div>
+              <div class="games-end-actions">
+                <button type="button" class="btn" id="endPlayAgainBtn">Play Again</button>
+                <button type="button" class="btn outline" data-games-back="hub">← Back to Our Games</button>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </div>
@@ -5848,6 +6376,59 @@
         "Bucket List": "Lista de Desejos",
         Quizzes: "Quizzes",
         Music: "Músicas",
+        "Our Games": "Nossos Jogos",
+        "A little collection, just for us": "Uma pequena coleção, só nossa",
+        "Five decks, five different feelings. Pick one and draw a card.":
+          "Cinco baralhos, cinco sensações diferentes. Escolha um e puxe uma carta.",
+        "🎲 Random": "🎲 Aleatório",
+        "♡ My Favorites": "♡ Meus Favoritos",
+        "My Favorites": "Meus Favoritos",
+        "💌 Card of the Day": "💌 Carta do Dia",
+        Categories: "Categorias",
+        Rounds: "Rodadas",
+        "∞ Endless": "∞ Sem Fim",
+        "Start Game": "Começar Jogo",
+        "← Back to Our Games": "← Voltar aos Nossos Jogos",
+        "✕ Exit": "✕ Sair",
+        Skip: "Pular",
+        "Next Card →": "Próxima Carta →",
+        "End game & see summary": "Terminar e ver o resumo",
+        "Play Again": "Jogar de Novo",
+        "Our Game Stats": "Estatísticas dos Nossos Jogos",
+        "Total cards played": "Total de cartas jogadas",
+        "No favorites yet — tap ♡ on any card to save it here.":
+          "Ainda sem favoritos — toque em ♡ em qualquer carta para guardá-la aqui.",
+        "Nicely played ♥": "Muito bem jogado ♥",
+        "Cards played": "Cartas jogadas",
+        Matches: "Combinações",
+        Disasters: "Desastres",
+        "Prediction accuracy": "Precisão da previsão",
+        "🔮 Predict my answer first": "🔮 Prever minha resposta primeiro",
+        "Did the prediction match?": "A previsão bateu?",
+        "Both answered — did you match?": "Os dois responderam — vocês combinaram?",
+        "🎯 Match!": "🎯 Combinou!",
+        "😂 Disaster!": "😂 Desastre!",
+        "cards": "cartas",
+        "Really Know Us": "Conhecer de Verdade",
+        Deep: "Profundo",
+        "Meaningful questions about memories, values, and each other.":
+          "Perguntas significativas sobre memórias, valores e sobre vocês dois.",
+        "You or Me?": "Você ou Eu?",
+        "Would You Rather": "Prefere Que",
+        "Impossible choices, funny and romantic. Discuss, then reveal.":
+          "Escolhas impossíveis, engraçadas e românticas. Conversem e depois revelem.",
+        "After Dark": "Depois do Anoitecer",
+        Flirty: "Flerte",
+        "Playful, romantic, and a little bold. Skip anything, anytime.":
+          "Brincalhão, romântico e um pouco ousado. Pule qualquer carta, a qualquer momento.",
+        "Couple Chaos": "Caos do Casal",
+        Chaos: "Caos",
+        "Ridiculous scenarios. Answer secretly, then see if you match.":
+          "Cenários ridículos. Respondam em segredo e vejam se combinam.",
+        Someday: "Um Dia",
+        Future: "Futuro",
+        "Dream about the life you're building together.":
+          "Sonhem com a vida que estão construindo juntos.",
         "Press play": "Aperte o play",
         "Songs for every mood — ours, yours, and everything in between.":
           "Músicas para cada humor — nossas, suas e tudo no meio.",
@@ -6073,8 +6654,8 @@
         Calendar: "Calendário",
         "Day Cards": "Cartões do dia",
         "Little notes": "Bilhetes",
-        "Write each other something during the day. Cards expire after 24 hours — unless you save them.":
-          "Escrevam um ao outro durante o dia. Os cartões expiram em 24 horas — a menos que os guardem.",
+        "Write each other something during the day. Cards expire after 24 hours.":
+          "Escrevam um ao outro durante o dia. Os cartões expiram em 24 horas.",
         "Your message": "A tua mensagem",
         "Thinking of you…": "A pensar em ti…",
         "Thinking of you… (optional if you send audio)":
@@ -6520,7 +7101,7 @@
       }
 
       // Tabs that live under the ··· "More" menu (add future ones here)
-      const MORE_TABS = ["calendar", "daycards"];
+      const MORE_TABS = ["calendar", "daycards", "games"];
 
       // Valid tab ids — used for URL hash routing (#album, #music, #calendar, …)
       const VALID_TABS = [
@@ -6533,6 +7114,7 @@
         "music",
         "calendar",
         "daycards",
+        "games",
       ];
 
       function closeNavMore() {
@@ -6598,6 +7180,11 @@
             "daycards",
             typeof dayCards !== "undefined" ? dayCards : [],
           );
+        if (name === "games" && typeof renderGamesHub === "function") {
+          try {
+            renderGamesHub();
+          } catch (e) {}
+        }
 
         document
           .querySelectorAll(".tab-panel")
@@ -7022,11 +7609,17 @@
       }
       // ---- "On this day" photo (matches today's month/day against album dates) ----
       function parseAlbumDateParts(dateStr) {
-        // Accepts "MM/DD/YYYY" (used across CONFIG.album and live memory dates).
+        // Accepts "MM/DD/YYYY", "M/D/YYYY", and "YYYY-MM-DD" (from <input type="date">).
         if (!dateStr) return null;
-        const m = String(dateStr)
-          .trim()
-          .match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+        const s = String(dateStr).trim();
+        let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+        if (m) {
+          const month = parseInt(m[2], 10);
+          const day = parseInt(m[3], 10);
+          if (!month || !day) return null;
+          return { month, day };
+        }
+        m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
         if (!m) return null;
         const month = parseInt(m[1], 10);
         const day = parseInt(m[2], 10);
@@ -7901,10 +8494,15 @@
         fig.className = "photo-tile";
         fig.innerHTML = `
     <img src="${m.url}" alt="${m.caption || ""}" loading="lazy" style="width:100%; height:100%; object-fit:cover; aspect-ratio:3/4;">
+    <button type="button" class="memory-edit" aria-label="Edit" title="Edit">✎</button>
     <button type="button" class="memory-del" aria-label="Delete" title="Delete">✕</button>
-    <figcaption>${m.caption || ""}${m.date ? " · " + m.date : ""}</figcaption>
+    <figcaption>${m.caption || ""}${m.date ? " · " + formatMemoryDateDisplay(m.date) : ""}</figcaption>
   `;
         fig.addEventListener("click", () => openLightbox(idx));
+        fig.querySelector(".memory-edit").addEventListener("click", (e) => {
+          e.stopPropagation();
+          startEditMemory(m);
+        });
         fig.querySelector(".memory-del").addEventListener("click", (e) => {
           e.stopPropagation();
           deleteMemory(m);
@@ -8499,6 +9097,13 @@
           {
             en: "Snapshot added — the album keeps growing. 💚",
             pt: "Foto adicionada — o álbum só cresce. 💚",
+          },
+        ],
+        memoryUpdated: [
+          { en: "Memory updated. ✏️", pt: "Lembrança atualizada. ✏️" },
+          {
+            en: "Saved your edits to this photo.",
+            pt: "Edições desta foto salvas.",
           },
         ],
         memoryDeleted: [
@@ -10969,6 +11574,115 @@
         renderAlbum();
       }
 
+      // Editing state for live album photos (caption / date / album / optional new file)
+      let memoryEditingId = null;
+      let memoryEditingUrl = "";
+
+      // Normalize dates for matching "On this day" and for display.
+      // Accepts MM/DD/YYYY, M/D/YYYY, YYYY-MM-DD (from <input type="date">).
+      function normalizeMemoryDate(raw) {
+        if (!raw) return "";
+        const s = String(raw).trim();
+        let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+        if (m) {
+          return (
+            String(parseInt(m[2], 10)).padStart(2, "0") +
+            "/" +
+            String(parseInt(m[3], 10)).padStart(2, "0") +
+            "/" +
+            m[1]
+          );
+        }
+        m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+        if (m) {
+          let y = m[3];
+          if (y.length === 2) y = "20" + y;
+          return (
+            String(parseInt(m[1], 10)).padStart(2, "0") +
+            "/" +
+            String(parseInt(m[2], 10)).padStart(2, "0") +
+            "/" +
+            y
+          );
+        }
+        return s;
+      }
+
+      function memoryDateToInputValue(raw) {
+        const n = normalizeMemoryDate(raw);
+        const m = n.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (!m) return "";
+        return (
+          m[3] +
+          "-" +
+          String(parseInt(m[1], 10)).padStart(2, "0") +
+          "-" +
+          String(parseInt(m[2], 10)).padStart(2, "0")
+        );
+      }
+
+      function formatMemoryDateDisplay(raw) {
+        return normalizeMemoryDate(raw) || raw || "";
+      }
+
+      function setMemoryFormMode(editing) {
+        const title = document.getElementById("liveMemoriesTitle");
+        const btn = document.getElementById("memoryUploadBtn");
+        const cancel = document.getElementById("memoryCancelEditBtn");
+        const photoLabel = document.getElementById("memoryPhotoLabel");
+        const isPt = currentLanguage() === "pt";
+        if (editing) {
+          if (title)
+            title.textContent = isPt ? "Editar foto ♥" : "Edit photo ♥";
+          if (btn) btn.textContent = isPt ? "Salvar ♥" : "Save ♥";
+          if (cancel) cancel.style.display = "";
+          if (photoLabel)
+            photoLabel.textContent = isPt
+              ? "Nova foto (opcional)"
+              : "New photo (optional)";
+        } else {
+          if (title)
+            title.textContent = isPt ? "Adicionar uma foto ♥" : "Add a photo ♥";
+          if (btn) btn.textContent = isPt ? "Adicionar ♥" : "Add Memory ♥";
+          if (cancel) cancel.style.display = "none";
+          if (photoLabel)
+            photoLabel.textContent = isPt ? "Escolha uma foto" : "Choose a photo";
+          memoryEditingId = null;
+          memoryEditingUrl = "";
+        }
+      }
+
+      function clearMemoryForm() {
+        const fileInput = document.getElementById("memoryPhotoInput");
+        const captionInput = document.getElementById("memoryCaptionInput");
+        const dateInput = document.getElementById("memoryDateInput");
+        const statusEl = document.getElementById("memoryUploadStatus");
+        if (fileInput) fileInput.value = "";
+        if (captionInput) captionInput.value = "";
+        if (dateInput) dateInput.value = "";
+        if (statusEl) statusEl.textContent = "";
+        setMemoryFormMode(false);
+      }
+
+      function startEditMemory(m) {
+        if (!m) return;
+        memoryEditingId = m.id;
+        memoryEditingUrl = m.url || "";
+        setMemoryFormMode(true);
+        fillMemoryAlbumSelect();
+        const albumSelect = document.getElementById("memoryAlbumSelect");
+        const captionInput = document.getElementById("memoryCaptionInput");
+        const dateInput = document.getElementById("memoryDateInput");
+        const fileInput = document.getElementById("memoryPhotoInput");
+        if (albumSelect && m.category) albumSelect.value = m.category;
+        if (captionInput) captionInput.value = m.caption || "";
+        if (dateInput) dateInput.value = memoryDateToInputValue(m.date || "");
+        if (fileInput) fileInput.value = "";
+        document
+          .getElementById("memoryUploadForm")
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+
       async function addMemory() {
         const fileInput = document.getElementById("memoryPhotoInput");
         const captionInput = document.getElementById("memoryCaptionInput");
@@ -10977,15 +11691,16 @@
         const statusEl = document.getElementById("memoryUploadStatus");
         const btn = document.getElementById("memoryUploadBtn");
         const isPt = currentLanguage() === "pt";
+        const editing = !!memoryEditingId;
 
         const file = fileInput.files && fileInput.files[0];
-        if (!file) {
+        if (!editing && !file) {
           statusEl.textContent = isPt
             ? "Escolha uma foto primeiro."
             : "Choose a photo first.";
           return;
         }
-        if (isWebpFile(file) || !isAllowedMemoryFile(file)) {
+        if (file && (isWebpFile(file) || !isAllowedMemoryFile(file))) {
           statusEl.textContent = isPt
             ? "WebP não é permitido. Usa JPEG ou PNG (PNG vira JPEG automaticamente)."
             : "WebP is not allowed. Use JPEG or PNG (PNG is auto-converted to JPEG).";
@@ -11000,7 +11715,7 @@
             : "Choose an album.";
           return;
         }
-        if (!isCloudinaryConfigured()) {
+        if (file && !isCloudinaryConfigured()) {
           statusEl.textContent = isPt
             ? "Configure o Cloudinary primeiro (veja MEMORIES_SETUP.md)."
             : "Cloudinary isn't set up yet (see MEMORIES_SETUP.md).";
@@ -11008,37 +11723,65 @@
         }
 
         btn.disabled = true;
-        statusEl.textContent = isPt
-          ? "A converter e enviar..."
-          : "Converting & uploading...";
+        statusEl.textContent = file
+          ? isPt
+            ? "A converter e enviar..."
+            : "Converting & uploading..."
+          : isPt
+            ? "A salvar..."
+            : "Saving...";
 
         try {
-          // PNG/JPEG/HEIC → always compressed JPEG blob before leaving the browser
-          const compressed = await compressImage(file);
-          const url = await uploadToCloudinary(compressed);
-          // category must match CONFIG.album[].category exactly (e.g. "Us", "Favorite Memories")
+          let url = memoryEditingUrl || "";
+          if (file) {
+            const compressed = await compressImage(file);
+            url = await uploadToCloudinary(compressed);
+          }
+          if (!url) {
+            statusEl.textContent = isPt
+              ? "Escolha uma foto primeiro."
+              : "Choose a photo first.";
+            return;
+          }
           const payload = {
             url,
-            caption: captionInput.value.trim(),
-            date: dateInput.value || "",
+            caption: (captionInput.value || "").trim(),
+            date: normalizeMemoryDate(dateInput.value || ""),
             category,
           };
 
-          if (memoriesSyncLive && memoriesDb) {
-            await memoriesDb.collection("memories").add({
-              ...payload,
-              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            });
+          if (editing) {
+            if (
+              memoriesSyncLive &&
+              memoriesDb &&
+              !String(memoryEditingId).startsWith("local-")
+            ) {
+              await memoriesDb
+                .collection("memories")
+                .doc(memoryEditingId)
+                .update(payload);
+            } else {
+              const idx = memoriesItems.findIndex(
+                (x) => x.id === memoryEditingId,
+              );
+              if (idx >= 0)
+                memoriesItems[idx] = { ...memoriesItems[idx], ...payload };
+              renderMemories();
+            }
+            notify("memoryUpdated");
           } else {
-            memoriesItems.push({ id: "local-" + Date.now(), ...payload });
-            renderMemories();
+            if (memoriesSyncLive && memoriesDb) {
+              await memoriesDb.collection("memories").add({
+                ...payload,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+              });
+            } else {
+              memoriesItems.push({ id: "local-" + Date.now(), ...payload });
+              renderMemories();
+            }
+            notify("memoryCreated");
           }
-
-          notify("memoryCreated");
-          fileInput.value = "";
-          captionInput.value = "";
-          dateInput.value = "";
-          statusEl.textContent = "";
+          clearMemoryForm();
         } catch (err) {
           statusEl.textContent = isPt
             ? "Não deu pra enviar. Tente de novo."
@@ -11078,6 +11821,9 @@
       document
         .getElementById("memoryUploadBtn")
         .addEventListener("click", addMemory);
+      document
+        .getElementById("memoryCancelEditBtn")
+        ?.addEventListener("click", clearMemoryForm);
 
       (function initMemories() {
         fillMemoryAlbumSelect();
@@ -12050,7 +12796,7 @@
       }
 
       function daycardIsExpired(card) {
-        if (!card || card.saved) return false;
+        if (!card) return false;
         const exp = daycardTimeMs(card.expiresAt);
         if (!exp) {
           const created = daycardTimeMs(card.createdAt);
@@ -12062,7 +12808,6 @@
 
       function daycardRemainingLabel(card) {
         const isPt = currentLanguage() === "pt";
-        if (card.saved) return isPt ? "Guardado" : "Saved";
         let exp = daycardTimeMs(card.expiresAt);
         if (!exp) {
           const created = daycardTimeMs(card.createdAt);
@@ -12142,7 +12887,7 @@
           el.innerHTML = `
             <div class="daycard-meta">
               <span class="daycard-from">${name}</span>
-              <span class="daycard-badge ${card.saved ? "saved" : ""}">${daycardRemainingLabel(card)}</span>
+              <span class="daycard-badge">${daycardRemainingLabel(card)}</span>
             </div>
             ${hasText ? `<div class="daycard-text"></div>` : ""}
             ${hasAudio ? `<audio class="daycard-player" controls preload="metadata" src=""></audio>` : ""}
@@ -12151,11 +12896,6 @@
                 hasText
                   ? `<button type="button" data-act="speak">${tr("Listen")} 🔊</button>`
                   : ""
-              }
-              ${
-                card.saved
-                  ? `<button type="button" data-act="unsave">${tr("Unsave")}</button>`
-                  : `<button type="button" data-act="save">${tr("Save")} ★</button>`
               }
               <button type="button" class="danger" data-act="del">${tr("Delete")}</button>
             </div>
@@ -12172,12 +12912,6 @@
             const audioEl = el.querySelector("audio");
             if (audioEl) audioEl.src = card.audioUrl;
           }
-          const saveBtn = el.querySelector('[data-act="save"]');
-          if (saveBtn)
-            saveBtn.addEventListener("click", () => saveDaycard(card));
-          const unsaveBtn = el.querySelector('[data-act="unsave"]');
-          if (unsaveBtn)
-            unsaveBtn.addEventListener("click", () => unsaveDaycard(card));
           el.querySelector('[data-act="del"]').addEventListener("click", () =>
             deleteDaycard(card),
           );
@@ -12477,6 +13211,986 @@
         } catch (e) {}
         if (typeof renderTodayWidget === "function") renderTodayWidget();
       })();
+
+      // ============================================================
+      // OUR GAMES — five-deck couples card game system
+      // Add more cards any time by pushing objects into GAMES_DATA[gameId];
+      // no other code needs to change. Card shape:
+      // { id, category, level(optional), question, followUp(optional), rare(optional) }
+      // ============================================================
+      const GAMES_META = {
+        deep: {
+          emoji: "💚",
+          title: "Really Know Us",
+          subtitle: "Deep",
+          accent: "green",
+          desc: "Meaningful questions about memories, values, and each other.",
+          mechanic: "reveal",
+        },
+        wyr: {
+          emoji: "🎲",
+          title: "You or Me?",
+          subtitle: "Would You Rather",
+          accent: "gold",
+          desc: "Impossible choices, funny and romantic. Discuss, then reveal.",
+          mechanic: "predict",
+        },
+        flirty: {
+          emoji: "🔥",
+          title: "After Dark",
+          subtitle: "Flirty",
+          accent: "blush",
+          desc: "Playful, romantic, and a little bold. Skip anything, anytime.",
+          mechanic: "reveal",
+        },
+        chaos: {
+          emoji: "😂",
+          title: "Couple Chaos",
+          subtitle: "Chaos",
+          accent: "amber",
+          desc: "Ridiculous scenarios. Answer secretly, then see if you match.",
+          mechanic: "match",
+        },
+        future: {
+          emoji: "🌎",
+          title: "Someday",
+          subtitle: "Future",
+          accent: "plum",
+          desc: "Dream about the life you're building together.",
+          mechanic: "summary",
+        },
+      };
+
+      const GAMES_DATA = {
+        deep: [
+          { id: "deep_001", category: "First Impressions", level: 1, question: "What was the very first thing you noticed about me?" },
+          { id: "deep_002", category: "First Impressions", level: 1, question: "When did you first realize you liked me as more than a friend?" },
+          { id: "deep_003", category: "First Impressions", level: 1, question: "What was your first impression of my laugh?" },
+          { id: "deep_004", category: "Memories", level: 1, question: "What's a small, ordinary moment with me that you still think about?" },
+          { id: "deep_005", category: "Memories", level: 1, question: "What is your favorite memory of us so far, and why?" },
+          { id: "deep_006", category: "Memories", level: 1, question: "Describe a moment when you felt proud of us as a couple." },
+          { id: "deep_007", category: "Memories", level: 1, question: "What's a photo of us that always makes you smile?" },
+          { id: "deep_008", category: "Appreciation", level: 1, question: "What's something small I do that you don't think I know you appreciate?" },
+          { id: "deep_009", category: "Appreciation", level: 1, question: "What is one habit of mine that you secretly love?" },
+          { id: "deep_010", category: "Appreciation", level: 1, question: "When do you feel most proud of me?" },
+          { id: "deep_011", category: "Personality", level: 2, question: "What's a side of my personality that took you time to understand?" },
+          { id: "deep_012", category: "Personality", level: 2, question: "How would you describe me to someone who has never met me?" },
+          { id: "deep_013", category: "Personality", level: 2, question: "What do you think is my greatest strength?" },
+          { id: "deep_014", category: "Personality", level: 2, question: "What is something about me that still surprises you?" },
+          { id: "deep_015", category: "Love", level: 2, question: "What is something I do that makes you feel loved without me saying a word?" },
+          { id: "deep_016", category: "Love", level: 2, question: "How do you prefer to receive love from me?" },
+          { id: "deep_017", category: "Love", level: 2, question: "What does 'home' feel like when you're with me?" },
+          { id: "deep_018", category: "Communication", level: 2, question: "When do you feel most heard by me?" },
+          { id: "deep_019", category: "Communication", level: 2, question: "What's the best way for me to check in with you on a hard day?" },
+          { id: "deep_020", category: "Communication", level: 2, question: "Is there a topic you wish we talked about more often?" },
+          { id: "deep_021", category: "Childhood", level: 2, question: "What's something from your childhood you wish I understood better?" },
+          { id: "deep_022", category: "Childhood", level: 2, question: "What childhood dream still lives somewhere in you?" },
+          { id: "deep_023", category: "Childhood", level: 2, question: "Who in your family shaped how you love the most?" },
+          { id: "deep_024", category: "Dreams", level: 2, question: "What is a dream of yours that you haven't told many people about?" },
+          { id: "deep_025", category: "Dreams", level: 2, question: "What would a perfect ordinary day with me look like?" },
+          { id: "deep_026", category: "Us", level: 2, question: "What is something about me that you think you understand better than most people?" },
+          { id: "deep_027", category: "Us", level: 2, question: "What inside joke of ours would you never explain to a stranger?" },
+          { id: "deep_028", category: "Us", level: 2, question: "What song will always remind you of us?" },
+          { id: "deep_029", category: "Relationship", level: 3, question: "What do you think has changed most about us since we met?" },
+          { id: "deep_030", category: "Relationship", level: 3, question: "What is one thing we do well as a team?" },
+          { id: "deep_031", category: "Relationship", level: 3, question: "What is one thing you'd like us to get better at together?" },
+          { id: "deep_032", category: "Relationship", level: 3, question: "When do you feel closest to me?" },
+          { id: "deep_033", category: "Values", level: 3, question: "What's a value of mine that you didn't expect to admire so much?" },
+          { id: "deep_034", category: "Values", level: 3, question: "What principle would you never want us to compromise on?" },
+          { id: "deep_035", category: "Fears", level: 3, question: "What's a fear about us that you rarely say out loud?" },
+          { id: "deep_036", category: "Fears", level: 3, question: "What helps you feel safe when you're anxious about us?" },
+          { id: "deep_037", category: "Future", level: 3, question: "What part of our future are you most excited about, and what part scares you a little?" },
+          { id: "deep_038", category: "Future", level: 3, question: "What tradition do you hope we create together?" },
+          { id: "deep_039", category: "Vulnerability", level: 4, question: "What's something you've never told me because you were afraid of how I'd react?", followUp: "You don't have to answer fully — even sharing a little counts." },
+          { id: "deep_040", category: "Vulnerability", level: 4, question: "When was the last time you felt truly vulnerable with me?" },
+          { id: "deep_041", category: "Vulnerability", level: 4, question: "What do you need from me when you're hurting that I might not always know?" },
+          { id: "deep_042", category: "Things We Haven't Said", level: 4, question: "What is something you wish I asked you about more often?" },
+          { id: "deep_043", category: "Things We Haven't Said", level: 4, question: "Is there a compliment you've wanted to give me but haven't?" },
+          { id: "deep_044", category: "Things We Haven't Said", level: 4, question: "What's something hard you want to say, but gently?" },
+          { id: "deep_045", category: "Trust", level: 4, question: "What builds trust for you the fastest in a relationship?" },
+          { id: "deep_046", category: "Trust", level: 4, question: "When have you felt most trusted by me?" },
+          { id: "deep_047", category: "Conflict", level: 3, question: "How do you prefer we repair after a disagreement?" },
+          { id: "deep_048", category: "Conflict", level: 3, question: "What is something I do during conflict that helps you, even if I don't realize it?" },
+          { id: "deep_049", category: "Conflict", level: 4, question: "What is a disagreement we handled well, and what made it work?" },
+          { id: "deep_050", category: "Growth", level: 3, question: "In what way have I helped you grow since we met?" },
+          { id: "deep_051", category: "Growth", level: 3, question: "What is something you've learned about love from being with me?" },
+          { id: "deep_052", category: "Growth", level: 2, question: "What version of me do you hope I keep becoming?" },
+          { id: "deep_053", category: "How Well Do You Know Me", level: 2, question: "What do you think I worry about more than I admit?" },
+          { id: "deep_054", category: "How Well Do You Know Me", level: 2, question: "What do you think makes me feel most confident?" },
+          { id: "deep_055", category: "How Well Do You Know Me", level: 3, question: "If you had to guess my biggest insecurity, what would you say?" },
+          { id: "deep_056", category: "How Well Do You Know Me", level: 2, question: "What do you think is my love language, and why?" },
+          { id: "deep_057", category: "Appreciation", level: 1, question: "Name three things you're grateful for about us right now." },
+          { id: "deep_058", category: "Memories", level: 2, question: "What was a moment when you thought, 'I really love this person'?" },
+          { id: "deep_059", category: "Memories", level: 2, question: "Tell the story of a day with me that felt perfect in a simple way." },
+          { id: "deep_060", category: "Love", level: 3, question: "What does loyalty mean to you in our relationship?" },
+          { id: "deep_061", category: "Love", level: 3, question: "How do you know when I need reassurance?" },
+          { id: "deep_062", category: "Us", level: 3, question: "What is our superpower as a couple?" },
+          { id: "deep_063", category: "Us", level: 3, question: "What would you miss most about us if we couldn't talk for a week?" },
+          { id: "deep_064", category: "Communication", level: 3, question: "Do you feel more comfortable texting or talking when something is serious?" },
+          { id: "deep_065", category: "Personality", level: 3, question: "What is a boundary of yours that you want me to always respect?" },
+          { id: "deep_066", category: "Personality", level: 2, question: "What makes you feel most like yourself around me?" },
+          { id: "deep_067", category: "Dreams", level: 3, question: "What shared goal feels most important to you this year?" },
+          { id: "deep_068", category: "Values", level: 2, question: "What kind of partner do you try to be for me?" },
+          { id: "deep_069", category: "Fears", level: 4, question: "What would make you feel distant from me, and how can we avoid that?" },
+          { id: "deep_070", category: "Trust", level: 3, question: "What does honesty look like to you on ordinary days, not just big ones?" },
+          { id: "deep_071", category: "Growth", level: 4, question: "What is something you're still learning about being in a relationship?" },
+          { id: "deep_072", category: "Vulnerability", level: 3, question: "What is a soft spot of yours that you only show people you trust?" },
+          { id: "deep_073", category: "Relationship", level: 4, question: "If our relationship were a season, which one would it be right now and why?" },
+          { id: "deep_074", category: "Us", level: 5, question: "Tell them something you've never said out loud before.", rare: true },
+          { id: "deep_075", category: "Us", level: 5, question: "Pick a memory and tell the full story, with all the details you remember.", rare: true },
+          { id: "deep_076", category: "Love", level: 5, question: "In one minute, say everything you love about me without stopping.", rare: true },
+          { id: "deep_077", category: "Vulnerability", level: 5, question: "Share a fear about the future and let the other person respond with care.", rare: true },
+          { id: "deep_078", category: "Things We Haven't Said", level: 5, question: "Ask the question you've been avoiding — gently.", rare: true },
+          { id: "deep_079", category: "Appreciation", level: 2, question: "What is the kindest thing I've ever done for you?" },
+          { id: "deep_080", category: "Memories", level: 3, question: "What trip or outing with me would you do again tomorrow if you could?" },
+          { id: "deep_081", category: "First Impressions", level: 2, question: "What did you almost get wrong about me at the beginning?" },
+          { id: "deep_082", category: "Childhood", level: 3, question: "What part of your younger self still shows up when you're with me?" },
+          { id: "deep_083", category: "Communication", level: 4, question: "What is something you need me to hear, even if it's hard to say?" },
+          { id: "deep_084", category: "Love", level: 1, question: "When was the last time I made you laugh until it hurt?" },
+          { id: "deep_085", category: "Us", level: 1, question: "What is your favorite way we say goodbye or goodnight?" },
+          { id: "deep_086", category: "Appreciation", level: 3, question: "What about my personality balances yours?" },
+          { id: "deep_087", category: "Relationship", level: 2, question: "What does quality time look like for you with me?" },
+          { id: "deep_088", category: "Dreams", level: 1, question: "If we could teleport somewhere for 24 hours, where would we go?" },
+          { id: "deep_089", category: "Values", level: 4, question: "What does 'forever' mean to you in practical, everyday terms?" },
+          { id: "deep_090", category: "Fears", level: 2, question: "What reassures you fastest when you overthink?" },
+          { id: "deep_091", category: "Trust", level: 2, question: "What is a promise between us that means a lot to you?" },
+          { id: "deep_092", category: "Growth", level: 1, question: "What is one thing I do better now than when we first met?" },
+          { id: "deep_093", category: "How Well Do You Know Me", level: 1, question: "What snack would I pick if I were stressed?" },
+          { id: "deep_094", category: "How Well Do You Know Me", level: 1, question: "What would I order at a café without looking at the menu?" },
+          { id: "deep_095", category: "Conflict", level: 2, question: "What is a signal that you're done arguing and ready to reconnect?" },
+          { id: "deep_096", category: "Personality", level: 1, question: "What emoji would you use to describe me today?" },
+          { id: "deep_097", category: "Memories", level: 4, question: "What is a hard moment we got through that made us stronger?" },
+          { id: "deep_098", category: "Love", level: 4, question: "What does commitment look like to you on the boring days?" },
+          { id: "deep_099", category: "Us", level: 4, question: "What story about us do you hope we tell people in ten years?" },
+          { id: "deep_100", category: "Vulnerability", level: 2, question: "When do you find it hardest to ask for help from me?" },
+        ],
+        wyr: [
+          { id: "wyr_001", category: "Funny", question: "Would you rather I sang out loud every time I was happy, or danced badly every time I was excited?", followUp: "Why?" },
+          { id: "wyr_002", category: "Funny", question: "Would you rather share a toothbrush for a week or a pillow for a year?", followUp: "Why?" },
+          { id: "wyr_003", category: "Funny", question: "Would you rather only communicate in memes for a day or only in voice notes?", followUp: "Why?" },
+          { id: "wyr_004", category: "Funny", question: "Would you rather I had a chaotic laugh or a chaotic sneeze?", followUp: "Why?" },
+          { id: "wyr_005", category: "Funny", question: "Would you rather be stuck in a karaoke booth with me for 3 hours or a silent library?", followUp: "Why?" },
+          { id: "wyr_006", category: "Romantic", question: "Would you rather relive our first date forever, or fast-forward to our future wedding day?", followUp: "Why?" },
+          { id: "wyr_007", category: "Romantic", question: "Would you rather get one long love letter a year, or one small sweet note every week?", followUp: "Why?" },
+          { id: "wyr_008", category: "Romantic", question: "Would you rather surprise me with flowers or with a home-cooked meal?", followUp: "Why?" },
+          { id: "wyr_009", category: "Romantic", question: "Would you rather watch the sunrise together or the sunset?", followUp: "Why?" },
+          { id: "wyr_010", category: "Romantic", question: "Would you rather hold hands in public always, or save the biggest affection for private?", followUp: "Why?" },
+          { id: "wyr_011", category: "Impossible Choices", question: "Would you rather never argue again but rarely talk deeply, or argue sometimes but always talk deeply?", followUp: "Why?" },
+          { id: "wyr_012", category: "Impossible Choices", question: "Would you rather know every thought I have for a day, or have me know every thought you have?", followUp: "Why?" },
+          { id: "wyr_013", category: "Impossible Choices", question: "Would you rather give up social media for a month or give up desserts for a month?", followUp: "Why?" },
+          { id: "wyr_014", category: "Impossible Choices", question: "Would you rather always be 10 minutes early or always fashionably late together?", followUp: "Why?" },
+          { id: "wyr_015", category: "Travel", question: "Would you rather spend a year traveling on a tiny budget, or take one perfect two-week trip with no budget?", followUp: "Why?" },
+          { id: "wyr_016", category: "Travel", question: "Would you rather explore a big city together or a quiet beach town?", followUp: "Why?" },
+          { id: "wyr_017", category: "Travel", question: "Would you rather backpack with one backpack each, or travel with oversized suitcases?", followUp: "Why?" },
+          { id: "wyr_018", category: "Travel", question: "Would you rather visit the same favorite place every year, or a new country every year?", followUp: "Why?" },
+          { id: "wyr_019", category: "Travel", question: "Would you rather get lost together on purpose, or plan every hour of a trip?", followUp: "Why?" },
+          { id: "wyr_020", category: "Food", question: "Would you rather I cooked for you every night for a month, or you cooked for me?", followUp: "Why?" },
+          { id: "wyr_021", category: "Food", question: "Would you rather only eat spicy food for a week or only bland food for a week?", followUp: "Why?" },
+          { id: "wyr_022", category: "Food", question: "Would you rather share every meal from the same plate, or never share food again?", followUp: "Why?" },
+          { id: "wyr_023", category: "Food", question: "Would you rather try a scary new restaurant or stick to our usual place?", followUp: "Why?" },
+          { id: "wyr_024", category: "Lifestyle", question: "Would you rather we lived somewhere loud and exciting, or somewhere quiet and slow?", followUp: "Why?" },
+          { id: "wyr_025", category: "Lifestyle", question: "Would you rather a tiny cozy apartment or a big empty house?", followUp: "Why?" },
+          { id: "wyr_026", category: "Lifestyle", question: "Would you rather mornings together or late nights together?", followUp: "Why?" },
+          { id: "wyr_027", category: "Lifestyle", question: "Would you rather a pet that is chaos or a pet that is calm?", followUp: "Why?" },
+          { id: "wyr_028", category: "Relationship", question: "Would you rather I planned every date for a month, or you did?", followUp: "Why?" },
+          { id: "wyr_029", category: "Relationship", question: "Would you rather more deep talks or more silly adventures?", followUp: "Why?" },
+          { id: "wyr_030", category: "Relationship", question: "Would you rather solve problems immediately or take space first?", followUp: "Why?" },
+          { id: "wyr_031", category: "Relationship", question: "Would you rather matchy outfits or completely different styles?", followUp: "Why?" },
+          { id: "wyr_032", category: "Future", question: "Would you rather know exactly where we'll be in 10 years, or be surprised by it?", followUp: "Why?" },
+          { id: "wyr_033", category: "Future", question: "Would you rather live near family or build our own little world far away?", followUp: "Why?" },
+          { id: "wyr_034", category: "Future", question: "Would you rather save aggressively for a big goal or enjoy more small treats along the way?", followUp: "Why?" },
+          { id: "wyr_035", category: "Embarrassing", question: "Would you rather I accidentally sent you my whole search history, or my entire camera roll?", followUp: "Why?" },
+          { id: "wyr_036", category: "Embarrassing", question: "Would you rather trip in public together or have a loud stomach growl on a quiet date?", followUp: "Why?" },
+          { id: "wyr_037", category: "Embarrassing", question: "Would you rather mispronounce a word confidently or forget someone's name mid-intro?", followUp: "Why?" },
+          { id: "wyr_038", category: "Personality", question: "Would you rather I was too honest, or too nice?", followUp: "Why?" },
+          { id: "wyr_039", category: "Personality", question: "Would you rather a partner who teases you or a partner who is always gentle?", followUp: "Why?" },
+          { id: "wyr_040", category: "Personality", question: "Would you rather be the planner or the spontaneous one in our duo?", followUp: "Why?" },
+          { id: "wyr_041", category: "Hypothetical", question: "Would you rather we could read each other's minds for a day, or swap bodies for a day?", followUp: "Why?" },
+          { id: "wyr_042", category: "Hypothetical", question: "Would you rather pause time for a perfect hour together, or rewind one imperfect moment?", followUp: "Why?" },
+          { id: "wyr_043", category: "Hypothetical", question: "Would you rather have a theme song that plays when we hug, or subtitles for our sarcasm?", followUp: "Why?" },
+          { id: "wyr_044", category: "Choose Between Us", question: "Would you rather I remembered every important date perfectly, or always showed up early?", followUp: "Why?" },
+          { id: "wyr_045", category: "Choose Between Us", question: "Would you rather give up your phone for a week, or give up alone time for a week — just to be around me more?", followUp: "Why?", rare: true },
+          { id: "wyr_046", category: "Choose Between Us", question: "Would you rather I pick the movie always, or you pick the restaurant always?", followUp: "Why?" },
+          { id: "wyr_047", category: "Chaos", question: "Would you rather we got stuck in an elevator together for six hours, or on a long delayed flight together?", followUp: "Why?" },
+          { id: "wyr_048", category: "Chaos", question: "Would you rather a power outage date night or a rainstorm that cancels all plans?", followUp: "Why?" },
+          { id: "wyr_049", category: "Chaos", question: "Would you rather lose our keys together or our phones together for a day?", followUp: "Why?" },
+          { id: "wyr_050", category: "Romantic", question: "Would you rather plan our next date together right now, or let me plan it as a surprise?", followUp: "If you pick 'plan it now' — actually do it before moving on.", rare: true },
+          { id: "wyr_051", category: "Funny", question: "Would you rather only speak in questions for an hour or only answer with song lyrics?", followUp: "Why?" },
+          { id: "wyr_052", category: "Travel", question: "Would you rather road trip with no playlist or flight with no snacks?", followUp: "Why?" },
+          { id: "wyr_053", category: "Food", question: "Would you rather brunch every weekend or late-night snacks every night?", followUp: "Why?" },
+          { id: "wyr_054", category: "Lifestyle", question: "Would you rather a clean minimalist home or a cozy cluttered one?", followUp: "Why?" },
+          { id: "wyr_055", category: "Relationship", question: "Would you rather more physical affection or more verbal affection?", followUp: "Why?" },
+          { id: "wyr_056", category: "Future", question: "Would you rather a small intimate wedding or a big joyful party?", followUp: "Why?" },
+          { id: "wyr_057", category: "Embarrassing", question: "Would you rather your partner see your childhood photos or your middle-school diary?", followUp: "Why?" },
+          { id: "wyr_058", category: "Personality", question: "Would you rather be called out lovingly or comforted first when you're wrong?", followUp: "Why?" },
+          { id: "wyr_059", category: "Hypothetical", question: "Would you rather share one dream every night or one secret every week?", followUp: "Why?" },
+          { id: "wyr_060", category: "Choose Between Us", question: "Would you rather I learn your hobby or you learn mine?", followUp: "Why?" },
+          { id: "wyr_061", category: "Chaos", question: "Would you rather cook a complicated recipe together or assemble furniture together?", followUp: "Why?" },
+          { id: "wyr_062", category: "Funny", question: "Would you rather a partner who steals the blankets or steals the fries?", followUp: "Why?" },
+          { id: "wyr_063", category: "Romantic", question: "Would you rather slow dance in the kitchen or kiss in the rain?", followUp: "Why?" },
+          { id: "wyr_064", category: "Travel", question: "Would you rather mountains or ocean for our next getaway?", followUp: "Why?" },
+          { id: "wyr_065", category: "Food", question: "Would you rather try every street food in a city or one fancy tasting menu?", followUp: "Why?" },
+          { id: "wyr_066", category: "Lifestyle", question: "Would you rather work from home together or commute and meet after work?", followUp: "Why?" },
+          { id: "wyr_067", category: "Relationship", question: "Would you rather weekly check-ins about feelings or only talk when needed?", followUp: "Why?" },
+          { id: "wyr_068", category: "Future", question: "Would you rather adopt a rescue pet next year or wait until we're more settled?", followUp: "Why?" },
+          { id: "wyr_069", category: "Embarrassing", question: "Would you rather your laugh is the loudest in the room or your sneeze?", followUp: "Why?" },
+          { id: "wyr_070", category: "Personality", question: "Would you rather a competitive partner or a cooperative partner in games?", followUp: "Why?" },
+          { id: "wyr_071", category: "Hypothetical", question: "Would you rather switch our morning routines for a week or our sleep schedules?", followUp: "Why?" },
+          { id: "wyr_072", category: "Choose Between Us", question: "Would you rather I text first always or you do?", followUp: "Why?" },
+          { id: "wyr_073", category: "Chaos", question: "Would you rather host a chaotic dinner party or attend one?", followUp: "Why?" },
+          { id: "wyr_074", category: "Funny", question: "Would you rather only whisper for a day or only shout?", followUp: "Why?" },
+          { id: "wyr_075", category: "Romantic", question: "Would you rather a handwritten letter or a voice message that goes on forever?", followUp: "Why?" },
+          { id: "wyr_076", category: "Travel", question: "Would you rather one long layover with me or a short flight with turbulence?", followUp: "Why?" },
+          { id: "wyr_077", category: "Food", question: "Would you rather never eat pizza again or never eat ice cream again?", followUp: "Why?" },
+          { id: "wyr_078", category: "Lifestyle", question: "Would you rather a plant-filled apartment or a candle-filled apartment?", followUp: "Why?" },
+          { id: "wyr_079", category: "Relationship", question: "Would you rather more date nights out or more cozy nights in?", followUp: "Why?" },
+          { id: "wyr_080", category: "Future", question: "Would you rather buy a house first or travel the world first?", followUp: "Why?" },
+          { id: "wyr_081", category: "Embarrassing", question: "Would you rather your partner narrate your life like a documentary for a day?", followUp: "Why?" },
+          { id: "wyr_082", category: "Personality", question: "Would you rather someone who challenges your ideas or always agrees?", followUp: "Why?" },
+          { id: "wyr_083", category: "Hypothetical", question: "Would you rather freeze one perfect day with me or skip one hard day?", followUp: "Why?" },
+          { id: "wyr_084", category: "Choose Between Us", question: "Would you rather share a calendar or keep some plans private?", followUp: "Why?" },
+          { id: "wyr_085", category: "Chaos", question: "Would you rather a surprise visit or a planned weekend together?", followUp: "Why?" },
+          { id: "wyr_086", category: "Funny", question: "Would you rather our pet could talk for one day or our furniture could gossip?", followUp: "Why?" },
+          { id: "wyr_087", category: "Romantic", question: "Would you rather match necklaces or matching playlists?", followUp: "Why?" },
+          { id: "wyr_088", category: "Travel", question: "Would you rather sleep in a tent or a fancy hotel?", followUp: "Why?" },
+          { id: "wyr_089", category: "Food", question: "Would you rather cook with no recipe or follow a recipe exactly?", followUp: "Why?" },
+          { id: "wyr_090", category: "Lifestyle", question: "Would you rather no notifications on dates or no phones in the bedroom?", followUp: "Why?" },
+          { id: "wyr_091", category: "Relationship", question: "Would you rather long good morning texts or long goodnight calls?", followUp: "Why?" },
+          { id: "wyr_092", category: "Future", question: "Would you rather raise kids in a city or in the countryside?", followUp: "Why?" },
+          { id: "wyr_093", category: "Impossible Choices", question: "Would you rather always win board games or always win arguments?", followUp: "Why?" },
+          { id: "wyr_094", category: "Impossible Choices", question: "Would you rather be slightly bored together or constantly busy apart?", followUp: "Why?" },
+          { id: "wyr_095", category: "Romantic", question: "Would you rather a slow long-distance chapter with deep talks, or a chaotic in-person week?", followUp: "Why?" },
+          { id: "wyr_096", category: "Funny", question: "Would you rather I adopt your slang or you adopt mine forever?", followUp: "Why?" },
+          { id: "wyr_097", category: "Chaos", question: "Would you rather a spontaneous road trip tonight or a carefully planned one next month?", followUp: "Why?" },
+          { id: "wyr_098", category: "Choose Between Us", question: "Would you rather I always choose the music or always choose the photos we post?", followUp: "Why?" },
+          { id: "wyr_099", category: "Hypothetical", question: "Would you rather a movie about our love story or a book?", followUp: "Why?" },
+          { id: "wyr_100", category: "Future", question: "Would you rather grow old in one city or move every five years?", followUp: "Why?" },
+        ],
+        flirty: [
+          { id: "flirty_001", category: "Flirting", level: 1, question: "What is the first thing you find yourself noticing about me when I walk into a room?" },
+          { id: "flirty_002", category: "Flirting", level: 1, question: "What is your favorite flirty text I've ever sent you?" },
+          { id: "flirty_003", category: "Flirting", level: 1, question: "How do you flirt when you're trying not to be obvious?" },
+          { id: "flirty_004", category: "Compliments", level: 1, question: "Give me a compliment you don't say often enough." },
+          { id: "flirty_005", category: "Compliments", level: 1, question: "What is a physical feature of mine you notice more than I think?" },
+          { id: "flirty_006", category: "Compliments", level: 1, question: "Compliment my personality in the most specific way you can." },
+          { id: "flirty_007", category: "Attraction", level: 1, question: "What's a completely ordinary thing I do that you secretly find attractive?" },
+          { id: "flirty_008", category: "Attraction", level: 1, question: "What outfit of mine is your soft spot?" },
+          { id: "flirty_009", category: "Attraction", level: 1, question: "When do I look most 'like myself' to you?" },
+          { id: "flirty_010", category: "Chemistry", level: 2, question: "When did you first feel real chemistry between us?" },
+          { id: "flirty_011", category: "Chemistry", level: 2, question: "What instantly puts you in a flirty mood with me?" },
+          { id: "flirty_012", category: "Chemistry", level: 2, question: "Describe our chemistry in three words." },
+          { id: "flirty_013", category: "Kissing", level: 2, question: "Describe your favorite kiss we've had, and why it stands out." },
+          { id: "flirty_014", category: "Kissing", level: 2, question: "Are you more of a slow kiss or a sudden kiss person?" },
+          { id: "flirty_015", category: "Kissing", level: 2, question: "Where is your favorite place to be kissed?" },
+          { id: "flirty_016", category: "Preferences", level: 2, question: "Do you prefer slow and teasing, or spontaneous and a little wild? Tell me why." },
+          { id: "flirty_017", category: "Preferences", level: 2, question: "What kind of attention from me makes you melt?" },
+          { id: "flirty_018", category: "Preferences", level: 2, question: "Lights on or lights off — and what else matters to you?" },
+          { id: "flirty_019", category: "Date Night", level: 2, question: "Plan our perfect flirty date night in three sentences." },
+          { id: "flirty_020", category: "Date Night", level: 2, question: "What would make a regular night feel more romantic?" },
+          { id: "flirty_021", category: "Date Night", level: 2, question: "Pick a song for a private dance in the living room." },
+          { id: "flirty_022", category: "Confessions", level: 3, question: "What's something flirty you've thought about saying to me but haven't?" },
+          { id: "flirty_023", category: "Confessions", level: 3, question: "What is a fantasy of closeness you've imagined with me?" },
+          { id: "flirty_024", category: "Confessions", level: 3, question: "Tell me a secret about how you feel when we're apart." },
+          { id: "flirty_025", category: "Rate", level: 3, question: "On a scale of 1-10, how good am I at flirting with you — and what would make it a 10?" },
+          { id: "flirty_026", category: "Rate", level: 3, question: "Rate our last reunion energy from 1-10 and explain." },
+          { id: "flirty_027", category: "Tell Me", level: 3, question: "Tell me one thing you find irresistible about me." },
+          { id: "flirty_028", category: "Tell Me", level: 3, question: "What do you miss most about my voice?" },
+          { id: "flirty_029", category: "Tell Me", level: 3, question: "What do you want to hear me say more often?" },
+          { id: "flirty_030", category: "Show Me", level: 3, question: "What's your favorite way to be greeted when we finally see each other again?" },
+          { id: "flirty_031", category: "Show Me", level: 3, question: "How do you want me to touch your hand in public?" },
+          { id: "flirty_032", category: "Show Me", level: 3, question: "Describe the ideal good-morning after sleeping in the same bed." },
+          { id: "flirty_033", category: "Romantic Scenarios", level: 4, question: "Describe, in detail, how you'd want our reunion to go." },
+          { id: "flirty_034", category: "Romantic Scenarios", level: 4, question: "If we had a hotel room with nowhere to be, how would the first hour go?" },
+          { id: "flirty_035", category: "Romantic Scenarios", level: 4, question: "Write a short scene of us on a rainy night." },
+          { id: "flirty_036", category: "Chemistry", level: 4, question: "What's something that instantly puts you in the mood to be close to me?" },
+          { id: "flirty_037", category: "Chemistry", level: 4, question: "What scent, sound, or look of mine gets to you?" },
+          { id: "flirty_038", category: "Choose", level: 4, question: "Would you rather I whispered something sweet, or something bold, in your ear right now?" },
+          { id: "flirty_039", category: "Choose", level: 4, question: "Would you rather a long teasing text thread or a sudden call?" },
+          { id: "flirty_040", category: "After Dark", level: 5, question: "Tell me, honestly, what you miss most about being physically close to me.", rare: true },
+          { id: "flirty_041", category: "After Dark", level: 5, question: "Write a one-sentence love letter to me, right now.", rare: true },
+          { id: "flirty_042", category: "Playful Challenges", level: 5, question: "Send me the flirtiest voice message or text you can think of, before the night is over.", rare: true },
+          { id: "flirty_043", category: "Flirting", level: 2, question: "What nickname energy do you like — soft, silly, or bold?" },
+          { id: "flirty_044", category: "Attraction", level: 2, question: "What is attractive about the way I talk?" },
+          { id: "flirty_045", category: "Compliments", level: 2, question: "Compliment something I do, not something I am." },
+          { id: "flirty_046", category: "Kissing", level: 3, question: "What makes a kiss feel meaningful to you?" },
+          { id: "flirty_047", category: "Preferences", level: 3, question: "What pace feels right for us when we're reunited after time apart?" },
+          { id: "flirty_048", category: "Date Night", level: 3, question: "Invent a flirty scavenger hunt for us in one city block." },
+          { id: "flirty_049", category: "Confessions", level: 4, question: "What is something tender you've never admitted out loud?" },
+          { id: "flirty_050", category: "Tell Me", level: 4, question: "Tell me how you want to be desired." },
+          { id: "flirty_051", category: "Show Me", level: 4, question: "What is a small gesture that feels intimate to you?" },
+          { id: "flirty_052", category: "Romantic Scenarios", level: 3, question: "Describe a perfect lazy Sunday morning together." },
+          { id: "flirty_053", category: "Chemistry", level: 3, question: "When do you feel the spark most — texts, calls, or in person?" },
+          { id: "flirty_054", category: "Flirting", level: 3, question: "What is your favorite way I tease you?" },
+          { id: "flirty_055", category: "Attraction", level: 3, question: "What is sexy about kindness to you?" },
+          { id: "flirty_056", category: "Compliments", level: 3, question: "Say something flattering about my mind." },
+          { id: "flirty_057", category: "After Dark", level: 4, question: "What boundaries matter to you when things get more intimate?" },
+          { id: "flirty_058", category: "After Dark", level: 3, question: "What helps you feel safe and open with me?" },
+          { id: "flirty_059", category: "Playful Challenges", level: 3, question: "Challenge me to something flirty I can do today." },
+          { id: "flirty_060", category: "Choose", level: 3, question: "Would you rather slow music or silence when we're close?" },
+          { id: "flirty_061", category: "Date Night", level: 1, question: "Where should we go that feels a little more special than usual?" },
+          { id: "flirty_062", category: "Flirting", level: 1, question: "What emoji feels like 'us' when we're being flirty?" },
+          { id: "flirty_063", category: "Attraction", level: 1, question: "What is cute about me that I probably underrate?" },
+          { id: "flirty_064", category: "Kissing", level: 1, question: "Forehead kiss or hand kiss — pick and defend." },
+          { id: "flirty_065", category: "Preferences", level: 1, question: "Big hug first or kiss first when we meet?" },
+          { id: "flirty_066", category: "Confessions", level: 2, question: "Have you ever rehearsed something sweet before saying it?" },
+          { id: "flirty_067", category: "Tell Me", level: 2, question: "What do you notice about my eyes?" },
+          { id: "flirty_068", category: "Show Me", level: 2, question: "How do you like to sit next to me on a couch?" },
+          { id: "flirty_069", category: "Romantic Scenarios", level: 2, question: "Describe us cooking dinner while flirting the whole time." },
+          { id: "flirty_070", category: "Chemistry", level: 1, question: "What song feels like our chemistry?" },
+          { id: "flirty_071", category: "After Dark", level: 2, question: "What is a soft limit you want me to know?" },
+          { id: "flirty_072", category: "Playful Challenges", level: 2, question: "Dare me to say something bold in our next call." },
+          { id: "flirty_073", category: "Choose", level: 2, question: "Would you rather matching pajamas or a dressy date?" },
+          { id: "flirty_074", category: "Flirting", level: 4, question: "How do you want me to flirt when we're around friends without being obvious?" },
+          { id: "flirty_075", category: "Attraction", level: 4, question: "What is something about my body language you like?" },
+          { id: "flirty_076", category: "Compliments", level: 4, question: "Give me a compliment you'd only say when we're alone." },
+          { id: "flirty_077", category: "Kissing", level: 4, question: "Describe a kiss you've imagined but we haven't had yet." },
+          { id: "flirty_078", category: "Preferences", level: 4, question: "What kind of aftercare or closeness do you want after intense moments?" },
+          { id: "flirty_079", category: "Date Night", level: 4, question: "Plan a night that starts sweet and ends a little daring." },
+          { id: "flirty_080", category: "Confessions", level: 5, question: "Confess a crush-on-you moment from early on.", rare: true },
+          { id: "flirty_081", category: "Tell Me", level: 5, question: "Tell me exactly how you want me to miss you.", rare: true },
+          { id: "flirty_082", category: "Show Me", level: 5, question: "Act out (or describe) how you'd pull me closer.", rare: true },
+          { id: "flirty_083", category: "Romantic Scenarios", level: 5, question: "Narrate the next time we close a door behind us.", rare: true },
+          { id: "flirty_084", category: "Chemistry", level: 5, question: "What makes our connection feel unique compared to past ones?", rare: true },
+          { id: "flirty_085", category: "After Dark", level: 1, question: "What is a soft, non-physical thing that still feels intimate?" },
+          { id: "flirty_086", category: "Playful Challenges", level: 1, question: "Send a flirty emoji only you would understand." },
+          { id: "flirty_087", category: "Choose", level: 1, question: "Would you rather candles or fairy lights?" },
+          { id: "flirty_088", category: "Flirting", level: 5, question: "Flirt with me for 30 seconds without stopping.", rare: true },
+          { id: "flirty_089", category: "Attraction", level: 5, question: "List five things that attract you to me, fast.", rare: true },
+          { id: "flirty_090", category: "Compliments", level: 5, question: "Write a cheesy pickup line about me — then a sincere one.", rare: true },
+          { id: "flirty_091", category: "Date Night", level: 5, question: "Book (or pretend to book) our next flirty plan out loud.", rare: true },
+          { id: "flirty_092", category: "Confessions", level: 1, question: "What's a small crush detail you noticed this week?" },
+          { id: "flirty_093", category: "Tell Me", level: 1, question: "What should I text you right now to make you smile?" },
+          { id: "flirty_094", category: "Show Me", level: 1, question: "How do you want goodnight to feel when we're apart?" },
+          { id: "flirty_095", category: "Romantic Scenarios", level: 1, question: "Describe us sharing headphones on public transit." },
+          { id: "flirty_096", category: "Chemistry", level: 1, question: "When did a simple 'hi' from me feel different?" },
+          { id: "flirty_097", category: "Preferences", level: 5, question: "Tell me your honest preference about pace and pressure — no guessing.", rare: true },
+          { id: "flirty_098", category: "Kissing", level: 5, question: "Guide me: how do you like to be kissed when you've missed me?", rare: true },
+          { id: "flirty_099", category: "After Dark", level: 5, question: "Share one desire and one boundary in the same breath.", rare: true },
+          { id: "flirty_100", category: "Playful Challenges", level: 4, question: "Create a secret code word that means 'come closer'." },
+        ],
+        chaos: [
+          { id: "chaos_001", category: "Who Would", question: "Who would survive longer in a zombie apocalypse?" },
+          { id: "chaos_002", category: "Who Would", question: "Who would be the better reality TV contestant?" },
+          { id: "chaos_003", category: "Who Would", question: "Who would accidentally start a cult with a group project speech?" },
+          { id: "chaos_004", category: "Who Would", question: "Who would become friends with the flight attendant first?" },
+          { id: "chaos_005", category: "Who Would", question: "Who would win in a dance-off with no practice?" },
+          { id: "chaos_006", category: "Most Likely", question: "Who is more likely to accidentally become famous online?" },
+          { id: "chaos_007", category: "Most Likely", question: "Who is more likely to trip in public and pretend it was on purpose?" },
+          { id: "chaos_008", category: "Most Likely", question: "Who is more likely to cry during a movie?" },
+          { id: "chaos_009", category: "Most Likely", question: "Who is more likely to adopt a street animal on impulse?" },
+          { id: "chaos_010", category: "Most Likely", question: "Who is more likely to forget why they walked into a room?" },
+          { id: "chaos_011", category: "Embarrassing", question: "Who is more likely to wave back at someone who wasn't waving at them?" },
+          { id: "chaos_012", category: "Embarrassing", question: "Who is more likely to send a text to the wrong person?" },
+          { id: "chaos_013", category: "Embarrassing", question: "Who is more likely to have food on their face without noticing?" },
+          { id: "chaos_014", category: "Arguments", question: "Who would win an argument if neither of you could use facts?" },
+          { id: "chaos_015", category: "Arguments", question: "Who is more stubborn when you're both wrong?" },
+          { id: "chaos_016", category: "Arguments", question: "Who apologizes first after a silly fight?" },
+          { id: "chaos_017", category: "Hypothetical Disasters", question: "Who would handle a sudden power outage better?" },
+          { id: "chaos_018", category: "Hypothetical Disasters", question: "Who would stay calmer if the car broke down?" },
+          { id: "chaos_019", category: "Hypothetical Disasters", question: "Who would negotiate better with a landlord?" },
+          { id: "chaos_020", category: "Weird Scenarios", question: "Who would get lost even while using GPS?" },
+          { id: "chaos_021", category: "Weird Scenarios", question: "Who would forget their own birthday first?" },
+          { id: "chaos_022", category: "Weird Scenarios", question: "Who would talk to a plant like it's a roommate?" },
+          { id: "chaos_023", category: "Ranking", question: "Who is the better cook, honestly?" },
+          { id: "chaos_024", category: "Ranking", question: "Who has better taste in music?" },
+          { id: "chaos_025", category: "Ranking", question: "Who is funnier at 1 a.m.?" },
+          { id: "chaos_026", category: "Predictions", question: "Who will fall asleep first tonight?" },
+          { id: "chaos_027", category: "Predictions", question: "Who will text first tomorrow morning?" },
+          { id: "chaos_028", category: "Predictions", question: "Who will suggest dessert first?" },
+          { id: "chaos_029", category: "Petty Debates", question: "Who is more dramatic about being a little sick?" },
+          { id: "chaos_030", category: "Petty Debates", question: "Who steals more of the blanket?" },
+          { id: "chaos_031", category: "Petty Debates", question: "Who is more likely to say 'I'm fine' when not fine?" },
+          { id: "chaos_032", category: "Inside Jokes", question: "Which one of your inside jokes would confuse a stranger the most?" },
+          { id: "chaos_033", category: "Inside Jokes", question: "Who starts the inside jokes more often?" },
+          { id: "chaos_034", category: "Challenges", question: "Who would last longer without their phone?" },
+          { id: "chaos_035", category: "Challenges", question: "Who would win a staring contest?" },
+          { id: "chaos_036", category: "Challenges", question: "Who would survive a week of only spicy food?" },
+          { id: "chaos_037", category: "Random", question: "Who would spend $500 on something completely unnecessary?" },
+          { id: "chaos_038", category: "Random", question: "Who would win at charades?" },
+          { id: "chaos_039", category: "Random", question: "Who would make a better podcast host?" },
+          { id: "chaos_040", category: "Challenges", question: "Recreate your first date, right now, as best you can from memory.", rare: true },
+          { id: "chaos_041", category: "Random", question: "Whoever laughs first has to do a silly dance.", rare: true },
+          { id: "chaos_042", category: "Who Would", question: "Who would pack lighter for a trip?" },
+          { id: "chaos_043", category: "Who Would", question: "Who would become the group chat admin everyone fears?" },
+          { id: "chaos_044", category: "Most Likely", question: "Who is more likely to rewatch the same series again?" },
+          { id: "chaos_045", category: "Most Likely", question: "Who is more likely to buy a gadget that never gets used?" },
+          { id: "chaos_046", category: "Embarrassing", question: "Who is more likely to mishear lyrics confidently?" },
+          { id: "chaos_047", category: "Arguments", question: "Who uses more sarcasm in a disagreement?" },
+          { id: "chaos_048", category: "Hypothetical Disasters", question: "Who would lead if you got locked out of the house?" },
+          { id: "chaos_049", category: "Weird Scenarios", question: "Who would befriend a raccoon energy person first?" },
+          { id: "chaos_050", category: "Ranking", question: "Who takes better photos of the other person?" },
+          { id: "chaos_051", category: "Predictions", question: "Who will say 'I told you so' next?" },
+          { id: "chaos_052", category: "Petty Debates", question: "Who is slower to leave the house?" },
+          { id: "chaos_053", category: "Inside Jokes", question: "What meme energy are you as a couple?" },
+          { id: "chaos_054", category: "Challenges", question: "Who would win at Mario Kart with one hand?" },
+          { id: "chaos_055", category: "Random", question: "Who would survive a week as a barista better?" },
+          { id: "chaos_056", category: "Who Would", question: "Who would accidentally join a pyramid scheme first?" },
+          { id: "chaos_057", category: "Most Likely", question: "Who is more likely to name a pet something ridiculous?" },
+          { id: "chaos_058", category: "Embarrassing", question: "Who is more likely to have a public wardrobe fail?" },
+          { id: "chaos_059", category: "Arguments", question: "Who changes the subject to food mid-fight?" },
+          { id: "chaos_060", category: "Hypothetical Disasters", question: "Who would handle a cancelled flight better?" },
+          { id: "chaos_061", category: "Weird Scenarios", question: "Who would talk during a horror movie more?" },
+          { id: "chaos_062", category: "Ranking", question: "Who is messier in the kitchen?" },
+          { id: "chaos_063", category: "Predictions", question: "Who will suggest a nap first this weekend?" },
+          { id: "chaos_064", category: "Petty Debates", question: "Who is more competitive about board games?" },
+          { id: "chaos_065", category: "Inside Jokes", question: "Who quotes movies more out of context?" },
+          { id: "chaos_066", category: "Challenges", question: "Who can hold a plank longer?" },
+          { id: "chaos_067", category: "Random", question: "Who would invent a worse startup idea?" },
+          { id: "chaos_068", category: "Who Would", question: "Who would become a conspiracy theory believer as a bit?" },
+          { id: "chaos_069", category: "Most Likely", question: "Who is more likely to cry at an airport goodbye?" },
+          { id: "chaos_070", category: "Embarrassing", question: "Who is more likely to call a teacher 'mom'?" },
+          { id: "chaos_071", category: "Arguments", question: "Who needs more time to cool down?" },
+          { id: "chaos_072", category: "Hypothetical Disasters", question: "Who would remember the insurance password?" },
+          { id: "chaos_073", category: "Weird Scenarios", question: "Who would name their WiFi something embarrassing?" },
+          { id: "chaos_074", category: "Ranking", question: "Who is better at gift-giving?" },
+          { id: "chaos_075", category: "Predictions", question: "Who will become a morning person first?" },
+          { id: "chaos_076", category: "Petty Debates", question: "Who leaves more dishes 'to soak'?" },
+          { id: "chaos_077", category: "Inside Jokes", question: "Who does the better impression of the other?" },
+          { id: "chaos_078", category: "Challenges", question: "Who can name more capitals in 30 seconds?" },
+          { id: "chaos_079", category: "Random", question: "Who would survive a reality dating show longer?" },
+          { id: "chaos_080", category: "Who Would", question: "Who would write a viral tweet by accident?" },
+          { id: "chaos_081", category: "Most Likely", question: "Who is more likely to fall for a prank twice?" },
+          { id: "chaos_082", category: "Embarrassing", question: "Who is more likely to wave at a reflective window?" },
+          { id: "chaos_083", category: "Arguments", question: "Who brings up old screenshots in a playful roast?" },
+          { id: "chaos_084", category: "Hypothetical Disasters", question: "Who would stay calm in a haunted house?" },
+          { id: "chaos_085", category: "Weird Scenarios", question: "Who would collect too many mugs?" },
+          { id: "chaos_086", category: "Ranking", question: "Who is better at parallel parking?" },
+          { id: "chaos_087", category: "Predictions", question: "Who will suggest ordering takeout first?" },
+          { id: "chaos_088", category: "Petty Debates", question: "Who is more likely to say 'one more episode'?" },
+          { id: "chaos_089", category: "Inside Jokes", question: "Who creates nicknames faster?" },
+          { id: "chaos_090", category: "Challenges", question: "Who would win a silent contest for 5 minutes?" },
+          { id: "chaos_091", category: "Random", question: "Who would become a food critic on pure confidence?" },
+          { id: "chaos_092", category: "Who Would", question: "Who would accidentally become the favorite of a random grandma?" },
+          { id: "chaos_093", category: "Most Likely", question: "Who is more likely to start a plant collection?" },
+          { id: "chaos_094", category: "Embarrassing", question: "Who is more likely to trip while trying to look cool?" },
+          { id: "chaos_095", category: "Arguments", question: "Who wins when the debate is about movie plots?" },
+          { id: "chaos_096", category: "Hypothetical Disasters", question: "Who would fix a leaky faucet with pure stubbornness?" },
+          { id: "chaos_097", category: "Weird Scenarios", question: "Who would talk to Alexa like a person?" },
+          { id: "chaos_098", category: "Ranking", question: "Who has the better 'I told you so' face?" },
+          { id: "chaos_099", category: "Predictions", question: "Who will finish their drink first on the next date?" },
+          { id: "chaos_100", category: "Petty Debates", question: "Who is more likely to hide online shopping packages?", rare: true },
+        ],
+        future: [
+          { id: "future_001", category: "Travel", question: "What country should we visit together first?" },
+          { id: "future_002", category: "Travel", question: "Beach vacation, city trip, or nature escape — what's our next move?" },
+          { id: "future_003", category: "Travel", question: "What is a place from your childhood you'd like to show me?" },
+          { id: "future_004", category: "Travel", question: "Would you rather a slow train journey or a quick flight for our trips?" },
+          { id: "future_005", category: "Home", question: "What would our dream home look like?" },
+          { id: "future_006", category: "Home", question: "What is non-negotiable in a place we live?" },
+          { id: "future_007", category: "Home", question: "Do you picture plants, pets, art — what makes a house feel like ours?" },
+          { id: "future_008", category: "Home", question: "City apartment or house with a yard?" },
+          { id: "future_009", category: "Career", question: "Where do you picture your career five years from now?" },
+          { id: "future_010", category: "Career", question: "How can I best support your work goals?" },
+          { id: "future_011", category: "Career", question: "What does work-life balance look like for us as a team?" },
+          { id: "future_012", category: "Money", question: "If money didn't matter for one year, what would we do?" },
+          { id: "future_013", category: "Money", question: "What money habit do you want us to build together?" },
+          { id: "future_014", category: "Money", question: "Save for a house, travel, or experiences first — what's your priority?" },
+          { id: "future_015", category: "Lifestyle", question: "What would our perfect ordinary Sunday look like?" },
+          { id: "future_016", category: "Lifestyle", question: "Are we more morning coffee people or late-night talk people long-term?" },
+          { id: "future_017", category: "Lifestyle", question: "How social do you want our life to be — dinners out or quiet home?" },
+          { id: "future_018", category: "Family", question: "What kind of family life do you picture for us?" },
+          { id: "future_019", category: "Family", question: "How involved do you want extended family to be in our daily life?" },
+          { id: "future_020", category: "Family", question: "What family tradition from your side do you want to keep?" },
+          { id: "future_021", category: "Pets", question: "Do you picture a pet in our future — and if so, what kind?" },
+          { id: "future_022", category: "Pets", question: "Dog, cat, or something unexpected?" },
+          { id: "future_023", category: "Adventures", question: "What's one adventure you want us to take before we settle down?" },
+          { id: "future_024", category: "Adventures", question: "What scare (skydiving, camping, karaoke) should we try together?" },
+          { id: "future_025", category: "Marriage", question: "What does marriage mean to you, in your own words?" },
+          { id: "future_026", category: "Marriage", question: "What would make a wedding feel like 'us'?" },
+          { id: "future_027", category: "Marriage", question: "Describe, in one paragraph, what you imagine our wedding day feeling like.", rare: true },
+          { id: "future_028", category: "Traditions", question: "What tradition would you want us to create together?" },
+          { id: "future_029", category: "Traditions", question: "Weekly date night, annual trip, or something weirder?" },
+          { id: "future_030", category: "Holidays", question: "How do you imagine we'll spend the holidays once we're together full-time?" },
+          { id: "future_031", category: "Holidays", question: "Do you prefer hosting or traveling for holidays?" },
+          { id: "future_032", category: "Retirement", question: "What do you imagine us doing when we're old together?" },
+          { id: "future_033", category: "Retirement", question: "Where do you hope we grow old?" },
+          { id: "future_034", category: "Dreams", question: "What's a dream of yours that you want us to chase together?" },
+          { id: "future_035", category: "Dreams", question: "What personal dream should never get lost because of the relationship?" },
+          { id: "future_036", category: "Bucket List", question: "What's one thing you'd want on a shared bucket list right now?" },
+          { id: "future_037", category: "Bucket List", question: "Name three things we should do before five years pass." },
+          { id: "future_038", category: "Where Will We Be", question: "Where do you think we'll be living five years from now?" },
+          { id: "future_039", category: "Where Will We Be", question: "Do you see us in Brazil, abroad, or both across different seasons?" },
+          { id: "future_040", category: "Future Memories", question: "Plan our next date, right now, in detail.", rare: true },
+          { id: "future_041", category: "Travel", question: "What language would you want us to learn together?" },
+          { id: "future_042", category: "Home", question: "What color is our future kitchen, in your head?" },
+          { id: "future_043", category: "Career", question: "Would you support a big career risk if one of us needed it?" },
+          { id: "future_044", category: "Money", question: "How do you feel about joint vs separate finances long-term?" },
+          { id: "future_045", category: "Lifestyle", question: "How important is living near friends?" },
+          { id: "future_046", category: "Family", question: "How do you feel about kids — timing, openness, fears?" },
+          { id: "future_047", category: "Pets", question: "What rules would our future pet have to follow?" },
+          { id: "future_048", category: "Adventures", question: "What festival or concert should be on our list?" },
+          { id: "future_049", category: "Marriage", question: "What vows matter more to you: poetic or practical?" },
+          { id: "future_050", category: "Traditions", question: "What should we always do on our anniversary?" },
+          { id: "future_051", category: "Holidays", question: "New Year's Eve in or out, years from now?" },
+          { id: "future_052", category: "Retirement", question: "What hobby do you hope we're still doing at 70?" },
+          { id: "future_053", category: "Dreams", question: "If we wrote a five-year plan tonight, what tops the list?" },
+          { id: "future_054", category: "Bucket List", question: "One spontaneous item and one planned item for the list." },
+          { id: "future_055", category: "Where Will We Be", question: "Urban energy or quieter life — where does your gut go?" },
+          { id: "future_056", category: "Future Memories", question: "What memory do you hope we create this year?" },
+          { id: "future_057", category: "Travel", question: "Road trip across a country — which one?" },
+          { id: "future_058", category: "Home", question: "Guest room or home office if we had to choose one?" },
+          { id: "future_059", category: "Career", question: "How do we handle busy seasons without losing us?" },
+          { id: "future_060", category: "Money", question: "What does 'enough' money mean to you?" },
+          { id: "future_061", category: "Lifestyle", question: "How much routine vs spontaneity do you want long-term?" },
+          { id: "future_062", category: "Family", question: "What values do you hope our household has?" },
+          { id: "future_063", category: "Pets", question: "Would you rather foster first or adopt for life?" },
+          { id: "future_064", category: "Adventures", question: "Camping for a weekend — yes, no, or luxury glamping only?" },
+          { id: "future_065", category: "Marriage", question: "How do you want to handle last names, if at all?" },
+          { id: "future_066", category: "Traditions", question: "Sunday morning ritual idea — go." },
+          { id: "future_067", category: "Holidays", question: "Which holiday do you want to make 'ours'?" },
+          { id: "future_068", category: "Retirement", question: "Travel when old, or deep roots in one place?" },
+          { id: "future_069", category: "Dreams", question: "What creative project could we do as a couple someday?" },
+          { id: "future_070", category: "Bucket List", question: "A kind of food destination you want to travel for." },
+          { id: "future_071", category: "Where Will We Be", question: "Same city forever or chapters in different places?" },
+          { id: "future_072", category: "Future Memories", question: "Describe a random Tuesday with us in ten years." },
+          { id: "future_073", category: "Travel", question: "First class once or more trips on a budget?" },
+          { id: "future_074", category: "Home", question: "What is the first thing you'd hang on the wall?" },
+          { id: "future_075", category: "Career", question: "Whose job would dictate a move, if either?" },
+          { id: "future_076", category: "Money", question: "Big wedding vs big honeymoon budget — lean?" },
+          { id: "future_077", category: "Lifestyle", question: "Gym partners, hobby partners, or independent hobbies?" },
+          { id: "future_078", category: "Family", question: "How do you want to show up for each other's parents?" },
+          { id: "future_079", category: "Pets", question: "Name a ridiculous pet name you'd actually consider." },
+          { id: "future_080", category: "Adventures", question: "Learn a sport together — which one?" },
+          { id: "future_081", category: "Marriage", question: "What does partnership look like on hard financial months?" },
+          { id: "future_082", category: "Traditions", question: "Photo tradition you want to keep every year." },
+          { id: "future_083", category: "Holidays", question: "Would you create a new holiday just for us?" },
+          { id: "future_084", category: "Retirement", question: "What promise do you want us to keep into old age?" },
+          { id: "future_085", category: "Dreams", question: "If fear weren't a factor, what would we build?" },
+          { id: "future_086", category: "Bucket List", question: "One skill to learn side by side." },
+          { id: "future_087", category: "Where Will We Be", question: "Climate, culture, cost — what drives where we live?" },
+          { id: "future_088", category: "Future Memories", question: "What should we document more so future-us can smile?" },
+          { id: "future_089", category: "Travel", question: "Island hop or train across Europe?" },
+          { id: "future_090", category: "Home", question: "Open-plan chaos or cozy separate rooms?" },
+          { id: "future_091", category: "Career", question: "Sabbatical together someday — yes or no?" },
+          { id: "future_092", category: "Money", question: "Charity or saving — how do we balance giving?" },
+          { id: "future_093", category: "Lifestyle", question: "Digital detox weekends as a future rule?" },
+          { id: "future_094", category: "Family", question: "Chosen family dinners — monthly idea?" },
+          { id: "future_095", category: "Adventures", question: "Volunteer trip together — interested?" },
+          { id: "future_096", category: "Marriage", question: "What support looks like during illness or stress." },
+          { id: "future_097", category: "Traditions", question: "First dance song energy — classic or our song?" },
+          { id: "future_098", category: "Dreams", question: "A home project you'd love to do with me." },
+          { id: "future_099", category: "Bucket List", question: "See the northern lights or the Sahara?" },
+          { id: "future_100", category: "Where Will We Be", question: "If we could only pick one city forever after next year, which?", rare: true },
+        ],
+      };
+
+      const FUTURE_PHRASES = {
+        Travel: "traveling together often",
+        Home: "building a home base you both love",
+        Career: "growing your careers side by side",
+        Money: "being aligned about money and plans",
+        Lifestyle: "shaping a lifestyle that fits you both",
+        Family: "family being a big part of your future",
+        Pets: "having a pet in your life together",
+        Adventures: "chasing adventures together",
+        Marriage: "imagining a life fully committed to each other",
+        Traditions: "creating your own little traditions",
+        Holidays: "spending the holidays together",
+        Retirement: "picturing life together, even far down the road",
+        Dreams: "chasing big dreams as a team",
+        "Bucket List": "checking things off a shared bucket list",
+        "Where Will We Be": "picturing exactly where you'll end up",
+        "Future Memories": "already imagining memories you haven't made yet",
+      };
+
+      const GAMES_LS_SHOWN = "gfGamesShown_v1";
+      const GAMES_LS_STATS = "gfGamesStats_v1";
+      const GAMES_LS_DAILY = "gfGamesDaily_v1";
+
+      function gamesLoadJSON(key, fallback) {
+        try {
+          const raw = localStorage.getItem(key);
+          return raw ? JSON.parse(raw) : fallback;
+        } catch (e) {
+          return fallback;
+        }
+      }
+      function gamesSaveJSON(key, val) {
+        try {
+          localStorage.setItem(key, JSON.stringify(val));
+        } catch (e) {}
+      }
+      function getShownMap() {
+        return gamesLoadJSON(GAMES_LS_SHOWN, {});
+      }
+      function markShown(gameId, cardId) {
+        const m = getShownMap();
+        m[gameId] = m[gameId] || [];
+        if (!m[gameId].includes(cardId)) m[gameId].push(cardId);
+        gamesSaveJSON(GAMES_LS_SHOWN, m);
+      }
+      function resetShown(gameId) {
+        const m = getShownMap();
+        m[gameId] = [];
+        gamesSaveJSON(GAMES_LS_SHOWN, m);
+      }
+      function getGameStats() {
+        return gamesLoadJSON(GAMES_LS_STATS, {});
+      }
+      function bumpGameStat(gameId, field, amount) {
+        amount = amount || 1;
+        const s = getGameStats();
+        s[gameId] = s[gameId] || {};
+        s[gameId][field] = (s[gameId][field] || 0) + amount;
+        gamesSaveJSON(GAMES_LS_STATS, s);
+        return s[gameId];
+      }
+
+      function buildDeck(gameId, categories) {
+        let pool = (GAMES_DATA[gameId] || []).filter(
+          (c) => !categories || categories.length === 0 || categories.includes(c.category),
+        );
+        if (!pool.length) pool = GAMES_DATA[gameId] || [];
+        const shownMap = getShownMap();
+        const shown = shownMap[gameId] || [];
+        let unseen = pool.filter((c) => !shown.includes(c.id));
+        if (!unseen.length) {
+          resetShown(gameId);
+          unseen = pool.slice();
+        }
+        const deck = unseen.slice();
+        for (let i = deck.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [deck[i], deck[j]] = [deck[j], deck[i]];
+        }
+        return deck;
+      }
+
+      function todayKeyStr() {
+        const d = new Date();
+        return (
+          d.getFullYear() +
+          "-" +
+          String(d.getMonth() + 1).padStart(2, "0") +
+          "-" +
+          String(d.getDate()).padStart(2, "0")
+        );
+      }
+      function getCardOfDay() {
+        const key = todayKeyStr();
+        const saved = gamesLoadJSON(GAMES_LS_DAILY, null);
+        if (saved && saved.date === key) return saved;
+        const ids = Object.keys(GAMES_META);
+        const gameId = ids[Math.floor(Math.random() * ids.length)];
+        const pool = GAMES_DATA[gameId] || [];
+        const card = pool[Math.floor(Math.random() * pool.length)];
+        const rec = { date: key, gameId, cardId: card ? card.id : null };
+        gamesSaveJSON(GAMES_LS_DAILY, rec);
+        return rec;
+      }
+
+      function generateFutureSummary(categories) {
+        if (!categories.length)
+          return tr(
+            "You didn't get through enough cards yet to build a picture — draw a few more next time.",
+          );
+        const counts = {};
+        categories.forEach((t) => {
+          counts[t] = (counts[t] || 0) + 1;
+        });
+        const top = Object.keys(counts)
+          .sort((a, b) => counts[b] - counts[a])
+          .slice(0, 3);
+        const phrases = top.map((t) => FUTURE_PHRASES[t] || t.toLowerCase());
+        let joined;
+        if (phrases.length === 1) joined = phrases[0];
+        else if (phrases.length === 2) joined = phrases[0] + " and " + phrases[1];
+        else joined = phrases.slice(0, -1).join(", ") + ", and " + phrases[phrases.length - 1];
+        return tr("Tonight, you both leaned toward ") + joined + ".";
+      }
+
+      // ---------- state ----------
+      let gState = {
+        gameId: null,
+        deck: [],
+        idx: 0,
+        maxRounds: 0,
+        roundsPlayed: 0,
+        selectedCategories: null,
+        lobbyGameId: null,
+        lobbyCategories: null,
+        lobbyRounds: 0,
+        session: { matches: 0, disasters: 0, predictCorrect: 0, predictTotal: 0, categories: [], cardsSeen: 0 },
+      };
+
+      function currentGameCard() {
+        return gState.deck[gState.idx];
+      }
+
+      function showGamesView(view) {
+        const map = {
+          hub: "gamesHub",
+          lobby: "gamesLobby",
+          play: "gamesPlay",
+          end: "gamesEnd",
+        };
+        Object.keys(map).forEach((v) => {
+          const el = document.getElementById(map[v]);
+          if (el) el.hidden = v !== view;
+        });
+        if (view === "hub") renderGamesHub();
+      }
+
+      function renderDailyCard() {
+        const box = document.getElementById("gamesDailyCard");
+        if (!box) return;
+        const rec = getCardOfDay();
+        const pool = GAMES_DATA[rec.gameId] || [];
+        const card = pool.find((c) => c.id === rec.cardId);
+        if (!card) {
+          box.hidden = true;
+          return;
+        }
+        document.getElementById("gamesDailyQ").textContent = tr(card.question);
+        document.getElementById("gamesDailySub").textContent =
+          GAMES_META[rec.gameId].emoji +
+          " " +
+          tr(GAMES_META[rec.gameId].title) +
+          " · " +
+          tr(card.category);
+        box.hidden = false;
+      }
+
+      function renderGamesHub() {
+        const grid = document.getElementById("gamesGrid");
+        if (!grid) return;
+        grid.innerHTML = Object.keys(GAMES_META)
+          .map((id) => {
+            const meta = GAMES_META[id];
+            const count = (GAMES_DATA[id] || []).length;
+            return `<div class="games-tile" data-tile="${id}" data-game="${id}">
+              <div class="g-emoji">${meta.emoji}</div>
+              <h3>${tr(meta.title)}</h3>
+              <div class="g-sub">${tr(meta.subtitle)}</div>
+              <p class="g-desc">${tr(meta.desc)}</p>
+              <div class="g-count">${count} ${tr("cards")}</div>
+            </div>`;
+          })
+          .join("");
+        grid.querySelectorAll(".games-tile").forEach((t) =>
+          t.addEventListener("click", () => openLobby(t.dataset.game)),
+        );
+
+        const stats = getGameStats();
+        const rows = document.getElementById("gamesStatsRows");
+        let total = 0;
+        rows.innerHTML = Object.keys(GAMES_META)
+          .map((id) => {
+            const played = (stats[id] && stats[id].played) || 0;
+            total += played;
+            return `<span>${GAMES_META[id].emoji} ${tr(GAMES_META[id].title)}: ${played}</span>`;
+          })
+          .join("");
+        document.getElementById("gamesStatsTotal").textContent =
+          tr("Total cards played") + ": " + total;
+
+        renderDailyCard();
+      }
+
+      function openLobby(gameId) {
+        gState.lobbyGameId = gameId;
+        gState.lobbyCategories = null;
+        gState.lobbyRounds = 0;
+        const meta = GAMES_META[gameId];
+        document.getElementById("lobbyEmoji").textContent = meta.emoji;
+        document.getElementById("lobbyTitle").textContent = tr(meta.title);
+        document.getElementById("lobbySubtitle").textContent = tr(meta.desc);
+        const total = (GAMES_DATA[gameId] || []).length;
+        document.getElementById("lobbyCount").textContent =
+          total + " " + tr("cards available");
+        const cats = Array.from(new Set((GAMES_DATA[gameId] || []).map((c) => c.category)));
+        const catBox = document.getElementById("lobbyCategories");
+        catBox.innerHTML =
+          `<button type="button" class="games-chip active" data-cat="__all">${tr("All")}</button>` +
+          cats.map((c) => `<button type="button" class="games-chip" data-cat="${c}">${tr(c)}</button>`).join("");
+        catBox.querySelectorAll(".games-chip").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            if (btn.dataset.cat === "__all") {
+              catBox.querySelectorAll(".games-chip").forEach((b) => b.classList.remove("active"));
+              btn.classList.add("active");
+              gState.lobbyCategories = null;
+            } else {
+              catBox.querySelector('[data-cat="__all"]').classList.remove("active");
+              btn.classList.toggle("active");
+              const active = Array.from(catBox.querySelectorAll(".games-chip.active")).map((b) => b.dataset.cat);
+              if (!active.length) {
+                catBox.querySelector('[data-cat="__all"]').classList.add("active");
+                gState.lobbyCategories = null;
+              } else {
+                gState.lobbyCategories = active;
+              }
+            }
+          });
+        });
+        const roundsBox = document.getElementById("lobbyRounds");
+        roundsBox.querySelectorAll(".games-chip").forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.rounds === "0");
+          btn.onclick = () => {
+            roundsBox.querySelectorAll(".games-chip").forEach((b) => b.classList.remove("active"));
+            btn.classList.add("active");
+            gState.lobbyRounds = parseInt(btn.dataset.rounds, 10) || 0;
+          };
+        });
+        showGamesView("lobby");
+      }
+
+      function startGame(gameId, categories, maxRounds) {
+        gState.gameId = gameId;
+        gState.selectedCategories = categories;
+        gState.maxRounds = maxRounds || 0;
+        gState.roundsPlayed = 0;
+        gState.session = { matches: 0, disasters: 0, predictCorrect: 0, predictTotal: 0, categories: [], cardsSeen: 0 };
+        gState.deck = buildDeck(gameId, categories);
+        gState.idx = 0;
+        if (!gState.deck.length) {
+          showToast(tr("No cards available for that filter."), "updated");
+          showGamesView("hub");
+          return;
+        }
+        markShown(gameId, gState.deck[0].id);
+        bumpGameStat(gameId, "played", 1);
+        showGamesView("play");
+        renderCurrentGameCard();
+      }
+
+      function goNextGameCard() {
+        gState.roundsPlayed++;
+        if (gState.maxRounds > 0 && gState.roundsPlayed >= gState.maxRounds) {
+          endGame();
+          return;
+        }
+        gState.idx++;
+        if (gState.idx >= gState.deck.length) {
+          gState.deck = buildDeck(gState.gameId, gState.selectedCategories);
+          gState.idx = 0;
+          if (!gState.deck.length) {
+            endGame();
+            return;
+          }
+        }
+        markShown(gState.gameId, gState.deck[gState.idx].id);
+        bumpGameStat(gState.gameId, "played", 1);
+        renderCurrentGameCard();
+      }
+
+      function renderCurrentGameCard() {
+        const card = currentGameCard();
+        if (!card) return;
+        const meta = GAMES_META[gState.gameId];
+        const cardEl = document.getElementById("gamesCard");
+        cardEl.style.setProperty("--card-accent", "var(--" + meta.accent + ")");
+        document.getElementById("cardEmoji").textContent = meta.emoji;
+        document.getElementById("cardCategory").textContent =
+          tr(card.category) + (card.level ? " · Lv " + card.level : "");
+        document.getElementById("cardRare").hidden = !card.rare;
+        document.getElementById("cardQuestion").textContent = tr(card.question);
+        const fu = document.getElementById("cardFollowup");
+        if (card.followUp) {
+          fu.textContent = tr(card.followUp);
+          fu.style.display = "";
+        } else {
+          fu.textContent = "";
+          fu.style.display = "none";
+        }
+
+        const label =
+          gState.maxRounds > 0
+            ? tr("Card") + " " + (gState.roundsPlayed + 1) + " " + tr("of") + " " + gState.maxRounds
+            : tr("Card") + " " + (gState.roundsPlayed + 1) + " · " + tr("Endless");
+        document.getElementById("gamesProgressLabel").textContent = label;
+        const pct = gState.maxRounds > 0 ? Math.min(100, Math.round((gState.roundsPlayed / gState.maxRounds) * 100)) : 100;
+        document.getElementById("gamesProgressFill").style.width = pct + "%";
+
+
+        document.getElementById("wyrRow").hidden = meta.mechanic !== "predict";
+        document.getElementById("chaosRow").hidden = meta.mechanic !== "match";
+        document.getElementById("wyrRevealRow").hidden = true;
+        document.getElementById("wyrPredictBtn").hidden = false;
+
+        gState.session.categories.push(card.category);
+        gState.session.cardsSeen++;
+
+        cardEl.style.animation = "none";
+        void cardEl.offsetWidth;
+        cardEl.style.animation = "";
+      }
+
+      function endGame() {
+        const meta = GAMES_META[gState.gameId];
+        document.getElementById("endEmoji").textContent = meta.emoji;
+        document.getElementById("endTitle").textContent = tr("Nicely played ♥");
+        let statsHtml = tr("Cards played") + ": " + gState.session.cardsSeen;
+        if (meta.mechanic === "match") {
+          statsHtml +=
+            "<br>" + tr("Matches") + ": " + gState.session.matches + " · " + tr("Disasters") + ": " + gState.session.disasters;
+        } else if (meta.mechanic === "predict") {
+          const pct = gState.session.predictTotal
+            ? Math.round((100 * gState.session.predictCorrect) / gState.session.predictTotal) + "%"
+            : "—";
+          statsHtml += "<br>" + tr("Prediction accuracy") + ": " + pct;
+        }
+        document.getElementById("endStats").innerHTML = statsHtml;
+        const summaryBox = document.getElementById("futureSummary");
+        if (meta.mechanic === "summary") {
+          summaryBox.hidden = false;
+          summaryBox.textContent = generateFutureSummary(gState.session.categories);
+        } else {
+          summaryBox.hidden = true;
+        }
+        showGamesView("end");
+      }
+
+      function initGames() {
+        renderGamesHub();
+
+        document.getElementById("cardSkipBtn")?.addEventListener("click", goNextGameCard);
+        document.getElementById("cardNextBtn")?.addEventListener("click", goNextGameCard);
+        document.getElementById("cardEndBtn")?.addEventListener("click", endGame);
+        document.getElementById("gamesExitBtn")?.addEventListener("click", () => showGamesView("hub"));
+        document.querySelectorAll("[data-games-back]").forEach((b) =>
+          b.addEventListener("click", () => showGamesView("hub")),
+        );
+        document.getElementById("gamesSurpriseBtn")?.addEventListener("click", () => {
+          const ids = Object.keys(GAMES_META);
+          const pick = ids[Math.floor(Math.random() * ids.length)];
+          showToast(tr("Random game") + ": " + tr(GAMES_META[pick].title), "updated");
+          openLobby(pick);
+        });
+        document.getElementById("wyrPredictBtn")?.addEventListener("click", () => {
+          document.getElementById("wyrPredictBtn").hidden = true;
+          document.getElementById("wyrRevealRow").hidden = false;
+        });
+        document.querySelectorAll("[data-predict]").forEach((b) =>
+          b.addEventListener("click", () => {
+            const correct = b.dataset.predict === "yes";
+            gState.session.predictTotal++;
+            if (correct) gState.session.predictCorrect++;
+            bumpGameStat(gState.gameId, "predictTotal", 1);
+            if (correct) bumpGameStat(gState.gameId, "predictCorrect", 1);
+            goNextGameCard();
+          }),
+        );
+        document.querySelectorAll("[data-chaos]").forEach((b) =>
+          b.addEventListener("click", () => {
+            const matched = b.dataset.chaos === "match";
+            if (matched) {
+              gState.session.matches++;
+              bumpGameStat(gState.gameId, "matches", 1);
+            } else {
+              gState.session.disasters++;
+              bumpGameStat(gState.gameId, "disasters", 1);
+            }
+            goNextGameCard();
+          }),
+        );
+        document.getElementById("lobbyStartBtn")?.addEventListener("click", () => {
+          startGame(gState.lobbyGameId, gState.lobbyCategories, gState.lobbyRounds);
+        });
+        document.getElementById("endPlayAgainBtn")?.addEventListener("click", () => {
+          startGame(gState.gameId, gState.selectedCategories, gState.maxRounds);
+        });
+      }
+      initGames();
 
       // Translate static labels and headings after the page has been rendered.
       translateStaticDOM();
