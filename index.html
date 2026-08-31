@@ -853,30 +853,42 @@
         color: var(--ink-soft);
         margin-bottom: 12px;
       }
-      .today-count-row {
+      .today-news-list {
         display: flex;
-        gap: 14px;
-        justify-content: center;
-        text-align: center;
+        flex-direction: column;
+        gap: 8px;
       }
-      .today-num {
+      .today-news-item {
         display: block;
-        font-family: var(--serif);
-        font-size: 1.85rem;
-        font-weight: 600;
-        color: var(--green-deep);
-        line-height: 1.1;
+        padding: 8px 10px;
+        border-radius: var(--radius-sm);
+        background: var(--cream-dim);
+        text-decoration: none;
+        color: inherit;
+        transition: background 0.15s ease;
       }
-      .today-unit {
-        font-size: 0.72rem;
+      .today-news-item:hover {
+        background: var(--sage-dim);
+      }
+      .today-news-item .headline {
+        font-size: 0.86rem;
+        font-weight: 600;
+        color: var(--ink);
+        line-height: 1.35;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .today-news-item .meta {
+        margin-top: 3px;
+        font-size: 0.68rem;
         color: var(--ink-soft);
         font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
       }
-      .today-muted {
-        margin-top: 10px;
-        font-size: 0.82rem;
+      .today-news-source {
+        margin-top: 8px;
+        font-size: 0.68rem;
         color: var(--ink-soft);
         text-align: center;
         font-style: italic;
@@ -3889,26 +3901,14 @@
 
           <div class="today-panel" id="todayPanel" hidden>
             <p class="today-panel-intro">
-              A little snapshot of us — countdown, mood, plans &amp; notes.
+              A little snapshot of us — news, mood, plans &amp; notes.
             </p>
             <div class="today-grid" id="todayGrid">
-              <div class="today-card today-countdown">
-                <div class="today-card-label">Until we meet</div>
-                <div class="today-count-row" id="todayCountdown">
-                  <div>
-                    <span class="today-num" id="t-days">0</span>
-                    <span class="today-unit">days</span>
-                  </div>
-                  <div>
-                    <span class="today-num" id="t-hours">00</span>
-                    <span class="today-unit">hrs</span>
-                  </div>
-                  <div>
-                    <span class="today-num" id="t-mins">00</span>
-                    <span class="today-unit">min</span>
-                  </div>
+              <div class="today-card today-news">
+                <div class="today-card-label">World news today</div>
+                <div id="todayNewsList" class="today-news-list">
+                  <p class="today-empty">Loading headlines…</p>
                 </div>
-                <p class="today-muted" id="todayCountdownNote"></p>
               </div>
 
               <div class="today-card today-moods">
@@ -5038,6 +5038,12 @@
           final: "photos/final.jpeg",
         },
 
+        // News backend (Cloudflare Worker). After deploy, paste your URL here:
+        // e.g. "https://gf-news.YOUR_SUBDOMAIN.workers.dev"  (no trailing slash)
+        // Leave "" to use public CORS proxies as fallback.
+        newsBackendUrl: "",
+
+
         thingsIMiss: [
           {
             icon: "🤗",
@@ -5700,9 +5706,10 @@
         Today: "Hoje",
         "Tap to open": "Toque para abrir",
         "Tap to close": "Toque para fechar",
-        "A little snapshot of us — countdown, mood, plans & notes.":
-          "Um resumo de nós — contagem, mood, planos e notas.",
-        "Until we meet": "Até nos vermos",
+        "A little snapshot of us — news, mood, plans & notes.":
+          "Um resumo de nós — notícias, mood, planos e notas.",
+        "World news today": "Notícias do dia",
+        "Loading headlines…": "A carregar manchetes…",
         "Our mood": "Nosso humor",
         "On the calendar": "No calendário",
         "Latest day card": "Último cartão",
@@ -6575,19 +6582,6 @@
             const el = document.getElementById(id);
             if (el) el.textContent = "0";
           });
-          const td = document.getElementById("t-days"),
-            th = document.getElementById("t-hours"),
-            tm = document.getElementById("t-mins");
-          if (td) {
-            td.textContent = "0";
-            th.textContent = "00";
-            tm.textContent = "00";
-          }
-          const note = document.getElementById("todayCountdownNote");
-          if (note)
-            note.textContent = isPt
-              ? "O dia chegou — só nós."
-              : "The day is here — just us.";
           return;
         }
         const d = Math.floor(diff / 86400000);
@@ -6616,25 +6610,6 @@
           fh.textContent = pad(h);
           fm.textContent = pad(m);
           fs.textContent = pad(s);
-        }
-        const td = document.getElementById("t-days"),
-          th = document.getElementById("t-hours"),
-          tm = document.getElementById("t-mins");
-        if (td) {
-          td.textContent = d;
-          th.textContent = pad(h);
-          tm.textContent = pad(m);
-        }
-        const note = document.getElementById("todayCountdownNote");
-        if (note) {
-          note.textContent =
-            d === 0
-              ? isPt
-                ? "É quase hoje…"
-                : "Almost today…"
-              : isPt
-                ? `${d} dia${d === 1 ? "" : "s"} pela frente`
-                : `${d} day${d === 1 ? "" : "s"} to go`;
         }
       }
       setInterval(updateReunion, 1000);
@@ -6863,10 +6838,226 @@
           );
         });
       }
+      // ---- World news (automatic daily headlines) ----
+      // Prefers CONFIG.newsBackendUrl (Cloudflare Worker). Falls back to RSS
+      // via public CORS proxies. Client cache ~6h. Not affiliated with CNN10.
+      const NEWS_CACHE_KEY = "gfNewsCache_v2";
+      const NEWS_CACHE_MS = 6 * 60 * 60 * 1000;
+      const NEWS_FEEDS = {
+        en: "https://feeds.bbci.co.uk/news/world/rss.xml",
+        pt: "https://feeds.bbci.co.uk/portuguese/rss.xml",
+      };
+
+      function newsDayKey() {
+        const d = new Date();
+        return (
+          d.getFullYear() +
+          "-" +
+          String(d.getMonth() + 1).padStart(2, "0") +
+          "-" +
+          String(d.getDate()).padStart(2, "0")
+        );
+      }
+
+      function readNewsCache(lang) {
+        try {
+          const raw = localStorage.getItem(NEWS_CACHE_KEY);
+          if (!raw) return null;
+          const data = JSON.parse(raw);
+          if (
+            data &&
+            data.lang === lang &&
+            data.day === newsDayKey() &&
+            data.at &&
+            Date.now() - data.at < NEWS_CACHE_MS &&
+            Array.isArray(data.items) &&
+            data.items.length
+          ) {
+            return data.items;
+          }
+        } catch (e) {}
+        return null;
+      }
+
+      function writeNewsCache(lang, items) {
+        try {
+          localStorage.setItem(
+            NEWS_CACHE_KEY,
+            JSON.stringify({
+              lang,
+              day: newsDayKey(),
+              at: Date.now(),
+              items,
+            }),
+          );
+        } catch (e) {}
+      }
+
+      function parseRssItems(xmlText, limit) {
+        const out = [];
+        try {
+          const doc = new DOMParser().parseFromString(xmlText, "text/xml");
+          const nodes = doc.querySelectorAll("item");
+          nodes.forEach((item) => {
+            if (out.length >= limit) return;
+            const title = (
+              item.querySelector("title")?.textContent || ""
+            ).trim();
+            const link = (
+              item.querySelector("link")?.textContent ||
+              item.querySelector("guid")?.textContent ||
+              ""
+            ).trim();
+            const pub =
+              (
+                item.querySelector("pubDate")?.textContent || ""
+              ).trim() || "";
+            if (title) out.push({ title, link, pub });
+          });
+        } catch (e) {}
+        return out;
+      }
+
+      async function fetchWorldNews() {
+        const lang = currentLanguage() === "pt" ? "pt" : "en";
+        const cached = readNewsCache(lang);
+        if (cached) return { items: cached, fromCache: true, lang };
+
+        let items = [];
+        let source = "";
+
+        // 1) Preferred: your Cloudflare Worker / Node backend
+        const backend = (CONFIG.newsBackendUrl || "").replace(/\/$/, "");
+        if (backend) {
+          try {
+            const ctrl =
+              typeof AbortController !== "undefined"
+                ? new AbortController()
+                : null;
+            const timer = ctrl ? setTimeout(() => ctrl.abort(), 12000) : null;
+            const res = await fetch(
+              backend + "/?lang=" + encodeURIComponent(lang),
+              ctrl ? { signal: ctrl.signal } : {},
+            );
+            if (timer) clearTimeout(timer);
+            if (res.ok) {
+              const data = await res.json();
+              if (data && Array.isArray(data.items) && data.items.length) {
+                items = data.items
+                  .slice(0, 5)
+                  .map((it) => ({
+                    title: it.title || "",
+                    link: it.link || "",
+                    pub: it.pub || "",
+                  }))
+                  .filter((it) => it.title);
+                source = data.source || "";
+              }
+            }
+          } catch (e) {}
+        }
+
+        // 2) Fallback: public CORS proxies + BBC RSS
+        if (!items.length) {
+          const feed = NEWS_FEEDS[lang] || NEWS_FEEDS.en;
+          const proxies = [
+            "https://api.allorigins.win/raw?url=" + encodeURIComponent(feed),
+            "https://corsproxy.io/?" + encodeURIComponent(feed),
+          ];
+          for (const url of proxies) {
+            try {
+              const ctrl =
+                typeof AbortController !== "undefined"
+                  ? new AbortController()
+                  : null;
+              const timer = ctrl
+                ? setTimeout(() => ctrl.abort(), 12000)
+                : null;
+              const res = await fetch(
+                url,
+                ctrl ? { signal: ctrl.signal } : {},
+              );
+              if (timer) clearTimeout(timer);
+              if (!res.ok) continue;
+              const text = await res.text();
+              items = parseRssItems(text, 5);
+              if (items.length) {
+                source = lang === "pt" ? "BBC Português" : "BBC World";
+                break;
+              }
+            } catch (e) {}
+          }
+        }
+
+        if (items.length) writeNewsCache(lang, items);
+        return { items, fromCache: false, lang, source };
+      }
+
+      function renderTodayNewsItems(items, lang, source) {
+        const box = document.getElementById("todayNewsList");
+        if (!box) return;
+        const isPt = lang === "pt" || currentLanguage() === "pt";
+        if (!items || !items.length) {
+          box.innerHTML = `<p class="today-empty">${
+            isPt
+              ? "Não foi possível carregar notícias agora."
+              : "Couldn't load headlines right now."
+          }</p>`;
+          return;
+        }
+        const metaLabel =
+          source || (isPt ? "BBC Português" : "BBC World");
+        box.innerHTML = items
+          .map((it) => {
+            const href = it.link
+              ? `href="${String(it.link).replace(/"/g, "")}" target="_blank" rel="noopener noreferrer"`
+              : "";
+            return `<a class="today-news-item" ${href}>
+              <div class="headline"></div>
+              <div class="meta"></div>
+            </a>`;
+          })
+          .join("");
+        Array.from(box.querySelectorAll(".today-news-item")).forEach(
+          (el, i) => {
+            const h = el.querySelector(".headline");
+            const m = el.querySelector(".meta");
+            if (h) h.textContent = items[i].title || "";
+            if (m) m.textContent = metaLabel;
+          },
+        );
+        const foot = document.createElement("p");
+        foot.className = "today-news-source";
+        foot.textContent = isPt
+          ? "Resumo automático · " + metaLabel
+          : "Automatic brief · " + metaLabel;
+        box.appendChild(foot);
+      }
+
+      async function renderTodayNews() {
+        const box = document.getElementById("todayNewsList");
+        if (!box) return;
+        const isPt = currentLanguage() === "pt";
+        box.innerHTML = `<p class="today-empty">${
+          isPt ? "A carregar manchetes…" : "Loading headlines…"
+        }</p>`;
+        try {
+          const { items, lang, source } = await fetchWorldNews();
+          renderTodayNewsItems(items, lang, source);
+        } catch (e) {
+          box.innerHTML = `<p class="today-empty">${
+            isPt
+              ? "Não foi possível carregar notícias agora."
+              : "Couldn't load headlines right now."
+          }</p>`;
+        }
+      }
+
       function renderTodayWidget() {
         renderTodayMoods();
         renderTodayCalendar();
         renderTodayDaycard();
+        renderTodayNews();
       }
       function initTodayToggle() {
         const btn = document.getElementById("todayToggle");
