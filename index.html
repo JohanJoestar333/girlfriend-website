@@ -294,8 +294,9 @@
       html[data-theme="dark"] .daycard,
       html[data-theme="dark"] .daycard-compose,
       html[data-theme="dark"] .music-add-form,
+      html[data-theme="dark"] .music-player-wrap,
+      html[data-theme="dark"] .music-track,
       html[data-theme="dark"] .bucket-item,
-      html[data-theme="dark"] .track-row,
       html[data-theme="dark"] .quiz-menu-card,
       html[data-theme="dark"] .quiz-select-card,
       html[data-theme="dark"] .quiz-q-card,
@@ -316,6 +317,23 @@
         background: var(--surface) !important;
         color: var(--ink);
         border-color: rgba(255, 255, 255, 0.08);
+      }
+      html[data-theme="dark"] .music-player-wrap {
+        border-color: rgba(255, 255, 255, 0.08);
+      }
+      html[data-theme="dark"] .music-now {
+        border-top-color: rgba(255, 255, 255, 0.08);
+      }
+      html[data-theme="dark"] .music-track.active {
+        background: var(--sage-dim) !important;
+        border-color: var(--sage) !important;
+      }
+      html[data-theme="dark"] .music-add-field input,
+      html[data-theme="dark"] .music-add-field textarea,
+      html[data-theme="dark"] .music-add-field select {
+        background: var(--cream-dim);
+        color: var(--ink);
+        border-color: rgba(255, 255, 255, 0.12);
       }
       html[data-theme="dark"] .miss-card .extra {
         border-top-color: rgba(255, 255, 255, 0.12);
@@ -893,7 +911,48 @@
         text-align: center;
         font-style: italic;
       }
-      .today-concursos-refresh {
+      /* Day card full-width on desktop so quote + news share a row */
+      @media (min-width: 641px) {
+        .today-card.today-note {
+          grid-column: 1 / -1;
+        }
+      }
+      /* ---- daily quote (Today widget) ---- */
+      .today-quote-card {
+        display: flex;
+        flex-direction: column;
+        min-height: 140px;
+      }
+      .today-quote-body {
+        font-family: var(--serif);
+        font-style: italic;
+        font-size: 1.02rem;
+        line-height: 1.5;
+        color: var(--ink);
+        margin: 4px 0 10px;
+        flex: 1;
+        display: -webkit-box;
+        -webkit-line-clamp: 6;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .today-quote-author {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--green-deep);
+        text-align: right;
+        font-style: normal;
+        font-family: var(--body);
+        margin-top: auto;
+      }
+      .today-quote-source {
+        margin-top: 6px;
+        font-size: 0.65rem;
+        color: var(--ink-soft);
+        text-align: center;
+        font-style: italic;
+      }
+      .today-quote-refresh {
         border: 1px solid rgba(80, 120, 90, 0.25);
         background: rgba(255, 255, 255, 0.72);
         color: var(--green-deep);
@@ -904,50 +963,13 @@
         font-weight: 700;
         cursor: pointer;
       }
-      .today-concursos-refresh:disabled { opacity: .55; cursor: wait; }
-      .today-concursos-status {
-        min-height: 18px;
-        margin: 2px 0 8px;
-        font-size: 0.72rem;
-        color: var(--text-muted, #777);
+      .today-quote-refresh:disabled { opacity: .55; cursor: wait; }
+      html[data-theme="dark"] .today-quote-refresh {
+        background: var(--cream-dim);
+        border-color: rgba(255, 255, 255, 0.12);
+        color: var(--green-deep);
       }
-      .today-concurso-row {
-        display:flex; align-items:flex-start; gap:10px; width:100%;
-      }
-      .today-concurso-main { flex:1; min-width:0; }
-      .today-concurso-actions { display:flex; gap:6px; flex-shrink:0; }
-      .today-concurso-action {
-        border:0; background:transparent; cursor:pointer; font-size:1.05rem;
-        opacity:.65; padding:3px; border-radius:8px;
-      }
-      .today-concurso-action:hover { opacity:1; background:rgba(0,0,0,.05); }
-      .today-concurso-action.fav { color:#a66a00; }
-      .today-concurso-action.link { color:var(--green-deep); }
-      .today-concurso-source { margin-top:10px; }
 
-      .today-concursos-group-label {
-        font-size: 0.68rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: var(--green);
-        margin: 10px 0 4px;
-      }
-      .today-concursos-group-label:first-child {
-        margin-top: 0;
-      }
-      .today-concursos-item .headline {
-        font-size: 0.86rem;
-        font-weight: 600;
-        color: var(--ink);
-        line-height: 1.35;
-      }
-      .today-concursos-item .meta {
-        margin-top: 2px;
-        font-size: 0.72rem;
-        color: var(--ink-soft);
-        font-weight: 600;
-      }
       .today-mood-row {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -3564,6 +3586,32 @@
         font-size: 0.92rem;
         color: var(--ink);
         background: #fff;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .music-add-field select {
+        -webkit-appearance: none;
+        appearance: none;
+        background-image: linear-gradient(45deg, transparent 50%, var(--ink-soft) 50%),
+          linear-gradient(135deg, var(--ink-soft) 50%, transparent 50%);
+        background-position: calc(100% - 16px) calc(50% - 3px), calc(100% - 11px) calc(50% - 3px);
+        background-size: 5px 5px, 5px 5px;
+        background-repeat: no-repeat;
+        padding-right: 28px;
+      }
+      @media (max-width: 560px) {
+        .music-add-field input,
+        .music-add-field textarea,
+        .music-add-field select {
+          font-size: 16px;
+        }
+        .music-add-grid {
+          grid-template-columns: 1fr !important;
+        }
       }
       .music-add-field input:focus,
       .music-add-field textarea:focus,
@@ -3923,10 +3971,7 @@
           <h1 id="heroTitle" class="script"></h1>
           <p class="sub" id="heroSubtitle"></p>
           <p class="msg" id="heroMessage"></p>
-          <a href="#todayWidget" class="btn">Today ♥</a>
-          <a href="#counterSection" class="btn outline" style="margin-left: 8px"
-            >Explore Our Story</a
-          >
+          <a href="#counterSection" class="btn">Explore Our Story ♥</a>
         </div>
       </section>
 
@@ -3952,27 +3997,9 @@
 
           <div class="today-panel" id="todayPanel" hidden>
             <p class="today-panel-intro">
-              A little snapshot of us — news, mood, plans &amp; notes.
+              A little snapshot of us — news, a daily quote, mood, plans &amp; notes.
             </p>
             <div class="today-grid" id="todayGrid">
-              <div class="today-card today-news">
-                <div class="today-card-label">World news today</div>
-                <div id="todayNewsList" class="today-news-list">
-                  <p class="today-empty">Loading headlines…</p>
-                </div>
-              </div>
-
-              <div class="today-card today-concursos" style="grid-column: 1 / -1">
-                <div class="today-card-label" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-                  <span>Concursos públicos</span>
-                  <button type="button" id="todayConcursosRefresh" class="today-concursos-refresh" title="Atualizar concursos">↻ Atualizar</button>
-                </div>
-                <div id="todayConcursosStatus" class="today-concursos-status"></div>
-                <div id="todayConcursosList" class="today-news-list">
-                  <p class="today-empty">Loading contests…</p>
-                </div>
-              </div>
-
               <div class="today-card today-moods">
                 <div class="today-card-label">Our mood</div>
                 <div class="today-mood-row">
@@ -4012,6 +4039,25 @@
                 <div class="today-card-label">Latest day card</div>
                 <div id="todayDaycard" class="today-daycard-body">
                   <p class="today-empty">Loading…</p>
+                </div>
+              </div>
+
+              <div class="today-card today-quote-card">
+                <div class="today-card-label" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                  <span>Quote of the day</span>
+                  <button type="button" id="todayQuoteRefresh" class="today-quote-refresh" title="Refresh quote">↻</button>
+                </div>
+                <div id="todayQuoteBody" class="today-quote-body">
+                  <p class="today-empty">Loading quote…</p>
+                </div>
+                <div id="todayQuoteAuthor" class="today-quote-author"></div>
+                <p id="todayQuoteSource" class="today-quote-source"></p>
+              </div>
+
+              <div class="today-card today-news">
+                <div class="today-card-label">World news today</div>
+                <div id="todayNewsList" class="today-news-list">
+                  <p class="today-empty">Loading headlines…</p>
                 </div>
               </div>
             </div>
@@ -5123,18 +5169,6 @@
         // Leave "" to use public CORS proxies as fallback.
         newsBackendUrl: "https://gf-news.johanjoestar333.workers.dev",
 
-        // Concursos públicos por estado — API comunitária (Deno), documentada
-        // no TabNews, que raspa e atualiza os dados a cada hora.
-        // Docs/fonte: https://concursos-api.deno.dev/  (rota /{uf}, ex. /sc)
-        // Troque para a sigla do estado desejado (ex. "sp", "rs", "rj"...).
-        concursosUF: "sc",
-        // Optional: add your own reliable JSON proxy/backend here later.
-        // It must return the same shape as the community API:
-        // { estado, concursos_abertos: [], concursos_previstos: [] }
-        concursosBackendUrl: "",
-        // How long a fresh API response is considered current in this browser.
-        concursosCacheMs: 60 * 60 * 1000,
-
         thingsIMiss: [
           {
             icon: "🤗",
@@ -5797,11 +5831,15 @@
         Today: "Hoje",
         "Tap to open": "Toque para abrir",
         "Tap to close": "Toque para fechar",
+        "A little snapshot of us — news, a daily quote, mood, plans & notes.":
+          "Um resumo de nós — notícias, frase do dia, mood, planos e notas.",
         "A little snapshot of us — news, mood, plans & notes.":
-          "Um resumo de nós — notícias, mood, planos e notas.",
+          "Um resumo de nós — notícias, frase do dia, mood, planos e notas.",
         "World news today": "Notícias do dia",
-        "Concursos públicos": "Concursos públicos",
-        "Loading contests…": "A carregar concursos…",
+        "Quote of the day": "Frase do dia",
+        "Loading quote…": "A carregar a frase…",
+        "Unsave": "Tirar dos guardados",
+        "Save": "Guardar",
         "Loading headlines…": "A carregar manchetes…",
         "Our mood": "Nosso humor",
         "On the calendar": "No calendário",
@@ -7136,219 +7174,179 @@
         }
       }
 
-      // ---- Concursos públicos: resilient API + stale cache + favorites ----
-      // Primary source: community Deno API. The site never gets stuck on the
-      // loading state: a fresh cache is used first, and a stale last-known-good
-      // cache is used if every network source is unavailable.
-      const CONCURSOS_API_BASE = "https://concursos-api.deno.dev";
-      const CONCURSOS_CACHE_KEY = "gfConcursosCache_v2";
-      const CONCURSOS_FAVORITES_KEY = "gfConcursosFavorites_v1";
-      let concursosLastData = null;
-      let concursosRefreshing = false;
+      // ---- Daily quote (ZenQuotes) — one quote per calendar day, cached locally ----
+      const QUOTE_CACHE_KEY = "gfDailyQuote_v1";
+      const QUOTE_API = "https://zenquotes.io/api/today";
+      let quoteRefreshing = false;
 
-      function concursosCacheMs() {
-        return Number(CONFIG.concursosCacheMs) || 60 * 60 * 1000;
+      const FALLBACK_QUOTES = [
+        { q: "In all the world, there is no heart for me like yours.", a: "Maya Angelou" },
+        { q: "Wherever you are, and whatever you do, be in love.", a: "Rumi" },
+        { q: "The best thing to hold onto in life is each other.", a: "Audrey Hepburn" },
+        { q: "Love is composed of a single soul inhabiting two bodies.", a: "Aristotle" },
+        { q: "We loved with a love that was more than love.", a: "Edgar Allan Poe" },
+        { q: "To love and be loved is to feel the sun from both sides.", a: "David Viscott" },
+        { q: "You are my today and all of my tomorrows.", a: "Leo Christopher" },
+        { q: "I have found the one whom my soul loves.", a: "Song of Solomon 3:4" },
+      ];
+
+      function quoteTodayKey() {
+        const d = new Date();
+        return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
       }
-      function readConcursosCache(uf, allowStale = false) {
+
+      function readQuoteCache() {
         try {
-          const raw = localStorage.getItem(CONCURSOS_CACHE_KEY);
+          const raw = localStorage.getItem(QUOTE_CACHE_KEY);
           if (!raw) return null;
           const data = JSON.parse(raw);
-          if (!data || data.uf !== uf || !data.at) return null;
-          if (allowStale || Date.now() - data.at < concursosCacheMs()) return data;
-        } catch (e) {}
-        return null;
-      }
-      function writeConcursosCache(uf, payload) {
-        try {
-          localStorage.setItem(CONCURSOS_CACHE_KEY, JSON.stringify({ uf, at: Date.now(), ...payload }));
-        } catch (e) {}
-      }
-      function normalizeConcursoItem(item) {
-        if (!item || typeof item !== "object") return { raw: item || {} };
-        const pick = (...keys) => {
-          for (const key of keys) {
-            if (item[key] !== undefined && item[key] !== null && String(item[key]).trim()) return String(item[key]).trim();
-          }
-          return "";
-        };
-        const url = pick("url", "URL", "link", "Link", "href", "site", "Site", "Inscrições", "Inscricoes", "Edital", "edital");
-        const orgao = pick("Órgão", "Orgao", "Instituição", "Instituicao", "Órgão/Instituição", "Orgao/Instituicao");
-        const cargo = pick("Cargo", "cargo", "Cargos", "cargos");
-        const situacao = pick("Situação", "Situacao", "status", "Status");
-        const cidade = pick("Cidade", "cidade", "Local", "local", "Município", "Municipio");
-        const inscricoes = pick("Inscrições", "Inscricoes", "Prazo", "prazo", "Data", "data");
-        const fallback = Object.values(item).filter(v => typeof v === "string" && v.trim());
-        return { raw:item, orgao: orgao || fallback[0] || "Concurso", cargo, situacao, cidade, inscricoes, url: /^https?:\/\//i.test(url) ? url : "" };
-      }
-      function concursoOrgLabel(item) { return normalizeConcursoItem(item).orgao; }
-      function concursoSituacaoLabel(item) {
-        const n = normalizeConcursoItem(item);
-        return [n.situacao, n.cargo, n.cidade, n.inscricoes].filter(Boolean).join(" · ");
-      }
-      function concursoFingerprint(item) {
-        const n = normalizeConcursoItem(item);
-        return [n.orgao,n.cargo,n.cidade,n.inscricoes,n.url].join("|").toLowerCase();
-      }
-      function getConcursosFavorites() {
-        try { return JSON.parse(localStorage.getItem(CONCURSOS_FAVORITES_KEY) || "[]"); } catch(e) { return []; }
-      }
-      function setConcursosFavorites(items) {
-        try { localStorage.setItem(CONCURSOS_FAVORITES_KEY, JSON.stringify(items)); } catch(e) {}
-      }
-      function isConcursoFavorite(item) { return getConcursosFavorites().includes(concursoFingerprint(item)); }
-
-      async function saveConcursoFavorite(item, add) {
-        const key = concursoFingerprint(item);
-        let favorites = getConcursosFavorites();
-        if (add && !favorites.includes(key)) favorites.push(key);
-        if (!add) favorites = favorites.filter(x => x !== key);
-        setConcursosFavorites(favorites);
-        // Firebase is optional. If configured, keep a cross-device favorite copy too.
-        const db = typeof getSharedFirestore === "function" ? getSharedFirestore() : null;
-        if (db) {
-          try {
-            const id = btoa(unescape(encodeURIComponent(key))).replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 120) || "favorite";
-            const ref = db.collection("concursosfavoritos").doc(id);
-            if (add) {
-              const n = normalizeConcursoItem(item);
-              await ref.set({ fingerprint:key, orgao:n.orgao, cargo:n.cargo || "", cidade:n.cidade || "", url:n.url || "", estado:(CONFIG.concursosUF || "sc").toUpperCase(), updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-            } else await ref.delete();
-          } catch(e) { console.warn("Contest favorite Firebase sync failed", e); }
+          if (!data || !data.date || !data.q) return null;
+          return data;
+        } catch (e) {
+          return null;
         }
-        renderTodayConcursosItems(concursosLastData);
       }
 
-      async function fetchJsonWithTimeout(url, timeoutMs = 9000) {
-        const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
-        const timer = ctrl ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
+      function writeQuoteCache(payload) {
         try {
-          const res = await fetch(url, { cache: "no-store", signal: ctrl ? ctrl.signal : undefined });
+          localStorage.setItem(QUOTE_CACHE_KEY, JSON.stringify(payload));
+        } catch (e) {}
+      }
+
+      function pickFallbackQuote() {
+        const key = quoteTodayKey();
+        let hash = 0;
+        for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+        return FALLBACK_QUOTES[hash % FALLBACK_QUOTES.length];
+      }
+
+      async function fetchJsonWithTimeout(url, timeoutMs) {
+        timeoutMs = timeoutMs || 9000;
+        const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+        const timer = ctrl ? setTimeout(function () { ctrl.abort(); }, timeoutMs) : null;
+        try {
+          const res = await fetch(url, {
+            cache: "no-store",
+            signal: ctrl ? ctrl.signal : undefined,
+          });
           if (!res.ok) throw new Error("HTTP " + res.status);
           return await res.json();
-        } finally { if (timer) clearTimeout(timer); }
-      }
-
-      async function fetchConcursos(force = false) {
-        const uf = (CONFIG.concursosUF || "sc").toLowerCase();
-        const fresh = !force && readConcursosCache(uf, false);
-        if (fresh) return { ...fresh, source: "cache", stale: false };
-
-        const target = CONFIG.concursosBackendUrl
-          ? CONFIG.concursosBackendUrl.replace(/\/$/, "") + "/" + uf
-          : CONCURSOS_API_BASE + "/" + uf;
-        const attempts = [
-          target,
-          "https://api.allorigins.win/raw?url=" + encodeURIComponent(target),
-          "https://corsproxy.io/?" + encodeURIComponent(target),
-        ];
-        for (const url of attempts) {
-          try {
-            const data = await fetchJsonWithTimeout(url);
-            const payload = {
-              estado: data.estado || uf.toUpperCase(),
-              abertos: Array.isArray(data.concursos_abertos) ? data.concursos_abertos : (Array.isArray(data.abertos) ? data.abertos : []),
-              previstos: Array.isArray(data.concursos_previstos) ? data.concursos_previstos : (Array.isArray(data.previstos) ? data.previstos : []),
-            };
-            if (!payload.abertos.length && !payload.previstos.length) throw new Error("Empty contest payload");
-            writeConcursosCache(uf, payload);
-            return { uf, at: Date.now(), ...payload, source: "network", stale: false };
-          } catch (e) { console.warn("Contest source failed:", url, e); }
-        }
-        const stale = readConcursosCache(uf, true);
-        if (stale) return { ...stale, source: "stale-cache", stale: true };
-        return null;
-      }
-
-      function renderTodayConcursosItems(data) {
-        const box = document.getElementById("todayConcursosList");
-        const status = document.getElementById("todayConcursosStatus");
-        if (!box) return;
-        const isPt = currentLanguage() === "pt";
-        if (status) status.textContent = "";
-        if (!data) {
-          box.innerHTML = `<p class="today-empty">${isPt ? "Não foi possível carregar os concursos agora. Tente novamente em alguns minutos." : "Couldn't load contests right now. Try again in a few minutes."}</p>`;
-          return;
-        }
-        const abertos = data.abertos || [], previstos = data.previstos || [];
-        if (!abertos.length && !previstos.length) {
-          box.innerHTML = `<p class="today-empty">${isPt ? "Sem dados de concursos para este estado no momento." : "No contest data for this state right now."}</p>`;
-          return;
-        }
-        const abertosShown = abertos.slice(0, 4), previstosShown = previstos.slice(0, 3);
-        let html = "";
-        const renderGroup = (label, items) => {
-          if (!items.length) return "";
-          let out = `<div class="today-concursos-group-label">${label}</div>`;
-          out += items.map(item => {
-            const n = normalizeConcursoItem(item);
-            const fav = isConcursoFavorite(item);
-            return `<div class="today-news-item today-concursos-item" style="cursor:default;">\n              <div class="today-concurso-row">\n                <div class="today-concurso-main"><div class="headline"></div><div class="meta"></div></div>\n                <div class="today-concurso-actions">\n                  <button type="button" class="today-concurso-action fav" data-concurso-fav="${encodeURIComponent(concursoFingerprint(item))}" aria-label="${fav ? "Remover favorito" : "Adicionar favorito"}">${fav ? "★" : "☆"}</button>\n                  ${n.url ? `<button type="button" class="today-concurso-action link" data-concurso-link="${encodeURIComponent(n.url)}" aria-label="Abrir concurso">↗</button>` : ""}\n                </div>\n              </div>\n            </div>`;
-          }).join("");
-          return out;
-        };
-        html += renderGroup(isPt ? "Abertos" : "Open", abertosShown);
-        html += renderGroup(isPt ? "Previstos" : "Upcoming", previstosShown);
-        box.innerHTML = html;
-        const all = abertosShown.concat(previstosShown);
-        Array.from(box.querySelectorAll(".today-concurso-item, .today-concursos-item")).forEach((row, i) => {
-          const item = all[i]; if (!item) return;
-          const n = normalizeConcursoItem(item);
-          const h=row.querySelector(".headline"), m=row.querySelector(".meta");
-          if(h) h.textContent=n.orgao;
-          if(m) m.textContent=[n.situacao,n.cargo,n.cidade,n.inscricoes].filter(Boolean).join(" · ") || (isPt ? "Concurso público" : "Public contest");
-        });
-        box.querySelectorAll("[data-concurso-fav]").forEach(btn => btn.addEventListener("click", () => {
-          const fp = decodeURIComponent(btn.dataset.concursoFav || "");
-          const item = all.find(x => concursoFingerprint(x) === fp);
-          if (item) saveConcursoFavorite(item, !isConcursoFavorite(item));
-        }));
-        box.querySelectorAll("[data-concurso-link]").forEach(btn => btn.addEventListener("click", () => {
-          const url = decodeURIComponent(btn.dataset.concursoLink || "");
-          if (/^https?:\/\//i.test(url)) window.open(url, "_blank", "noopener,noreferrer");
-        }));
-        const when = data.at ? new Date(data.at).toLocaleString(isPt ? "pt-BR" : "en-US") : "";
-        const stateLabel = data.estado || (CONFIG.concursosUF || "").toUpperCase();
-        if (status) {
-          if (data.stale) status.textContent = (isPt ? "🟡 API indisponível — mostrando o último dado salvo · " : "🟡 API unavailable — showing the last saved data · ") + when;
-          else status.textContent = (isPt ? "🟢 Atualizado " : "🟢 Updated ") + when + " · " + stateLabel;
-        }
-        const foot = document.createElement("p");
-        foot.className = "today-news-source today-concurso-source";
-        foot.textContent = isPt ? "Fonte: API comunitária de concursos · " + stateLabel : "Source: community contest API · " + stateLabel;
-        box.appendChild(foot);
-      }
-
-      async function renderTodayConcursos(force = false) {
-        const box = document.getElementById("todayConcursosList");
-        const btn = document.getElementById("todayConcursosRefresh");
-        if (!box || concursosRefreshing) return;
-        const isPt = currentLanguage() === "pt";
-        concursosRefreshing = true;
-        if (btn) { btn.disabled = true; btn.textContent = isPt ? "↻ Atualizando…" : "↻ Refreshing…"; }
-        box.innerHTML = `<p class="today-empty">${isPt ? "A carregar concursos…" : "Loading contests…"}</p>`;
-        try {
-          const data = await fetchConcursos(force);
-          concursosLastData = data;
-          renderTodayConcursosItems(data);
-        } catch (e) {
-          const stale = readConcursosCache((CONFIG.concursosUF || "sc").toLowerCase(), true);
-          concursosLastData = stale;
-          renderTodayConcursosItems(stale);
         } finally {
-          concursosRefreshing = false;
-          if (btn) { btn.disabled = false; btn.textContent = isPt ? "↻ Atualizar" : "↻ Refresh"; }
+          if (timer) clearTimeout(timer);
         }
       }
 
-      document.getElementById("todayConcursosRefresh")?.addEventListener("click", () => renderTodayConcursos(true));
+      function normalizeQuotePayload(data) {
+        let item = null;
+        if (Array.isArray(data) && data.length) item = data[0];
+        else if (data && typeof data === "object" && data.q) item = data;
+        if (!item || !item.q) return null;
+        return {
+          q: String(item.q).trim(),
+          a: String(item.a || "Unknown").trim(),
+          date: quoteTodayKey(),
+          source: "zenquotes",
+        };
+      }
+
+      async function fetchDailyQuote(force) {
+        const today = quoteTodayKey();
+        if (!force) {
+          const cached = readQuoteCache();
+          if (cached && cached.date === today && cached.q) {
+            return { ...cached, fromCache: true };
+          }
+        }
+
+        const attempts = [
+          QUOTE_API,
+          "https://api.allorigins.win/raw?url=" + encodeURIComponent(QUOTE_API),
+          "https://corsproxy.io/?" + encodeURIComponent(QUOTE_API),
+        ];
+
+        for (let i = 0; i < attempts.length; i++) {
+          try {
+            const data = await fetchJsonWithTimeout(attempts[i]);
+            const normalized = normalizeQuotePayload(data);
+            if (!normalized) throw new Error("Empty quote");
+            writeQuoteCache(normalized);
+            return { ...normalized, fromCache: false };
+          } catch (e) {
+            console.warn("Quote source failed:", attempts[i], e);
+          }
+        }
+
+        const stale = readQuoteCache();
+        if (stale && stale.q) {
+          return { ...stale, fromCache: true, stale: true };
+        }
+
+        const fb = pickFallbackQuote();
+        const payload = { q: fb.q, a: fb.a, date: today, source: "fallback" };
+        writeQuoteCache(payload);
+        return { ...payload, fromCache: false, fallback: true };
+      }
+
+      function renderTodayQuoteItems(data) {
+        const body = document.getElementById("todayQuoteBody");
+        const author = document.getElementById("todayQuoteAuthor");
+        const source = document.getElementById("todayQuoteSource");
+        if (!body) return;
+        const isPt = currentLanguage() === "pt";
+        if (!data || !data.q) {
+          body.innerHTML = '<p class="today-empty">' + (isPt ? "Não foi possível carregar a frase agora." : "Couldn't load a quote right now.") + "</p>";
+          if (author) author.textContent = "";
+          if (source) source.textContent = "";
+          return;
+        }
+        body.textContent = "\u201c" + data.q + "\u201d";
+        if (author) author.textContent = data.a ? "\u2014 " + data.a : "";
+        if (source) {
+          if (data.fallback) {
+            source.textContent = isPt ? "Frase local · atualiza amanhã" : "Local quote · updates tomorrow";
+          } else if (data.stale) {
+            source.textContent = isPt ? "Última frase salva · ZenQuotes" : "Last saved quote · ZenQuotes";
+          } else {
+            source.textContent = isPt ? "ZenQuotes · frase do dia" : "ZenQuotes · quote of the day";
+          }
+        }
+      }
+
+      async function renderTodayQuote(force) {
+        const body = document.getElementById("todayQuoteBody");
+        const btn = document.getElementById("todayQuoteRefresh");
+        if (!body || quoteRefreshing) return;
+        const isPt = currentLanguage() === "pt";
+        quoteRefreshing = true;
+        if (btn) btn.disabled = true;
+        const cached = readQuoteCache();
+        if (!cached || cached.date !== quoteTodayKey() || force) {
+          body.innerHTML = '<p class="today-empty">' + (isPt ? "A carregar a frase…" : "Loading quote…") + "</p>";
+          const author = document.getElementById("todayQuoteAuthor");
+          const source = document.getElementById("todayQuoteSource");
+          if (author) author.textContent = "";
+          if (source) source.textContent = "";
+        }
+        try {
+          const data = await fetchDailyQuote(!!force);
+          renderTodayQuoteItems(data);
+        } catch (e) {
+          const fb = pickFallbackQuote();
+          renderTodayQuoteItems({ q: fb.q, a: fb.a, fallback: true });
+        } finally {
+          quoteRefreshing = false;
+          if (btn) btn.disabled = false;
+        }
+      }
+
+      document.getElementById("todayQuoteRefresh")?.addEventListener("click", () => renderTodayQuote(true));
 
       function renderTodayWidget() {
         renderTodayMoods();
         renderTodayCalendar();
         renderTodayDaycard();
         renderTodayNews();
-        renderTodayConcursos();
+        renderTodayQuote();
       }
       function initTodayToggle() {
         const btn = document.getElementById("todayToggle");
@@ -11346,7 +11344,8 @@
           const opt = document.createElement("option");
           opt.value = String(item.id);
           const label = (item.text || "").trim() || String(item.id);
-          opt.textContent = item.done ? (isPt ? "✓ " : "✓ ") + label : label;
+          const short = label.length > 42 ? label.slice(0, 39) + "…" : label;
+          opt.textContent = item.done ? "✓ " + short : short;
           sel.appendChild(opt);
         });
         if (prev && Array.from(sel.options).some((o) => o.value === prev)) {
@@ -12002,7 +12001,7 @@
               }
               ${
                 card.saved
-                  ? ""
+                  ? `<button type="button" data-act="unsave">${tr("Unsave")}</button>`
                   : `<button type="button" data-act="save">${tr("Save")} ★</button>`
               }
               <button type="button" class="danger" data-act="del">${tr("Delete")}</button>
@@ -12023,6 +12022,9 @@
           const saveBtn = el.querySelector('[data-act="save"]');
           if (saveBtn)
             saveBtn.addEventListener("click", () => saveDaycard(card));
+          const unsaveBtn = el.querySelector('[data-act="unsave"]');
+          if (unsaveBtn)
+            unsaveBtn.addEventListener("click", () => unsaveDaycard(card));
           el.querySelector('[data-act="del"]').addEventListener("click", () =>
             deleteDaycard(card),
           );
@@ -12126,12 +12128,61 @@
             })
             .catch(() => {
               card.saved = true;
+              card.expiresAt = null;
               showToast(isPt ? "Cartão guardado." : "Card saved.", "updated");
               renderDaycards();
             });
         } else {
           card.saved = true;
+          card.expiresAt = null;
           showToast(isPt ? "Cartão guardado." : "Card saved.", "updated");
+          renderDaycards();
+        }
+      }
+
+      function unsaveDaycard(card) {
+        if (!card) return;
+        const isPt = currentLanguage() === "pt";
+        // Restart the 24h timer from now so the card doesn't vanish immediately
+        const newExpiry = Date.now() + DAYCARD_TTL_MS;
+        if (
+          daycardsSyncLive &&
+          daycardsDb &&
+          card.id &&
+          !String(card.id).startsWith("local-")
+        ) {
+          daycardsDb
+            .collection("daycards")
+            .doc(card.id)
+            .update({ saved: false, expiresAt: newExpiry })
+            .then(() => {
+              showToast(
+                isPt
+                  ? "Cartão deixou de estar guardado — expira em 24h."
+                  : "Card unsaved — expires in 24h.",
+                "updated",
+              );
+            })
+            .catch(() => {
+              card.saved = false;
+              card.expiresAt = newExpiry;
+              showToast(
+                isPt
+                  ? "Cartão deixou de estar guardado — expira em 24h."
+                  : "Card unsaved — expires in 24h.",
+                "updated",
+              );
+              renderDaycards();
+            });
+        } else {
+          card.saved = false;
+          card.expiresAt = newExpiry;
+          showToast(
+            isPt
+              ? "Cartão deixou de estar guardado — expira em 24h."
+              : "Card unsaved — expires in 24h.",
+            "updated",
+          );
           renderDaycards();
         }
       }
