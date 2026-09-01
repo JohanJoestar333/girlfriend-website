@@ -15800,6 +15800,9 @@
       function tpUid() {
         return "tp_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
       }
+      function tpAttr(v) {
+        return String(v == null ? "" : v).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+      }
       function tpDefaultData() {
         return {
           habits: [
@@ -15813,7 +15816,7 @@
           wishlist: [],
           bucket: [],
           romantic: [],
-          study: [],
+          study: { course: { name: "", description: "" }, subjects: [] },
           morning: [
             { id: "m1", text: "Make bed" },
             { id: "m2", text: "Hydrate + light stretch" },
@@ -15860,6 +15863,10 @@
             tpData.goals = Object.assign({ career: [], romantic: [], personal: [] }, tpData.goals || {});
             tpData.affirmations = Object.assign(d.affirmations, tpData.affirmations || {});
             tpData.pomodoro = Object.assign(d.pomodoro, tpData.pomodoro || {});
+            var legacyStudy = Array.isArray(tpData.study) ? tpData.study : [];
+            if (!tpData.study || Array.isArray(tpData.study)) tpData.study = { course: { name: "", description: "" }, subjects: legacyStudy };
+            tpData.study.course = Object.assign({ name: "", description: "" }, tpData.study.course || {});
+            tpData.study.subjects = tpData.study.subjects || [];
           } else tpData = tpDefaultData();
         } catch (e) { tpData = tpDefaultData(); }
       }
@@ -16290,8 +16297,8 @@
       function tpViewWishlist() {
         var pri = { high: "hi", medium: "mid", low: "lo" };
         return '<div class="tp-card"><h3>Wishlist</h3><p class="tp-sub">Things to buy or achieve</p>' +
-          ((tpData.wishlist||[]).map(function(w){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+w.title+'</strong><span><span class="tp-tag '+(pri[w.priority]||'mid')+'">'+(w.priority||'medium')+'</span> <span class="tp-tag '+(w.status==='got'?'done':'')+'">'+(w.status||'want')+'</span> <button type="button" class="tp-btn sm outline" data-tp-wish-status="'+w.id+'">Toggle</button> <button type="button" class="tp-btn danger sm" data-tp-del-wish="'+w.id+'">✕</button></span></div>'+(w.notes?'<div class="meta" style="font-size:0.78rem;color:var(--ink-soft)">'+w.notes+'</div>':'')+'</div>'; }).join('') || '<p class="tp-empty">Wishlist is empty.</p>') +
-          '<div class="tp-row"><input id="tpWishTitle" placeholder="Item…"><select id="tpWishPri"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select><input id="tpWishNotes" placeholder="Notes (optional)"><button type="button" class="tp-btn" id="tpAddWish">Add</button></div></div>';
+          ((tpData.wishlist||[]).map(function(w){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+w.title+'</strong><span><span class="tp-tag '+(pri[w.priority]||'mid')+'">'+(w.priority||'medium')+'</span> <span class="tp-tag '+(w.status==='got'?'done':'')+'">'+(w.status||'want')+'</span> <button type="button" class="tp-btn sm outline" data-tp-wish-status="'+w.id+'">Toggle</button> <button type="button" class="tp-btn danger sm" data-tp-del-wish="'+w.id+'">✕</button></span></div>'+(w.notes?'<div class="meta" style="font-size:0.78rem;color:var(--ink-soft)">'+w.notes+'</div>':'')+(w.link?'<div class="meta" style="font-size:0.78rem"><a href="'+tpAttr(w.link)+'" target="_blank" rel="noopener" style="color:var(--sage)">'+w.link+'</a></div>':'')+'</div>'; }).join('') || '<p class="tp-empty">Wishlist is empty.</p>') +
+          '<div class="tp-row"><input id="tpWishTitle" placeholder="Item…"><select id="tpWishPri"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select><input id="tpWishLink" placeholder="Link (optional)"><input id="tpWishNotes" placeholder="Notes (optional)"><button type="button" class="tp-btn" id="tpAddWish">Add</button></div></div>';
       }
 
       function tpViewBucket() {
@@ -16307,16 +16314,24 @@
       }
 
       function tpViewStudy() {
-        var subs = tpData.study || [];
-        return (subs.length ? subs.map(function(s){
+        var study = tpData.study || { course: { name: "", description: "" }, subjects: [] };
+        var course = study.course || { name: "", description: "" };
+        var subs = study.subjects || [];
+        var html = '<div class="tp-card"><h3>Course</h3><p class="tp-sub">What you\'re studying overall</p>' +
+          (course.name ? '<div class="tp-item"><strong>'+course.name+'</strong>'+(course.description?'<div class="meta" style="font-size:0.78rem;color:var(--ink-soft)">'+course.description+'</div>':'')+'</div>' : '<p class="tp-empty">No course set yet.</p>') +
+          '<div class="tp-row"><input id="tpCourseName" placeholder="Course name…" value="'+tpAttr(course.name)+'"><input id="tpCourseDesc" placeholder="Course description…" value="'+tpAttr(course.description)+'"><button type="button" class="tp-btn" id="tpSaveCourse">Save</button></div></div>';
+        html += (subs.length ? subs.map(function(s){
           var portions = s.portions || [];
           var done = portions.filter(function(p){ return p.done; }).length;
           return '<div class="tp-card"><div class="tp-item-head"><h3>'+s.name+'</h3><button type="button" class="tp-btn danger sm" data-tp-del-subject="'+s.id+'">✕</button></div>' +
+            (s.description ? '<p class="tp-sub">'+s.description+'</p>' : '') +
             '<p class="tp-sub">'+done+' / '+portions.length+' portions applied</p>' +
             (portions.length ? portions.map(function(p){ return '<label class="tp-check '+(p.done?'done':'')+'"><input type="checkbox" data-tp-portion="'+p.id+'" data-subject="'+s.id+'" '+(p.done?'checked':'')+'><span style="flex:1">'+p.text+'</span><button type="button" class="tp-btn danger sm" data-tp-del-portion="'+p.id+'" data-subject="'+s.id+'">✕</button></label>'; }).join('') : '<p class="tp-empty">No portions added yet.</p>') +
-            '<div class="tp-row"><input data-new-portion="'+s.id+'" placeholder="Add a portion you\'re applying to…"><button type="button" class="tp-btn" data-tp-add-portion="'+s.id+'">Add</button></div></div>';
-        }).join('') : '<p class="tp-empty">No subjects yet — add one below.</p>') +
-          '<div class="tp-card"><h3>New subject</h3><p class="tp-sub">Add a subject you\'re studying</p><div class="tp-row"><input id="tpNewSubject" placeholder="Subject name…"><button type="button" class="tp-btn" id="tpAddSubject">Add subject</button></div></div>';
+            '<div class="tp-row"><input data-new-portion="'+s.id+'" placeholder="Add a portion you\'re applying to…"><button type="button" class="tp-btn" data-tp-add-portion="'+s.id+'">Add</button></div>' +
+            '<div class="tp-row"><input data-edit-subject-name="'+s.id+'" placeholder="Subject name…" value="'+tpAttr(s.name)+'"><input data-edit-subject-desc="'+s.id+'" placeholder="Description…" value="'+tpAttr(s.description)+'"><button type="button" class="tp-btn outline sm" data-tp-save-subject="'+s.id+'">Save</button></div></div>';
+        }).join('') : '<p class="tp-empty">No subjects yet — add one below.</p>');
+        html += '<div class="tp-card"><h3>New subject</h3><p class="tp-sub">Add a subject you\'re studying</p><div class="tp-row"><input id="tpNewSubject" placeholder="Subject name…"><input id="tpNewSubjectDesc" placeholder="Description (optional)…"><button type="button" class="tp-btn" id="tpAddSubject">Add subject</button></div></div>';
+        return html;
       }
 
       function tpBindView() {
@@ -16354,7 +16369,7 @@
         document.querySelectorAll("[data-tp-goal-prog]").forEach(function(b){ b.addEventListener("click", function(){ var cat=b.getAttribute("data-cat"); var id=b.getAttribute("data-tp-goal-prog"); var g=(tpData.goals[cat]||[]).find(function(x){return x.id===id;}); if(!g) return; g.progress=Math.min(100,(g.progress||0)+10); if(g.progress>=100) g.done=true; tpSave(); tpRender(); }); });
         document.querySelectorAll("[data-tp-del-gcat]").forEach(function(b){ b.addEventListener("click", function(){ var cat=b.getAttribute("data-tp-del-gcat"); var id=b.getAttribute("data-id"); tpData.goals[cat]=(tpData.goals[cat]||[]).filter(function(x){return x.id!==id;}); tpSave(); tpRender(); }); });
         var addWish=document.getElementById("tpAddWish");
-        if(addWish) addWish.addEventListener("click", function(){ var title=((document.getElementById("tpWishTitle")||{}).value||"").trim(); if(!title) return; tpData.wishlist.push({id:tpUid(),title:title,priority:((document.getElementById("tpWishPri")||{}).value)||"medium",notes:((document.getElementById("tpWishNotes")||{}).value)||"",status:"want"}); tpSave(); tpRender(); });
+        if(addWish) addWish.addEventListener("click", function(){ var title=((document.getElementById("tpWishTitle")||{}).value||"").trim(); if(!title) return; tpData.wishlist.push({id:tpUid(),title:title,priority:((document.getElementById("tpWishPri")||{}).value)||"medium",link:((document.getElementById("tpWishLink")||{}).value||"").trim(),notes:((document.getElementById("tpWishNotes")||{}).value)||"",status:"want"}); tpSave(); tpRender(); });
         document.querySelectorAll("[data-tp-wish-status]").forEach(function(b){ b.addEventListener("click", function(){ var w=tpData.wishlist.find(function(x){return x.id===b.getAttribute("data-tp-wish-status");}); if(w){ w.status=w.status==="got"?"want":"got"; tpSave(); tpRender(); } }); });
         document.querySelectorAll("[data-tp-del-wish]").forEach(function(b){ b.addEventListener("click", function(){ tpData.wishlist=tpData.wishlist.filter(function(x){return x.id!==b.getAttribute("data-tp-del-wish");}); tpSave(); tpRender(); }); });
         var addBucket=document.getElementById("tpAddBucket");
@@ -16366,11 +16381,14 @@
         document.querySelectorAll("[data-tp-rom-status]").forEach(function(b){ b.addEventListener("click", function(){ var r=tpData.romantic.find(function(x){return x.id===b.getAttribute("data-tp-rom-status");}); if(!r) return; var cycle=["idea","planned","done"]; r.status=cycle[(cycle.indexOf(r.status||"idea")+1)%cycle.length]; tpSave(); tpRender(); }); });
         document.querySelectorAll("[data-tp-del-rom]").forEach(function(b){ b.addEventListener("click", function(){ tpData.romantic=tpData.romantic.filter(function(x){return x.id!==b.getAttribute("data-tp-del-rom");}); tpSave(); tpRender(); }); });
         var addSubject=document.getElementById("tpAddSubject");
-        if(addSubject) addSubject.addEventListener("click", function(){ var t=((document.getElementById("tpNewSubject")||{}).value||"").trim(); if(!t) return; tpData.study=tpData.study||[]; tpData.study.push({id:tpUid(),name:t,portions:[]}); tpSave(); tpRender(); });
-        document.querySelectorAll("[data-tp-del-subject]").forEach(function(b){ b.addEventListener("click", function(e){ e.preventDefault(); tpData.study=(tpData.study||[]).filter(function(x){return x.id!==b.getAttribute("data-tp-del-subject");}); tpSave(); tpRender(); }); });
-        document.querySelectorAll("[data-tp-add-portion]").forEach(function(b){ b.addEventListener("click", function(){ var sid=b.getAttribute("data-tp-add-portion"); var input=document.querySelector('[data-new-portion="'+sid+'"]'); var t=((input||{}).value||"").trim(); if(!t) return; var s=(tpData.study||[]).find(function(x){return x.id===sid;}); if(!s) return; s.portions=s.portions||[]; s.portions.push({id:tpUid(),text:t,done:false}); tpSave(); tpRender(); }); });
-        document.querySelectorAll("[data-tp-portion]").forEach(function(el){ el.addEventListener("change", function(){ var sid=el.getAttribute("data-subject"); var pid=el.getAttribute("data-tp-portion"); var s=(tpData.study||[]).find(function(x){return x.id===sid;}); if(!s) return; var p=(s.portions||[]).find(function(x){return x.id===pid;}); if(p){ p.done=el.checked; tpSave(); tpRender(); } }); });
-        document.querySelectorAll("[data-tp-del-portion]").forEach(function(b){ b.addEventListener("click", function(e){ e.preventDefault(); var sid=b.getAttribute("data-subject"); var pid=b.getAttribute("data-tp-del-portion"); var s=(tpData.study||[]).find(function(x){return x.id===sid;}); if(!s) return; s.portions=(s.portions||[]).filter(function(x){return x.id!==pid;}); tpSave(); tpRender(); }); });
+        if(addSubject) addSubject.addEventListener("click", function(){ var t=((document.getElementById("tpNewSubject")||{}).value||"").trim(); if(!t) return; var d=((document.getElementById("tpNewSubjectDesc")||{}).value||"").trim(); tpData.study=tpData.study||{course:{name:"",description:""},subjects:[]}; tpData.study.subjects=tpData.study.subjects||[]; tpData.study.subjects.push({id:tpUid(),name:t,description:d,portions:[]}); tpSave(); tpRender(); });
+        document.querySelectorAll("[data-tp-save-subject]").forEach(function(b){ b.addEventListener("click", function(){ var sid=b.getAttribute("data-tp-save-subject"); var s=(tpData.study.subjects||[]).find(function(x){return x.id===sid;}); if(!s) return; var nameEl=document.querySelector('[data-edit-subject-name="'+sid+'"]'); var descEl=document.querySelector('[data-edit-subject-desc="'+sid+'"]'); var n=((nameEl||{}).value||"").trim(); if(n) s.name=n; s.description=((descEl||{}).value||"").trim(); tpSave(); tpRender(); }); });
+        var saveCourse=document.getElementById("tpSaveCourse");
+        if(saveCourse) saveCourse.addEventListener("click", function(){ var n=((document.getElementById("tpCourseName")||{}).value||"").trim(); var d=((document.getElementById("tpCourseDesc")||{}).value||"").trim(); tpData.study=tpData.study||{course:{name:"",description:""},subjects:[]}; tpData.study.course={name:n,description:d}; tpSave(); tpRender(); });
+        document.querySelectorAll("[data-tp-del-subject]").forEach(function(b){ b.addEventListener("click", function(e){ e.preventDefault(); tpData.study.subjects=(tpData.study.subjects||[]).filter(function(x){return x.id!==b.getAttribute("data-tp-del-subject");}); tpSave(); tpRender(); }); });
+        document.querySelectorAll("[data-tp-add-portion]").forEach(function(b){ b.addEventListener("click", function(){ var sid=b.getAttribute("data-tp-add-portion"); var input=document.querySelector('[data-new-portion="'+sid+'"]'); var t=((input||{}).value||"").trim(); if(!t) return; var s=(tpData.study.subjects||[]).find(function(x){return x.id===sid;}); if(!s) return; s.portions=s.portions||[]; s.portions.push({id:tpUid(),text:t,done:false}); tpSave(); tpRender(); }); });
+        document.querySelectorAll("[data-tp-portion]").forEach(function(el){ el.addEventListener("change", function(){ var sid=el.getAttribute("data-subject"); var pid=el.getAttribute("data-tp-portion"); var s=(tpData.study.subjects||[]).find(function(x){return x.id===sid;}); if(!s) return; var p=(s.portions||[]).find(function(x){return x.id===pid;}); if(p){ p.done=el.checked; tpSave(); tpRender(); } }); });
+        document.querySelectorAll("[data-tp-del-portion]").forEach(function(b){ b.addEventListener("click", function(e){ e.preventDefault(); var sid=b.getAttribute("data-subject"); var pid=b.getAttribute("data-tp-del-portion"); var s=(tpData.study.subjects||[]).find(function(x){return x.id===sid;}); if(!s) return; s.portions=(s.portions||[]).filter(function(x){return x.id!==pid;}); tpSave(); tpRender(); }); });
       }
 
       function initThommyPersonal() {
