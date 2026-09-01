@@ -4024,6 +4024,44 @@
         border-color: var(--green);
         color: var(--cream);
       }
+      .games-multi-select {
+        width: 100%;
+        max-height: 160px;
+        overflow-y: auto;
+        border: 1.5px solid rgba(43, 38, 34, 0.12);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        padding: 6px 0;
+      }
+      html[data-theme="dark"] .games-multi-select {
+        border-color: rgba(255, 255, 255, 0.12);
+      }
+      .games-multi-option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 14px;
+        cursor: pointer;
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: var(--ink);
+        user-select: none;
+      }
+      .games-multi-option:hover {
+        background: var(--cream-dim);
+      }
+      .games-multi-option input {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--green);
+        flex-shrink: 0;
+      }
+      .games-multi-hint {
+        margin-top: 6px;
+        font-size: 0.7rem;
+        color: var(--ink-soft);
+        font-weight: 600;
+      }
       .games-start-btn {
         display: block;
         width: 100%;
@@ -5600,25 +5638,8 @@
               </div>
             </div>
 
-            <!-- Would You Rather: prediction flow -->
-            <div class="games-wyr-row" id="wyrRow" hidden>
-              <button type="button" class="btn outline" id="wyrPredictBtn">🔮 Predict my answer first</button>
-              <div class="games-wyr-reveal" id="wyrRevealRow" hidden>
-                <span>Did the prediction match?</span>
-                <button type="button" class="btn" data-predict="yes">✔ Yes</button>
-                <button type="button" class="btn outline" data-predict="no">✘ No</button>
-              </div>
-            </div>
-
-            <!-- Chaos: match / disaster flow -->
-            <div class="games-chaos-row" id="chaosRow" hidden>
-              <span class="games-chaos-hint">Both answered — did you match?</span>
-              <button type="button" class="btn" data-chaos="match">🎯 Match!</button>
-              <button type="button" class="btn outline" data-chaos="disaster">😂 Disaster!</button>
-            </div>
-
             <div class="games-action-row">
-              <button type="button" class="btn outline" id="cardSkipBtn">Skip</button>
+              <button type="button" class="btn" id="cardSkipBtn">Skip</button>
               <button type="button" class="btn" id="cardNextBtn">Next Card →</button>
             </div>
 
@@ -6445,6 +6466,8 @@
         Categories: "Categorias",
         Rounds: "Rodadas",
         "∞ Endless": "∞ Sem Fim",
+        "All categories": "Todas as categorias",
+        "Select one or more categories": "Selecione uma ou mais categorias",
         "Start Game": "Começar Jogo",
         "← Back to Our Games": "← Voltar aos Nossos Jogos",
         "✕ Exit": "✕ Sair",
@@ -13935,9 +13958,8 @@
       function getCardOfDay() {
         const key = todayKeyStr();
         const saved = gamesLoadJSON(GAMES_LS_DAILY, null);
-        if (saved && saved.date === key) return saved;
-        const ids = Object.keys(GAMES_META);
-        const gameId = ids[Math.floor(Math.random() * ids.length)];
+        if (saved && saved.date === key && saved.gameId === "wyr") return saved;
+        const gameId = "wyr";
         const pool = GAMES_DATA[gameId] || [];
         const card = pool[Math.floor(Math.random() * pool.length)];
         const rec = { date: key, gameId, cardId: card ? card.id : null };
@@ -14066,26 +14088,47 @@
           total + " " + tr("cards available");
         const cats = Array.from(new Set((GAMES_DATA[gameId] || []).map((c) => c.category)));
         const catBox = document.getElementById("lobbyCategories");
+        gState.lobbyCategories = null;
         catBox.innerHTML =
-          `<button type="button" class="games-chip active" data-cat="__all">${tr("All")}</button>` +
-          cats.map((c) => `<button type="button" class="games-chip" data-cat="${c}">${tr(c)}</button>`).join("");
-        catBox.querySelectorAll(".games-chip").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            if (btn.dataset.cat === "__all") {
-              catBox.querySelectorAll(".games-chip").forEach((b) => b.classList.remove("active"));
-              btn.classList.add("active");
-              gState.lobbyCategories = null;
-            } else {
-              catBox.querySelector('[data-cat="__all"]').classList.remove("active");
-              btn.classList.toggle("active");
-              const active = Array.from(catBox.querySelectorAll(".games-chip.active")).map((b) => b.dataset.cat);
-              if (!active.length) {
-                catBox.querySelector('[data-cat="__all"]').classList.add("active");
-                gState.lobbyCategories = null;
-              } else {
-                gState.lobbyCategories = active;
-              }
+          `<div class="games-multi-select" id="lobbyCatMulti">` +
+          `<label class="games-multi-option"><input type="checkbox" data-cat="__all" checked> ${tr("All categories")}</label>` +
+          cats
+            .map(
+              (c) =>
+                `<label class="games-multi-option"><input type="checkbox" data-cat="${c}"> ${tr(c)}</label>`,
+            )
+            .join("") +
+          `</div><p class="games-multi-hint">${tr("Select one or more categories")}</p>`;
+        const syncCats = () => {
+          const boxes = Array.from(catBox.querySelectorAll('input[type="checkbox"]'));
+          const allBox = catBox.querySelector('input[data-cat="__all"]');
+          const selected = boxes
+            .filter((b) => b.checked && b.dataset.cat !== "__all")
+            .map((b) => b.dataset.cat);
+          if (allBox && allBox.checked) {
+            boxes.forEach((b) => {
+              if (b.dataset.cat !== "__all") b.checked = false;
+            });
+            gState.lobbyCategories = null;
+          } else if (!selected.length) {
+            if (allBox) allBox.checked = true;
+            gState.lobbyCategories = null;
+          } else {
+            if (allBox) allBox.checked = false;
+            gState.lobbyCategories = selected;
+          }
+        };
+        catBox.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+          input.addEventListener("change", () => {
+            if (input.dataset.cat === "__all" && input.checked) {
+              catBox.querySelectorAll('input[type="checkbox"]').forEach((b) => {
+                if (b.dataset.cat !== "__all") b.checked = false;
+              });
+            } else if (input.dataset.cat !== "__all" && input.checked) {
+              const allBox = catBox.querySelector('input[data-cat="__all"]');
+              if (allBox) allBox.checked = false;
             }
+            syncCats();
           });
         });
         const roundsBox = document.getElementById("lobbyRounds");
@@ -14119,7 +14162,13 @@
         renderCurrentGameCard();
       }
 
-      function goNextGameCard() {
+      function goNextGameCard(played) {
+        if (played) {
+          const card = currentGameCard();
+          if (card) gState.session.categories.push(card.category);
+          gState.session.cardsSeen++;
+          bumpGameStat(gState.gameId, "played", 1);
+        }
         gState.roundsPlayed++;
         if (gState.maxRounds > 0 && gState.roundsPlayed >= gState.maxRounds) {
           endGame();
@@ -14135,7 +14184,6 @@
           }
         }
         markShown(gState.gameId, gState.deck[gState.idx].id);
-        bumpGameStat(gState.gameId, "played", 1);
         renderCurrentGameCard();
       }
 
@@ -14167,15 +14215,6 @@
         const pct = gState.maxRounds > 0 ? Math.min(100, Math.round((gState.roundsPlayed / gState.maxRounds) * 100)) : 100;
         document.getElementById("gamesProgressFill").style.width = pct + "%";
 
-
-        document.getElementById("wyrRow").hidden = meta.mechanic !== "predict";
-        document.getElementById("chaosRow").hidden = meta.mechanic !== "match";
-        document.getElementById("wyrRevealRow").hidden = true;
-        document.getElementById("wyrPredictBtn").hidden = false;
-
-        gState.session.categories.push(card.category);
-        gState.session.cardsSeen++;
-
         cardEl.style.animation = "none";
         void cardEl.offsetWidth;
         cardEl.style.animation = "";
@@ -14185,16 +14224,7 @@
         const meta = GAMES_META[gState.gameId];
         document.getElementById("endEmoji").textContent = meta.emoji;
         document.getElementById("endTitle").textContent = tr("Nicely played ♥");
-        let statsHtml = tr("Cards played") + ": " + gState.session.cardsSeen;
-        if (meta.mechanic === "match") {
-          statsHtml +=
-            "<br>" + tr("Matches") + ": " + gState.session.matches + " · " + tr("Disasters") + ": " + gState.session.disasters;
-        } else if (meta.mechanic === "predict") {
-          const pct = gState.session.predictTotal
-            ? Math.round((100 * gState.session.predictCorrect) / gState.session.predictTotal) + "%"
-            : "—";
-          statsHtml += "<br>" + tr("Prediction accuracy") + ": " + pct;
-        }
+        const statsHtml = tr("Cards played") + ": " + gState.session.cardsSeen;
         document.getElementById("endStats").innerHTML = statsHtml;
         const summaryBox = document.getElementById("futureSummary");
         if (meta.mechanic === "summary") {
@@ -14209,8 +14239,8 @@
       function initGames() {
         renderGamesHub();
 
-        document.getElementById("cardSkipBtn")?.addEventListener("click", goNextGameCard);
-        document.getElementById("cardNextBtn")?.addEventListener("click", goNextGameCard);
+        document.getElementById("cardSkipBtn")?.addEventListener("click", () => goNextGameCard(false));
+        document.getElementById("cardNextBtn")?.addEventListener("click", () => goNextGameCard(true));
         document.getElementById("cardEndBtn")?.addEventListener("click", endGame);
         document.getElementById("gamesExitBtn")?.addEventListener("click", () => showGamesView("hub"));
         document.querySelectorAll("[data-games-back]").forEach((b) =>
@@ -14222,33 +14252,6 @@
           showToast(tr("Random game") + ": " + tr(GAMES_META[pick].title), "updated");
           openLobby(pick);
         });
-        document.getElementById("wyrPredictBtn")?.addEventListener("click", () => {
-          document.getElementById("wyrPredictBtn").hidden = true;
-          document.getElementById("wyrRevealRow").hidden = false;
-        });
-        document.querySelectorAll("[data-predict]").forEach((b) =>
-          b.addEventListener("click", () => {
-            const correct = b.dataset.predict === "yes";
-            gState.session.predictTotal++;
-            if (correct) gState.session.predictCorrect++;
-            bumpGameStat(gState.gameId, "predictTotal", 1);
-            if (correct) bumpGameStat(gState.gameId, "predictCorrect", 1);
-            goNextGameCard();
-          }),
-        );
-        document.querySelectorAll("[data-chaos]").forEach((b) =>
-          b.addEventListener("click", () => {
-            const matched = b.dataset.chaos === "match";
-            if (matched) {
-              gState.session.matches++;
-              bumpGameStat(gState.gameId, "matches", 1);
-            } else {
-              gState.session.disasters++;
-              bumpGameStat(gState.gameId, "disasters", 1);
-            }
-            goNextGameCard();
-          }),
-        );
         document.getElementById("lobbyStartBtn")?.addEventListener("click", () => {
           startGame(gState.lobbyGameId, gState.lobbyCategories, gState.lobbyRounds);
         });
