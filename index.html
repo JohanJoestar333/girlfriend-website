@@ -52,7 +52,7 @@
    FIREBASE
    Optional. Fill CONFIG.firebase and publish Firestore rules for
    collections "bucketlist", "musicsongs", "memories", "albums", "calendar",
-   "daycards", and "moods" (doc "shared" — Today widget moods, 24h TTL).
+   "daycards", "moods", and optionally "thommyPersonal" (doc "main") (doc "shared" — Today widget moods, 24h TTL).
    ============================================================ */
 
       :root {
@@ -4248,6 +4248,125 @@
       [data-tile="flirty"] { --tile-accent: var(--blush); }
       [data-tile="chaos"] { --tile-accent: var(--amber); }
       [data-tile="future"] { --tile-accent: var(--plum); }
+    
+      /* -------- Thommy Personal dashboard -------- */
+      .tp-wrap { max-width: 1080px; margin: 0 auto; padding: 32px 24px 80px; }
+      .tp-gate {
+        max-width: 400px; margin: 48px auto; text-align: center;
+        background: var(--surface); border-radius: var(--radius-lg);
+        padding: 36px 28px; box-shadow: var(--shadow-soft);
+        border: 1px solid rgba(43,38,34,0.07);
+      }
+      .tp-gate h2 { font-family: var(--serif); font-size: 1.8rem; margin-bottom: 8px; }
+      .tp-gate p { color: var(--ink-soft); font-size: 0.9rem; margin-bottom: 20px; }
+      .tp-gate input {
+        width: 100%; padding: 12px 14px; border-radius: var(--radius-sm);
+        border: 1.5px solid rgba(43,38,34,0.12); background: var(--cream-dim);
+        color: var(--ink); font-size: 1rem; margin-bottom: 12px; text-align: center;
+        letter-spacing: 0.2em;
+      }
+      .tp-gate .tp-err { color: #c45; font-size: 0.82rem; min-height: 1.2em; margin-bottom: 8px; }
+      .tp-layout { display: grid; grid-template-columns: 200px 1fr; gap: 22px; align-items: start; }
+      @media (max-width: 800px) {
+        .tp-layout { grid-template-columns: 1fr; }
+        .tp-nav { display: flex; flex-wrap: wrap; gap: 6px; position: sticky; top: 70px; z-index: 5;
+          background: var(--cream); padding: 8px 0; }
+        .tp-nav button { flex: 1 1 auto; text-align: left; }
+      }
+      .tp-nav {
+        background: var(--surface); border-radius: var(--radius-md); padding: 12px;
+        border: 1px solid rgba(43,38,34,0.07); box-shadow: var(--shadow-tiny);
+        position: sticky; top: 80px;
+      }
+      .tp-nav button {
+        display: block; width: 100%; text-align: left; padding: 9px 12px;
+        border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600;
+        color: var(--ink-soft); margin-bottom: 2px; transition: background .15s, color .15s;
+      }
+      .tp-nav button:hover { background: var(--cream-dim); color: var(--ink); }
+      .tp-nav button.active { background: var(--green); color: var(--cream); }
+      .tp-view { display: none; }
+      .tp-view.active { display: block; animation: fadeIn .35s ease; }
+      .tp-card {
+        background: var(--surface); border-radius: var(--radius-md); padding: 18px;
+        border: 1px solid rgba(43,38,34,0.07); box-shadow: var(--shadow-tiny); margin-bottom: 14px;
+      }
+      .tp-card h3 { font-family: var(--serif); font-size: 1.25rem; margin-bottom: 6px; }
+      .tp-card .tp-sub { font-size: 0.78rem; color: var(--ink-soft); margin-bottom: 12px; }
+      .tp-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+      .tp-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+      @media (max-width: 700px) {
+        .tp-grid-2, .tp-grid-3 { grid-template-columns: 1fr; }
+      }
+      .tp-stat {
+        background: var(--cream-dim); border-radius: var(--radius-sm); padding: 14px;
+        text-align: center;
+      }
+      .tp-stat .n { font-family: var(--serif); font-size: 1.7rem; font-weight: 600; color: var(--green-deep); }
+      .tp-stat .l { font-size: 0.72rem; color: var(--ink-soft); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+      .tp-check {
+        display: flex; align-items: flex-start; gap: 10px; padding: 8px 0;
+        border-bottom: 1px solid rgba(43,38,34,0.06);
+      }
+      .tp-check:last-child { border-bottom: none; }
+      .tp-check input { width: 18px; height: 18px; accent-color: var(--green); margin-top: 2px; flex-shrink: 0; }
+      .tp-check.done span { text-decoration: line-through; opacity: 0.55; }
+      .tp-check .meta { font-size: 0.72rem; color: var(--ink-soft); }
+      .tp-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+      .tp-row input, .tp-row select, .tp-row textarea {
+        flex: 1 1 140px; padding: 9px 12px; border-radius: var(--radius-sm);
+        border: 1.5px solid rgba(43,38,34,0.12); background: var(--cream-dim); color: var(--ink); font: inherit;
+      }
+      .tp-row textarea { min-height: 64px; width: 100%; flex: 1 1 100%; }
+      .tp-btn {
+        padding: 9px 14px; border-radius: 999px; background: var(--green); color: var(--cream);
+        font-weight: 700; font-size: 0.82rem;
+      }
+      .tp-btn.outline { background: transparent; color: var(--green-deep); border: 1.5px solid var(--green); }
+      .tp-btn.danger { background: transparent; color: #b55; border: 1.5px solid #c88; }
+      .tp-btn.sm { padding: 5px 10px; font-size: 0.75rem; }
+      .tp-progress {
+        height: 8px; background: var(--cream-dim); border-radius: 999px; overflow: hidden; margin: 8px 0;
+      }
+      .tp-progress > i { display: block; height: 100%; background: var(--green); border-radius: 999px; }
+      .tp-tag {
+        display: inline-block; font-size: 0.68rem; font-weight: 700; padding: 3px 8px;
+        border-radius: 999px; background: var(--sage-dim); color: var(--green-deep); margin-right: 4px;
+      }
+      .tp-tag.hi { background: #fde8d0; color: #9a5b1a; }
+      .tp-tag.mid { background: var(--sage-dim); color: var(--green-deep); }
+      .tp-tag.lo { background: var(--cream-dim); color: var(--ink-soft); }
+      .tp-tag.done { background: var(--sage-dim); color: var(--green); }
+      .tp-item {
+        padding: 12px; border-radius: var(--radius-sm); background: var(--cream-dim); margin-bottom: 8px;
+      }
+      .tp-item-head { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+      .tp-item-head strong { font-size: 0.92rem; }
+      .tp-bars { display: flex; align-items: flex-end; gap: 4px; height: 100px; margin-top: 8px; }
+      .tp-bars span {
+        flex: 1; background: var(--green); border-radius: 4px 4px 0 0; min-height: 3px; opacity: 0.85;
+      }
+      .tp-pomodoro { text-align: center; padding: 20px 0; }
+      .tp-timer {
+        font-family: var(--serif); font-size: 3.4rem; font-weight: 600; letter-spacing: 0.04em;
+        color: var(--green-deep); margin: 12px 0;
+      }
+      .tp-modes { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+      .tp-modes button.active { background: var(--green); color: var(--cream); }
+      .tp-affirm {
+        font-family: var(--serif); font-size: 1.35rem; font-style: italic; line-height: 1.45;
+        text-align: center; padding: 24px 16px; color: var(--ink);
+      }
+      .tp-empty { color: var(--ink-soft); font-size: 0.88rem; padding: 8px 0; }
+      .tp-head { margin-bottom: 18px; }
+      .tp-head h2 { font-family: var(--serif); font-size: 2rem; }
+      .tp-head .eyebrow { margin-bottom: 4px; }
+      html[data-theme="dark"] .tp-gate,
+      html[data-theme="dark"] .tp-nav,
+      html[data-theme="dark"] .tp-card { border-color: rgba(255,255,255,0.08); }
+      html[data-theme="dark"] .tp-check { border-bottom-color: rgba(255,255,255,0.06); }
+      html[data-theme="dark"] .tp-tag.hi { background: #3a2a18; color: #e8b86a; }
+
     </style>
     <!-- Firebase — only used for the Bucket List's cross-device sync.
      Nothing loads or runs unless CONFIG.firebase below is filled in. -->
@@ -4400,6 +4519,9 @@
               <button class="tab-btn" data-tab="games" role="menuitem">
                 Our Games
               </button>
+              <button class="tab-btn" data-tab="personal" role="menuitem">
+                Thommy personal
+              </button>
             </div>
           </div>
         </nav>
@@ -4488,6 +4610,7 @@
           Day Cards<span class="tab-dot" data-dot-for="daycards" hidden></span>
         </button>
         <button class="tab-btn" data-tab="games">Our Games</button>
+        <button class="tab-btn" data-tab="personal">Thommy personal</button>
       </div>
     </header>
 
@@ -5663,6 +5786,46 @@
           </div>
         </div>
       </section>
+    </div>
+
+
+    <!-- ============================= TAB: THOMMY PERSONAL ============================= -->
+    <div class="tab-panel" id="tab-personal">
+      <div class="tp-wrap">
+        <div id="tpGate" class="tp-gate">
+          <div class="eyebrow">Private</div>
+          <h2>Thommy personal</h2>
+          <p>Your growth space. Enter the password to continue.</p>
+          <input type="password" id="tpPassInput" placeholder="••••••" autocomplete="off" />
+          <div class="tp-err" id="tpPassErr"></div>
+          <button type="button" class="tp-btn" id="tpUnlockBtn">Unlock</button>
+        </div>
+
+        <div id="tpApp" hidden>
+          <div class="tp-head">
+            <p class="eyebrow">Personal development</p>
+            <h2>Thommy personal</h2>
+          </div>
+          <div class="tp-layout">
+            <nav class="tp-nav" id="tpNav">
+              <button type="button" data-tp="dash" class="active">Dashboard</button>
+              <button type="button" data-tp="habits">Goals & Habits</button>
+              <button type="button" data-tp="analytics">Analytics</button>
+              <button type="button" data-tp="pomodoro">Focus / Pomodoro</button>
+              <button type="button" data-tp="morning">Morning Routine</button>
+              <button type="button" data-tp="night">Night Routine</button>
+              <button type="button" data-tp="affirm">Affirmations</button>
+              <button type="button" data-tp="goals">Goals</button>
+              <button type="button" data-tp="wishlist">Wishlist</button>
+              <button type="button" data-tp="bucket">Bucket List</button>
+              <button type="button" data-tp="romantic">Romantic Life</button>
+            </nav>
+            <div class="tp-main" id="tpMain">
+              <!-- views rendered by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ============================= LIGHTBOX ============================= -->
@@ -7182,7 +7345,7 @@
       }
 
       // Tabs that live under the ··· "More" menu (add future ones here)
-      const MORE_TABS = ["calendar", "daycards", "games"];
+      const MORE_TABS = ["calendar", "daycards", "games", "personal"];
 
       // Valid tab ids — used for URL hash routing (#album, #music, #calendar, …)
       const VALID_TABS = [
@@ -7193,6 +7356,7 @@
         "bucketlist",
         "quizzes",
         "music",
+        "personal",
         "calendar",
         "daycards",
         "games",
@@ -7264,6 +7428,11 @@
         if (name === "games" && typeof renderGamesHub === "function") {
           try {
             renderGamesHub();
+          } catch (e) {}
+        }
+        if (name === "personal" && typeof tpRender === "function") {
+          try {
+            tpRender();
           } catch (e) {}
         }
 
@@ -14760,6 +14929,446 @@
         });
       }
       initGames();
+
+
+      // ===================== THOMMY PERSONAL =====================
+      const TP_PASS = "122100";
+      const TP_LS = "thommyPersonal_v1";
+      const TP_UNLOCK = "thommyPersonalUnlocked";
+
+      function tpToday() {
+        const d = new Date();
+        return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+      }
+      function tpUid() {
+        return "tp_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+      }
+      function tpDefaultData() {
+        return {
+          habits: [
+            { id: "h1", name: "Exercise / move body", streak: 0, best: 0, lastDone: "", log: {} },
+            { id: "h2", name: "Read 20 minutes", streak: 0, best: 0, lastDone: "", log: {} },
+            { id: "h3", name: "Drink enough water", streak: 0, best: 0, lastDone: "", log: {} },
+            { id: "h4", name: "No doomscroll after 22:00", streak: 0, best: 0, lastDone: "", log: {} },
+          ],
+          dailyGoals: {},
+          goals: { career: [], romantic: [], personal: [] },
+          wishlist: [],
+          bucket: [],
+          romantic: [],
+          morning: [
+            { id: "m1", text: "Make bed" },
+            { id: "m2", text: "Hydrate + light stretch" },
+            { id: "m3", text: "Review top 3 priorities" },
+            { id: "m4", text: "Affirmation (1 min)" },
+          ],
+          night: [
+            { id: "n1", text: "Phone away 30 min before bed" },
+            { id: "n2", text: "Plan tomorrow's top 3" },
+            { id: "n3", text: "Journal / one gratitude" },
+            { id: "n4", text: "Wind-down (no heavy screens)" },
+          ],
+          routineLog: {},
+          pomodoro: { sessions: [], mode: "focus", focusMin: 25, shortMin: 5, longMin: 15 },
+          affirmations: {
+            custom: [
+              "I am becoming the man I decided to be.",
+              "Opportunities find me because I show up consistently.",
+              "My relationship grows through presence, honesty, and care.",
+              "I finish what matters.",
+            ],
+            lastIndex: 0,
+            practiced: {},
+            futureSelf: "",
+          },
+          reflections: {},
+          focusByDay: {},
+        };
+      }
+
+      let tpData = null;
+      let tpView = "dash";
+      let tpPomodoro = { running: false, endsAt: 0, left: 25 * 60, mode: "focus", timer: null };
+
+      function tpLoad() {
+        try {
+          const raw = localStorage.getItem(TP_LS);
+          if (raw) {
+            tpData = Object.assign(tpDefaultData(), JSON.parse(raw));
+            const d = tpDefaultData();
+            tpData.habits = tpData.habits && tpData.habits.length ? tpData.habits : d.habits;
+            tpData.morning = tpData.morning && tpData.morning.length ? tpData.morning : d.morning;
+            tpData.night = tpData.night && tpData.night.length ? tpData.night : d.night;
+            tpData.goals = Object.assign({ career: [], romantic: [], personal: [] }, tpData.goals || {});
+            tpData.affirmations = Object.assign(d.affirmations, tpData.affirmations || {});
+            tpData.pomodoro = Object.assign(d.pomodoro, tpData.pomodoro || {});
+          } else tpData = tpDefaultData();
+        } catch (e) { tpData = tpDefaultData(); }
+      }
+      function tpSave() {
+        try { localStorage.setItem(TP_LS, JSON.stringify(tpData)); } catch (e) {}
+        tpMaybeFirebaseSync();
+      }
+      function tpMaybeFirebaseSync() {
+        try {
+          if (typeof getSharedFirestore === "function") {
+            const db = getSharedFirestore();
+            if (db) {
+              db.collection("thommyPersonal").doc("main").set(
+                { data: tpData, updatedAt: firebase.firestore.FieldValue.serverTimestamp() },
+                { merge: true },
+              ).catch(function () {});
+            }
+          }
+        } catch (e) {}
+      }
+      async function tpMaybeFirebaseLoad() {
+        try {
+          if (typeof getDb !== "function") return;
+          const db = getSharedFirestore();
+          if (!db) return;
+          const snap = await db.collection("thommyPersonal").doc("main").get();
+          if (snap.exists && snap.data() && snap.data().data) {
+            const remote = snap.data().data;
+            const rLen = (remote.pomodoro && remote.pomodoro.sessions && remote.pomodoro.sessions.length) || 0;
+            const lLen = (tpData.pomodoro && tpData.pomodoro.sessions && tpData.pomodoro.sessions.length) || 0;
+            if (rLen >= lLen) {
+              tpData = Object.assign(tpDefaultData(), remote);
+              try { localStorage.setItem(TP_LS, JSON.stringify(tpData)); } catch (e) {}
+            }
+          }
+        } catch (e) {}
+      }
+      function tpIsUnlocked() {
+        try { return sessionStorage.getItem(TP_UNLOCK) === "1"; } catch (e) { return false; }
+      }
+      function tpSetUnlocked() {
+        try { sessionStorage.setItem(TP_UNLOCK, "1"); } catch (e) {}
+      }
+      function tpHabitMark(id, done) {
+        const h = tpData.habits.find((x) => x.id === id);
+        if (!h) return;
+        const day = tpToday();
+        h.log = h.log || {};
+        if (done) {
+          h.log[day] = true;
+          let streak = 0;
+          const d = new Date();
+          for (let i = 0; i < 400; i++) {
+            const key = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+            if (h.log[key]) streak++;
+            else break;
+            d.setDate(d.getDate() - 1);
+          }
+          h.streak = streak;
+          h.best = Math.max(h.best || 0, streak);
+          h.lastDone = day;
+        } else {
+          delete h.log[day];
+          h.streak = 0;
+          h.lastDone = "";
+        }
+        tpSave();
+      }
+      function tpDayGoals() {
+        const day = tpToday();
+        if (!tpData.dailyGoals[day]) tpData.dailyGoals[day] = [];
+        return tpData.dailyGoals[day];
+      }
+      function tpFocusMinutes(rangeDays) {
+        const out = [];
+        const d = new Date();
+        for (let i = rangeDays - 1; i >= 0; i--) {
+          const dd = new Date(d);
+          dd.setDate(d.getDate() - i);
+          const key = dd.getFullYear() + "-" + String(dd.getMonth() + 1).padStart(2, "0") + "-" + String(dd.getDate()).padStart(2, "0");
+          out.push({ date: key, min: tpData.focusByDay[key] || 0 });
+        }
+        return out;
+      }
+      function tpHabitsDoneToday() {
+        const day = tpToday();
+        return tpData.habits.filter((h) => h.log && h.log[day]).length;
+      }
+      function tpModeSeconds(mode) {
+        if (mode === "short") return (tpData.pomodoro.shortMin || 5) * 60;
+        if (mode === "long") return (tpData.pomodoro.longMin || 15) * 60;
+        return (tpData.pomodoro.focusMin || 25) * 60;
+      }
+      function tpPomTick() {
+        if (!tpPomodoro.running) return;
+        const left = Math.max(0, Math.round((tpPomodoro.endsAt - Date.now()) / 1000));
+        tpPomodoro.left = left;
+        const disp = document.getElementById("tpTimerDisp");
+        if (disp) {
+          const m = Math.floor(left / 60);
+          const s = left % 60;
+          disp.textContent = String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+        }
+        if (left <= 0) tpPomComplete();
+      }
+      function tpPomStart() {
+        tpPomodoro.running = true;
+        tpPomodoro.endsAt = Date.now() + tpPomodoro.left * 1000;
+        if (tpPomodoro.timer) clearInterval(tpPomodoro.timer);
+        tpPomodoro.timer = setInterval(tpPomTick, 250);
+      }
+      function tpPomPause() {
+        tpPomodoro.running = false;
+        if (tpPomodoro.timer) clearInterval(tpPomodoro.timer);
+        tpPomodoro.timer = null;
+        tpPomodoro.left = Math.max(0, Math.round((tpPomodoro.endsAt - Date.now()) / 1000));
+      }
+      function tpPomStop() {
+        tpPomodoro.running = false;
+        if (tpPomodoro.timer) clearInterval(tpPomodoro.timer);
+        tpPomodoro.timer = null;
+      }
+      function tpPomComplete() {
+        tpPomStop();
+        const mins = Math.round(tpModeSeconds(tpPomodoro.mode) / 60);
+        if (tpPomodoro.mode === "focus") {
+          const day = tpToday();
+          tpData.focusByDay[day] = (tpData.focusByDay[day] || 0) + mins;
+        }
+        tpData.pomodoro.sessions = tpData.pomodoro.sessions || [];
+        tpData.pomodoro.sessions.push({ mode: tpPomodoro.mode, minutes: mins, at: new Date().toISOString() });
+        tpSave();
+        tpPomodoro.left = tpModeSeconds(tpPomodoro.mode);
+        if (typeof showToast === "function") showToast("Session complete · " + mins + "m", "updated");
+        try { if (navigator.vibrate) navigator.vibrate(200); } catch (e) {}
+        tpRender();
+      }
+
+      function tpRender() {
+        const gate = document.getElementById("tpGate");
+        const app = document.getElementById("tpApp");
+        if (!gate || !app) return;
+        if (!tpIsUnlocked()) {
+          gate.hidden = false;
+          app.hidden = true;
+          return;
+        }
+        gate.hidden = true;
+        app.hidden = false;
+        document.querySelectorAll("#tpNav button").forEach((b) => {
+          b.classList.toggle("active", b.dataset.tp === tpView);
+        });
+        const main = document.getElementById("tpMain");
+        if (!main) return;
+        if (tpView === "dash") main.innerHTML = tpViewDash();
+        else if (tpView === "habits") main.innerHTML = tpViewHabits();
+        else if (tpView === "analytics") main.innerHTML = tpViewAnalytics();
+        else if (tpView === "pomodoro") main.innerHTML = tpViewPomodoro();
+        else if (tpView === "morning") main.innerHTML = tpViewRoutine("morning");
+        else if (tpView === "night") main.innerHTML = tpViewRoutine("night");
+        else if (tpView === "affirm") main.innerHTML = tpViewAffirm();
+        else if (tpView === "goals") main.innerHTML = tpViewGoals();
+        else if (tpView === "wishlist") main.innerHTML = tpViewWishlist();
+        else if (tpView === "bucket") main.innerHTML = tpViewBucket();
+        else if (tpView === "romantic") main.innerHTML = tpViewRomantic();
+        tpBindView();
+      }
+
+      function tpViewDash() {
+        const goals = tpDayGoals();
+        const doneG = goals.filter((g) => g.done).length;
+        const habitsDone = tpHabitsDoneToday();
+        const focusToday = tpData.focusByDay[tpToday()] || 0;
+        const openGoals = ["career", "romantic", "personal"].reduce((n, k) => n + (tpData.goals[k] || []).filter((g) => !g.done).length, 0);
+        const topGoals = ["career", "romantic", "personal"].flatMap((k) =>
+          (tpData.goals[k] || []).filter((g) => !g.done).slice(0, 2).map((g) => Object.assign({}, g, { cat: k })),
+        ).slice(0, 4);
+        return '<div class="tp-grid-3">' +
+          '<div class="tp-stat"><div class="n">' + habitsDone + '/' + tpData.habits.length + '</div><div class="l">Habits today</div></div>' +
+          '<div class="tp-stat"><div class="n">' + doneG + '/' + (goals.length || 0) + '</div><div class="l">Daily goals</div></div>' +
+          '<div class="tp-stat"><div class="n">' + focusToday + 'm</div><div class="l">Focus today</div></div></div>' +
+          '<div class="tp-card" style="margin-top:14px"><h3>Today\'s priorities</h3><p class="tp-sub">Daily goals · ' + tpToday() + '</p><div>' +
+          (goals.length ? goals.map(function(g){ return '<label class="tp-check '+(g.done?'done':'')+'"><input type="checkbox" data-tp-goal="'+g.id+'" '+(g.done?'checked':'')+'><span>'+g.text+'</span></label>'; }).join('') : '<p class="tp-empty">No daily goals yet — add some in Goals & Habits.</p>') +
+          '</div></div><div class="tp-card"><h3>Habits snapshot</h3>' +
+          tpData.habits.map(function(h){ var on=h.log&&h.log[tpToday()]; return '<label class="tp-check '+(on?'done':'')+'"><input type="checkbox" data-tp-habit="'+h.id+'" '+(on?'checked':'')+'><div><span>'+h.name+'</span><div class="meta">🔥 '+(h.streak||0)+' day streak · best '+(h.best||0)+'</div></div></label>'; }).join('') +
+          '</div><div class="tp-card"><h3>Active goals ('+openGoals+' open)</h3>' +
+          (topGoals.length ? topGoals.map(function(g){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+g.title+'</strong><span class="tp-tag">'+g.cat+'</span></div><div class="tp-progress"><i style="width:'+Math.min(100,g.progress||0)+'%"></i></div><div class="meta" style="font-size:0.72rem;color:var(--ink-soft)">'+(g.progress||0)+'%'+(g.deadline?' · due '+g.deadline:'')+'</div></div>'; }).join('') : '<p class="tp-empty">Add goals under Goals.</p>') +
+          '</div>';
+      }
+
+      function tpViewHabits() {
+        var goals = tpDayGoals();
+        return '<div class="tp-card"><h3>Daily goals</h3><p class="tp-sub">Reset every day · '+tpToday()+'</p><div>' +
+          (goals.map(function(g){ return '<label class="tp-check '+(g.done?'done':'')+'"><input type="checkbox" data-tp-goal="'+g.id+'" '+(g.done?'checked':'')+'><span style="flex:1">'+g.text+'</span><button type="button" class="tp-btn danger sm" data-tp-del-goal="'+g.id+'">✕</button></label>'; }).join('') || '<p class="tp-empty">No goals for today.</p>') +
+          '</div><div class="tp-row"><input id="tpNewGoal" placeholder="Add a goal for today…"><button type="button" class="tp-btn" id="tpAddGoal">Add</button></div></div>' +
+          '<div class="tp-card"><h3>Habits</h3><p class="tp-sub">Streaks update when you check them off</p>' +
+          tpData.habits.map(function(h){ var on=h.log&&h.log[tpToday()]; return '<label class="tp-check '+(on?'done':'')+'"><input type="checkbox" data-tp-habit="'+h.id+'" '+(on?'checked':'')+'><div style="flex:1"><span>'+h.name+'</span><div class="meta">🔥 '+(h.streak||0)+' · best '+(h.best||0)+'</div></div><button type="button" class="tp-btn danger sm" data-tp-del-habit="'+h.id+'">✕</button></label>'; }).join('') +
+          '<div class="tp-row"><input id="tpNewHabit" placeholder="New habit…"><button type="button" class="tp-btn" id="tpAddHabit">Add habit</button></div></div>';
+      }
+
+      function tpViewAnalytics() {
+        var week = tpFocusMinutes(7);
+        var month = tpFocusMinutes(30);
+        var maxW = Math.max(1, ...week.map(function(x){ return x.min; }));
+        var maxM = Math.max(1, ...month.map(function(x){ return x.min; }));
+        var weekFocus = week.reduce(function(a,b){ return a+b.min; }, 0);
+        var habitsWeek = tpData.habits.reduce(function(acc,h){ var n=0; week.forEach(function(d){ if(h.log&&h.log[d.date]) n++; }); return acc+n; }, 0);
+        var goalsDoneWeek = week.reduce(function(acc,d){ var list=tpData.dailyGoals[d.date]||[]; return acc+list.filter(function(g){ return g.done; }).length; }, 0);
+        var sessions = (tpData.pomodoro.sessions||[]).slice(-20).reverse();
+        return '<div class="tp-grid-3"><div class="tp-stat"><div class="n">'+weekFocus+'m</div><div class="l">Focus this week</div></div><div class="tp-stat"><div class="n">'+habitsWeek+'</div><div class="l">Habit checks (7d)</div></div><div class="tp-stat"><div class="n">'+goalsDoneWeek+'</div><div class="l">Goals done (7d)</div></div></div>' +
+          '<div class="tp-card" style="margin-top:14px"><h3>Focus — last 7 days</h3><div class="tp-bars">'+week.map(function(d){ return '<span title="'+d.date+': '+d.min+'m" style="height:'+Math.round((d.min/maxW)*100)+'%"></span>'; }).join('')+'</div></div>' +
+          '<div class="tp-card"><h3>Focus — last 30 days</h3><div class="tp-bars">'+month.map(function(d){ return '<span title="'+d.date+': '+d.min+'m" style="height:'+Math.round((d.min/maxM)*100)+'%"></span>'; }).join('')+'</div></div>' +
+          '<div class="tp-card"><h3>Recent Pomodoro sessions</h3>'+(sessions.length?sessions.map(function(s){ return '<div class="tp-item"><strong>'+s.mode+'</strong> · '+s.minutes+'m <span style="float:right;font-size:0.72rem;color:var(--ink-soft)">'+(s.at||'').slice(0,16)+'</span></div>'; }).join(''):'<p class="tp-empty">No sessions yet — start one in Focus.</p>')+'</div>';
+      }
+
+      function tpViewPomodoro() {
+        var m = Math.floor(tpPomodoro.left / 60);
+        var s = tpPomodoro.left % 60;
+        var disp = String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+        return '<div class="tp-card tp-pomodoro"><h3>Focus center</h3><p class="tp-sub">Pomodoro · sessions feed your analytics</p><div class="tp-modes">' +
+          '<button type="button" class="tp-btn outline '+(tpPomodoro.mode==="focus"?"active":"")+'" data-tp-mode="focus">Focus '+(tpData.pomodoro.focusMin||25)+'m</button>' +
+          '<button type="button" class="tp-btn outline '+(tpPomodoro.mode==="short"?"active":"")+'" data-tp-mode="short">Short '+(tpData.pomodoro.shortMin||5)+'m</button>' +
+          '<button type="button" class="tp-btn outline '+(tpPomodoro.mode==="long"?"active":"")+'" data-tp-mode="long">Long '+(tpData.pomodoro.longMin||15)+'m</button></div>' +
+          '<div class="tp-timer" id="tpTimerDisp">'+disp+'</div><div class="tp-row" style="justify-content:center">' +
+          '<button type="button" class="tp-btn" id="tpPomStart">'+(tpPomodoro.running?"Pause":"Start")+'</button>' +
+          '<button type="button" class="tp-btn outline" id="tpPomReset">Reset</button></div></div>' +
+          '<div class="tp-card"><h3>Total focus logged</h3><div class="tp-stat"><div class="n">'+Object.values(tpData.focusByDay).reduce(function(a,b){return a+(b||0);},0)+'m</div><div class="l">All time</div></div></div>';
+      }
+
+      function tpViewRoutine(kind) {
+        var list = tpData[kind] || [];
+        var day = tpToday();
+        var log = (tpData.routineLog[day] && tpData.routineLog[day][kind]) || [];
+        var title = kind === "morning" ? "Morning routine" : "Night routine";
+        var sub = kind === "morning" ? "Start the day with intention" : "Close the day & prepare tomorrow";
+        var html = '<div class="tp-card"><h3>'+title+'</h3><p class="tp-sub">'+sub+' · '+day+'</p>' +
+          (list.map(function(item){ var on=log.indexOf(item.id)>=0; return '<label class="tp-check '+(on?'done':'')+'"><input type="checkbox" data-tp-routine="'+kind+'" data-id="'+item.id+'" '+(on?'checked':'')+'><span style="flex:1">'+item.text+'</span><button type="button" class="tp-btn danger sm" data-tp-del-routine="'+kind+'" data-id="'+item.id+'">✕</button></label>'; }).join('') || '<p class="tp-empty">Empty routine.</p>') +
+          '<div class="tp-row"><input id="tpNewRoutine" placeholder="Add step…"><button type="button" class="tp-btn" id="tpAddRoutine" data-kind="'+kind+'">Add</button></div></div>';
+        if (kind === "night") {
+          html += '<div class="tp-card"><h3>Daily reflection</h3><p class="tp-sub">What went well? What will you improve?</p><textarea id="tpReflection" placeholder="Write a few lines…">'+(tpData.reflections[day]||'')+'</textarea><div class="tp-row"><button type="button" class="tp-btn" id="tpSaveReflection">Save reflection</button></div></div>';
+        }
+        return html;
+      }
+
+      function tpViewAffirm() {
+        var list = tpData.affirmations.custom || [];
+        var idx = (tpData.affirmations.lastIndex || 0) % (list.length || 1);
+        var text = list[idx] || "I grow a little every day.";
+        var practiced = !!(tpData.affirmations.practiced && tpData.affirmations.practiced[tpToday()]);
+        return '<div class="tp-card"><h3>Today\'s affirmation</h3><p class="tp-sub">'+(practiced?"Practiced today ✓":"Read it slowly. Feel it as true.")+'</p>' +
+          '<div class="tp-affirm" id="tpAffirmText">'+text+'</div><div class="tp-row" style="justify-content:center">' +
+          '<button type="button" class="tp-btn outline" id="tpAffirmNext">Another</button>' +
+          '<button type="button" class="tp-btn" id="tpAffirmPractice">'+(practiced?"Practiced":"Mark practiced")+'</button>' +
+          '<button type="button" class="tp-btn outline" id="tpAffirmApi">Fetch online</button></div></div>' +
+          '<div class="tp-card"><h3>Future self</h3><p class="tp-sub">Who are you becoming?</p><textarea id="tpFutureSelf" placeholder="Describe your future self in vivid present tense…">'+(tpData.affirmations.futureSelf||'')+'</textarea><div class="tp-row"><button type="button" class="tp-btn" id="tpSaveFutureSelf">Save</button></div></div>' +
+          '<div class="tp-card"><h3>Your affirmations</h3>' +
+          list.map(function(t,i){ return '<div class="tp-item"><div class="tp-item-head"><span>'+t+'</span><button type="button" class="tp-btn danger sm" data-tp-del-affirm="'+i+'">✕</button></div></div>'; }).join('') +
+          '<div class="tp-row"><input id="tpNewAffirm" placeholder="Add affirmation…"><button type="button" class="tp-btn" id="tpAddAffirm">Add</button></div></div>';
+      }
+
+      function tpViewGoals() {
+        return ["career","romantic","personal"].map(function(cat){
+          var items = tpData.goals[cat] || [];
+          return '<div class="tp-card"><h3>'+cat.charAt(0).toUpperCase()+cat.slice(1)+' goals</h3>' +
+            (items.map(function(g){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+g.title+'</strong><span>'+(g.done?'<span class="tp-tag done">done</span> ':'')+'<button type="button" class="tp-btn sm outline" data-tp-goal-prog="'+g.id+'" data-cat="'+cat+'">+10%</button> <button type="button" class="tp-btn danger sm" data-tp-del-gcat="'+cat+'" data-id="'+g.id+'">✕</button></span></div><div class="tp-progress"><i style="width:'+Math.min(100,g.progress||0)+'%"></i></div><div class="meta" style="font-size:0.72rem;color:var(--ink-soft)">'+(g.progress||0)+'%'+(g.deadline?' · '+g.deadline:'')+(g.milestone?' · '+g.milestone:'')+'</div></div>'; }).join('') || '<p class="tp-empty">No goals yet.</p>') +
+            '<div class="tp-row"><input data-new-goal-title="'+cat+'" placeholder="Goal title…"><input data-new-goal-deadline="'+cat+'" type="date" style="flex:0.6"><input data-new-goal-ms="'+cat+'" placeholder="Next milestone…"><button type="button" class="tp-btn" data-tp-add-gcat="'+cat+'">Add</button></div></div>';
+        }).join('');
+      }
+
+      function tpViewWishlist() {
+        var pri = { high: "hi", medium: "mid", low: "lo" };
+        return '<div class="tp-card"><h3>Wishlist</h3><p class="tp-sub">Things to buy or achieve</p>' +
+          ((tpData.wishlist||[]).map(function(w){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+w.title+'</strong><span><span class="tp-tag '+(pri[w.priority]||'mid')+'">'+(w.priority||'medium')+'</span> <span class="tp-tag '+(w.status==='got'?'done':'')+'">'+(w.status||'want')+'</span> <button type="button" class="tp-btn sm outline" data-tp-wish-status="'+w.id+'">Toggle</button> <button type="button" class="tp-btn danger sm" data-tp-del-wish="'+w.id+'">✕</button></span></div>'+(w.notes?'<div class="meta" style="font-size:0.78rem;color:var(--ink-soft)">'+w.notes+'</div>':'')+'</div>'; }).join('') || '<p class="tp-empty">Wishlist is empty.</p>') +
+          '<div class="tp-row"><input id="tpWishTitle" placeholder="Item…"><select id="tpWishPri"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select><input id="tpWishNotes" placeholder="Notes (optional)"><button type="button" class="tp-btn" id="tpAddWish">Add</button></div></div>';
+      }
+
+      function tpViewBucket() {
+        return '<div class="tp-card"><h3>Life bucket list</h3><p class="tp-sub">Experiences you want — separate from the shared couple list</p>' +
+          ((tpData.bucket||[]).map(function(b){ return '<label class="tp-check '+(b.done?'done':'')+'"><input type="checkbox" data-tp-bucket="'+b.id+'" '+(b.done?'checked':'')+'><div style="flex:1"><span>'+b.title+'</span>'+(b.done&&b.dateDone?'<div class="meta">Done '+b.dateDone+'</div>':'')+'</div><button type="button" class="tp-btn danger sm" data-tp-del-bucket="'+b.id+'">✕</button></label>'; }).join('') || '<p class="tp-empty">Add experiences you want in this lifetime.</p>') +
+          '<div class="tp-row"><input id="tpBucketTitle" placeholder="Experience…"><button type="button" class="tp-btn" id="tpAddBucket">Add</button></div></div>';
+      }
+
+      function tpViewRomantic() {
+        return '<div class="tp-card"><h3>Romantic life</h3><p class="tp-sub">Date ideas, surprises, plans, memories to create</p>' +
+          ((tpData.romantic||[]).map(function(r){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+r.title+'</strong><span><span class="tp-tag">'+(r.type||'idea')+'</span> <span class="tp-tag '+(r.status==='done'?'done':'')+'">'+(r.status||'idea')+'</span> <button type="button" class="tp-btn sm outline" data-tp-rom-status="'+r.id+'">Cycle</button> <button type="button" class="tp-btn danger sm" data-tp-del-rom="'+r.id+'">✕</button></span></div>'+(r.notes?'<div class="meta" style="font-size:0.78rem;color:var(--ink-soft)">'+r.notes+'</div>':'')+'</div>'; }).join('') || '<p class="tp-empty">Start collecting romantic ideas.</p>') +
+          '<div class="tp-row"><input id="tpRomTitle" placeholder="Title…"><select id="tpRomType"><option value="date">Date</option><option value="surprise">Surprise</option><option value="plan">Plan</option><option value="memory">Memory</option><option value="goal">Goal</option></select><input id="tpRomNotes" placeholder="Notes…"><button type="button" class="tp-btn" id="tpAddRom">Add</button></div></div>';
+      }
+
+      function tpBindView() {
+        document.querySelectorAll("[data-tp-habit]").forEach(function(el){ el.addEventListener("change", function(){ tpHabitMark(el.getAttribute("data-tp-habit"), el.checked); tpRender(); }); });
+        document.querySelectorAll("[data-tp-goal]").forEach(function(el){ el.addEventListener("change", function(){ var g=tpDayGoals().find(function(x){return x.id===el.getAttribute("data-tp-goal");}); if(g){ g.done=el.checked; tpSave(); tpRender(); } }); });
+        var addGoal=document.getElementById("tpAddGoal");
+        if(addGoal) addGoal.addEventListener("click", function(){ var t=((document.getElementById("tpNewGoal")||{}).value||"").trim(); if(!t) return; tpDayGoals().push({id:tpUid(),text:t,done:false}); tpSave(); tpRender(); });
+        document.querySelectorAll("[data-tp-del-goal]").forEach(function(b){ b.addEventListener("click", function(e){ e.preventDefault(); var id=b.getAttribute("data-tp-del-goal"); tpData.dailyGoals[tpToday()]=tpDayGoals().filter(function(g){return g.id!==id;}); tpSave(); tpRender(); }); });
+        var addHabit=document.getElementById("tpAddHabit");
+        if(addHabit) addHabit.addEventListener("click", function(){ var t=((document.getElementById("tpNewHabit")||{}).value||"").trim(); if(!t) return; tpData.habits.push({id:tpUid(),name:t,streak:0,best:0,lastDone:"",log:{}}); tpSave(); tpRender(); });
+        document.querySelectorAll("[data-tp-del-habit]").forEach(function(b){ b.addEventListener("click", function(e){ e.preventDefault(); tpData.habits=tpData.habits.filter(function(h){return h.id!==b.getAttribute("data-tp-del-habit");}); tpSave(); tpRender(); }); });
+        document.querySelectorAll("[data-tp-routine]").forEach(function(el){ el.addEventListener("change", function(){ var kind=el.getAttribute("data-tp-routine"); var id=el.getAttribute("data-id"); var day=tpToday(); tpData.routineLog[day]=tpData.routineLog[day]||{morning:[],night:[]}; var arr=tpData.routineLog[day][kind]||[]; if(el.checked&&arr.indexOf(id)<0) arr.push(id); if(!el.checked) tpData.routineLog[day][kind]=arr.filter(function(x){return x!==id;}); else tpData.routineLog[day][kind]=arr; tpSave(); tpRender(); }); });
+        var addR=document.getElementById("tpAddRoutine");
+        if(addR) addR.addEventListener("click", function(){ var kind=addR.getAttribute("data-kind"); var t=((document.getElementById("tpNewRoutine")||{}).value||"").trim(); if(!t) return; tpData[kind].push({id:tpUid(),text:t}); tpSave(); tpRender(); });
+        document.querySelectorAll("[data-tp-del-routine]").forEach(function(b){ b.addEventListener("click", function(e){ e.preventDefault(); var kind=b.getAttribute("data-tp-del-routine"); var id=b.getAttribute("data-id"); tpData[kind]=tpData[kind].filter(function(x){return x.id!==id;}); tpSave(); tpRender(); }); });
+        var saveRef=document.getElementById("tpSaveReflection");
+        if(saveRef) saveRef.addEventListener("click", function(){ tpData.reflections[tpToday()]=((document.getElementById("tpReflection")||{}).value)||""; tpSave(); if(typeof showToast==="function") showToast("Reflection saved","updated"); });
+        document.querySelectorAll("[data-tp-mode]").forEach(function(b){ b.addEventListener("click", function(){ tpPomStop(); tpPomodoro.mode=b.getAttribute("data-tp-mode"); tpPomodoro.left=tpModeSeconds(tpPomodoro.mode); tpRender(); }); });
+        var pomStart=document.getElementById("tpPomStart");
+        if(pomStart) pomStart.addEventListener("click", function(){ if(tpPomodoro.running) tpPomPause(); else tpPomStart(); tpRender(); });
+        var pomReset=document.getElementById("tpPomReset");
+        if(pomReset) pomReset.addEventListener("click", function(){ tpPomStop(); tpPomodoro.left=tpModeSeconds(tpPomodoro.mode); tpRender(); });
+        var affNext=document.getElementById("tpAffirmNext");
+        if(affNext) affNext.addEventListener("click", function(){ var n=(tpData.affirmations.custom||[]).length||1; tpData.affirmations.lastIndex=((tpData.affirmations.lastIndex||0)+1)%n; tpSave(); tpRender(); });
+        var affPr=document.getElementById("tpAffirmPractice");
+        if(affPr) affPr.addEventListener("click", function(){ tpData.affirmations.practiced=tpData.affirmations.practiced||{}; tpData.affirmations.practiced[tpToday()]=true; tpSave(); tpRender(); });
+        var affApi=document.getElementById("tpAffirmApi");
+        if(affApi) affApi.addEventListener("click", async function(){ var el=document.getElementById("tpAffirmText"); try{ var text=null; try{ var r=await fetch("https://www.affirmations.dev/"); if(r.ok){ var j=await r.json(); text=j.affirmation; } }catch(e){} if(!text){ try{ var r2=await fetch("https://api.quotable.io/random?tags=inspirational"); if(r2.ok){ var j2=await r2.json(); text=j2.content; } }catch(e){} } if(text&&el) el.textContent=text; else if(typeof showToast==="function") showToast("Could not fetch affirmation","updated"); }catch(e){ if(typeof showToast==="function") showToast("Could not fetch affirmation","updated"); } });
+        var addAff=document.getElementById("tpAddAffirm");
+        if(addAff) addAff.addEventListener("click", function(){ var t=((document.getElementById("tpNewAffirm")||{}).value||"").trim(); if(!t) return; tpData.affirmations.custom.push(t); tpSave(); tpRender(); });
+        document.querySelectorAll("[data-tp-del-affirm]").forEach(function(b){ b.addEventListener("click", function(){ tpData.affirmations.custom.splice(parseInt(b.getAttribute("data-tp-del-affirm"),10),1); tpSave(); tpRender(); }); });
+        var saveFs=document.getElementById("tpSaveFutureSelf");
+        if(saveFs) saveFs.addEventListener("click", function(){ tpData.affirmations.futureSelf=((document.getElementById("tpFutureSelf")||{}).value)||""; tpSave(); if(typeof showToast==="function") showToast("Saved","updated"); });
+        document.querySelectorAll("[data-tp-add-gcat]").forEach(function(b){ b.addEventListener("click", function(){ var cat=b.getAttribute("data-tp-add-gcat"); var title=((document.querySelector('[data-new-goal-title="'+cat+'"]')||{}).value||"").trim(); var deadline=((document.querySelector('[data-new-goal-deadline="'+cat+'"]')||{}).value)||""; var milestone=((document.querySelector('[data-new-goal-ms="'+cat+'"]')||{}).value)||""; if(!title) return; tpData.goals[cat]=tpData.goals[cat]||[]; tpData.goals[cat].push({id:tpUid(),title:title,progress:0,deadline:deadline,milestone:milestone,done:false}); tpSave(); tpRender(); }); });
+        document.querySelectorAll("[data-tp-goal-prog]").forEach(function(b){ b.addEventListener("click", function(){ var cat=b.getAttribute("data-cat"); var id=b.getAttribute("data-tp-goal-prog"); var g=(tpData.goals[cat]||[]).find(function(x){return x.id===id;}); if(!g) return; g.progress=Math.min(100,(g.progress||0)+10); if(g.progress>=100) g.done=true; tpSave(); tpRender(); }); });
+        document.querySelectorAll("[data-tp-del-gcat]").forEach(function(b){ b.addEventListener("click", function(){ var cat=b.getAttribute("data-tp-del-gcat"); var id=b.getAttribute("data-id"); tpData.goals[cat]=(tpData.goals[cat]||[]).filter(function(x){return x.id!==id;}); tpSave(); tpRender(); }); });
+        var addWish=document.getElementById("tpAddWish");
+        if(addWish) addWish.addEventListener("click", function(){ var title=((document.getElementById("tpWishTitle")||{}).value||"").trim(); if(!title) return; tpData.wishlist.push({id:tpUid(),title:title,priority:((document.getElementById("tpWishPri")||{}).value)||"medium",notes:((document.getElementById("tpWishNotes")||{}).value)||"",status:"want"}); tpSave(); tpRender(); });
+        document.querySelectorAll("[data-tp-wish-status]").forEach(function(b){ b.addEventListener("click", function(){ var w=tpData.wishlist.find(function(x){return x.id===b.getAttribute("data-tp-wish-status");}); if(w){ w.status=w.status==="got"?"want":"got"; tpSave(); tpRender(); } }); });
+        document.querySelectorAll("[data-tp-del-wish]").forEach(function(b){ b.addEventListener("click", function(){ tpData.wishlist=tpData.wishlist.filter(function(x){return x.id!==b.getAttribute("data-tp-del-wish");}); tpSave(); tpRender(); }); });
+        var addBucket=document.getElementById("tpAddBucket");
+        if(addBucket) addBucket.addEventListener("click", function(){ var title=((document.getElementById("tpBucketTitle")||{}).value||"").trim(); if(!title) return; tpData.bucket.push({id:tpUid(),title:title,done:false,dateDone:""}); tpSave(); tpRender(); });
+        document.querySelectorAll("[data-tp-bucket]").forEach(function(el){ el.addEventListener("change", function(){ var b=tpData.bucket.find(function(x){return x.id===el.getAttribute("data-tp-bucket");}); if(b){ b.done=el.checked; b.dateDone=el.checked?tpToday():""; tpSave(); tpRender(); } }); });
+        document.querySelectorAll("[data-tp-del-bucket]").forEach(function(b){ b.addEventListener("click", function(e){ e.preventDefault(); tpData.bucket=tpData.bucket.filter(function(x){return x.id!==b.getAttribute("data-tp-del-bucket");}); tpSave(); tpRender(); }); });
+        var addRom=document.getElementById("tpAddRom");
+        if(addRom) addRom.addEventListener("click", function(){ var title=((document.getElementById("tpRomTitle")||{}).value||"").trim(); if(!title) return; tpData.romantic.push({id:tpUid(),title:title,type:((document.getElementById("tpRomType")||{}).value)||"date",notes:((document.getElementById("tpRomNotes")||{}).value)||"",status:"idea"}); tpSave(); tpRender(); });
+        document.querySelectorAll("[data-tp-rom-status]").forEach(function(b){ b.addEventListener("click", function(){ var r=tpData.romantic.find(function(x){return x.id===b.getAttribute("data-tp-rom-status");}); if(!r) return; var cycle=["idea","planned","done"]; r.status=cycle[(cycle.indexOf(r.status||"idea")+1)%cycle.length]; tpSave(); tpRender(); }); });
+        document.querySelectorAll("[data-tp-del-rom]").forEach(function(b){ b.addEventListener("click", function(){ tpData.romantic=tpData.romantic.filter(function(x){return x.id!==b.getAttribute("data-tp-del-rom");}); tpSave(); tpRender(); }); });
+      }
+
+      function initThommyPersonal() {
+        tpLoad();
+        tpPomodoro.mode = "focus";
+        tpPomodoro.left = tpModeSeconds("focus");
+        var unlockBtn = document.getElementById("tpUnlockBtn");
+        if (unlockBtn) unlockBtn.addEventListener("click", function() {
+          var v = ((document.getElementById("tpPassInput") || {}).value) || "";
+          var err = document.getElementById("tpPassErr");
+          if (v === TP_PASS) {
+            tpSetUnlocked();
+            if (err) err.textContent = "";
+            tpMaybeFirebaseLoad().then(function(){ tpRender(); });
+            tpRender();
+          } else {
+            if (err) err.textContent = "Wrong password";
+          }
+        });
+        var passInput = document.getElementById("tpPassInput");
+        if (passInput) passInput.addEventListener("keydown", function(e) {
+          if (e.key === "Enter") unlockBtn && unlockBtn.click();
+        });
+        var nav = document.getElementById("tpNav");
+        if (nav) nav.addEventListener("click", function(e) {
+          var btn = e.target.closest("button[data-tp]");
+          if (!btn) return;
+          tpView = btn.dataset.tp;
+          tpRender();
+        });
+      }
+      initThommyPersonal();
+
 
       // Translate static labels and headings after the page has been rendered.
       translateStaticDOM();
