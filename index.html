@@ -15779,29 +15779,6 @@
       let tpData = null;
       let tpView = "dash";
       let tpPomodoro = { running: false, endsAt: 0, left: 25 * 60, mode: "focus", timer: null };
-      // Inline edit target: { kind, id, cat? }
-      let tpEdit = { kind: null, id: null, cat: null };
-
-      function tpEsc(s) {
-        return String(s == null ? "" : s)
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;");
-      }
-      function tpIsEditing(kind, id, cat) {
-        if (!tpEdit || tpEdit.kind !== kind || tpEdit.id !== id) return false;
-        if (cat != null && tpEdit.cat !== cat) return false;
-        return true;
-      }
-      function tpStartEdit(kind, id, cat) {
-        tpEdit = { kind: kind, id: id, cat: cat || null };
-        tpRender();
-      }
-      function tpCancelEdit() {
-        tpEdit = { kind: null, id: null, cat: null };
-        tpRender();
-      }
 
       function tpLoad() {
         try {
@@ -15884,9 +15861,23 @@
         tpSave();
       }
       function tpDayGoals() {
+        // Fresh list every calendar day — goals from yesterday do not carry over
         const day = tpToday();
         if (!tpData.dailyGoals[day]) tpData.dailyGoals[day] = [];
         return tpData.dailyGoals[day];
+      }
+      function tpRoutineDoneToday(kind) {
+        const day = tpToday();
+        return (tpData.routineLog[day] && tpData.routineLog[day][kind]) || [];
+      }
+      function tpRoutineStats(kind) {
+        const list = tpData[kind] || [];
+        const done = tpRoutineDoneToday(kind);
+        let n = 0;
+        list.forEach(function (item) {
+          if (done.indexOf(item.id) >= 0) n++;
+        });
+        return { done: n, total: list.length };
       }
       function tpFocusMinutes(rangeDays) {
         const out = [];
@@ -15988,41 +15979,173 @@
         const doneG = goals.filter((g) => g.done).length;
         const habitsDone = tpHabitsDoneToday();
         const focusToday = tpData.focusByDay[tpToday()] || 0;
-        const openGoals = ["career", "romantic", "personal"].reduce((n, k) => n + (tpData.goals[k] || []).filter((g) => !g.done).length, 0);
-        const topGoals = ["career", "romantic", "personal"].flatMap((k) =>
-          (tpData.goals[k] || []).filter((g) => !g.done).slice(0, 2).map((g) => Object.assign({}, g, { cat: k })),
-        ).slice(0, 4);
-        return '<div class="tp-grid-3">' +
-          '<div class="tp-stat"><div class="n">' + habitsDone + '/' + tpData.habits.length + '</div><div class="l">Habits today</div></div>' +
-          '<div class="tp-stat"><div class="n">' + doneG + '/' + (goals.length || 0) + '</div><div class="l">Daily goals</div></div>' +
-          '<div class="tp-stat"><div class="n">' + focusToday + 'm</div><div class="l">Focus today</div></div></div>' +
-          '<div class="tp-card" style="margin-top:14px"><h3>Today\'s priorities</h3><p class="tp-sub">Daily goals · ' + tpToday() + '</p><div>' +
-          (goals.length ? goals.map(function(g){ return '<label class="tp-check '+(g.done?'done':'')+'"><input type="checkbox" data-tp-goal="'+g.id+'" '+(g.done?'checked':'')+'><span>'+g.text+'</span></label>'; }).join('') : '<p class="tp-empty">No daily goals yet — add some in Goals & Habits.</p>') +
-          '</div></div><div class="tp-card"><h3>Habits snapshot</h3>' +
-          tpData.habits.map(function(h){ var on=h.log&&h.log[tpToday()]; return '<label class="tp-check '+(on?'done':'')+'"><input type="checkbox" data-tp-habit="'+h.id+'" '+(on?'checked':'')+'><div><span>'+h.name+'</span><div class="meta">🔥 '+(h.streak||0)+' day streak · best '+(h.best||0)+'</div></div></label>'; }).join('') +
-          '</div><div class="tp-card"><h3>Active goals ('+openGoals+' open)</h3>' +
-          (topGoals.length ? topGoals.map(function(g){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+g.title+'</strong><span class="tp-tag">'+g.cat+'</span></div><div class="tp-progress"><i style="width:'+Math.min(100,g.progress||0)+'%"></i></div><div class="meta" style="font-size:0.72rem;color:var(--ink-soft)">'+(g.progress||0)+'%'+(g.deadline?' · due '+g.deadline:'')+'</div></div>'; }).join('') : '<p class="tp-empty">Add goals under Goals.</p>') +
-          '</div>';
+        const morn = tpRoutineStats("morning");
+        const night = tpRoutineStats("night");
+        const openGoals = ["career", "romantic", "personal"].reduce(
+          (n, k) => n + (tpData.goals[k] || []).filter((g) => !g.done).length,
+          0,
+        );
+        const topGoals = ["career", "romantic", "personal"]
+          .flatMap((k) =>
+            (tpData.goals[k] || [])
+              .filter((g) => !g.done)
+              .slice(0, 2)
+              .map((g) => Object.assign({}, g, { cat: k })),
+          )
+          .slice(0, 4);
+        const morningList = tpData.morning || [];
+        const nightList = tpData.night || [];
+        const mornDone = tpRoutineDoneToday("morning");
+        const nightDone = tpRoutineDoneToday("night");
+        return (
+          '<div class="tp-grid-3">' +
+          '<div class="tp-stat"><div class="n">' +
+          habitsDone +
+          "/" +
+          tpData.habits.length +
+          '</div><div class="l">Habits today</div></div>' +
+          '<div class="tp-stat"><div class="n">' +
+          doneG +
+          "/" +
+          (goals.length || 0) +
+          '</div><div class="l">Daily goals</div></div>' +
+          '<div class="tp-stat"><div class="n">' +
+          focusToday +
+          'm</div><div class="l">Focus today</div></div></div>' +
+          '<div class="tp-grid-3" style="margin-top:12px">' +
+          '<div class="tp-stat"><div class="n">' +
+          morn.done +
+          "/" +
+          morn.total +
+          '</div><div class="l">Morning routine</div></div>' +
+          '<div class="tp-stat"><div class="n">' +
+          night.done +
+          "/" +
+          night.total +
+          '</div><div class="l">Night routine</div></div>' +
+          '<div class="tp-stat"><div class="n">' +
+          openGoals +
+          '</div><div class="l">Open goals</div></div></div>' +
+          '<div class="tp-card" style="margin-top:14px"><h3>Today\'s priorities</h3><p class="tp-sub">Daily goals for ' +
+          tpToday() +
+          " only · cleared after midnight</p><div>" +
+          (goals.length
+            ? goals
+                .map(function (g) {
+                  return (
+                    '<label class="tp-check ' +
+                    (g.done ? "done" : "") +
+                    '"><input type="checkbox" data-tp-goal="' +
+                    g.id +
+                    '" ' +
+                    (g.done ? "checked" : "") +
+                    "><span>" +
+                    g.text +
+                    "</span></label>"
+                  );
+                })
+                .join("")
+            : '<p class="tp-empty">No goals for today — add some under Habits.</p>') +
+          "</div></div>" +
+          '<div class="tp-card"><h3>Habits snapshot</h3><p class="tp-sub">Items stay · checks reset every day · streaks keep going</p>' +
+          tpData.habits
+            .map(function (h) {
+              var on = h.log && h.log[tpToday()];
+              return (
+                '<label class="tp-check ' +
+                (on ? "done" : "") +
+                '"><input type="checkbox" data-tp-habit="' +
+                h.id +
+                '" ' +
+                (on ? "checked" : "") +
+                "><div><span>" +
+                h.name +
+                '</span><div class="meta">🔥 ' +
+                (h.streak || 0) +
+                " day streak · best " +
+                (h.best || 0) +
+                "</div></div></label>"
+              );
+            })
+            .join("") +
+          "</div>" +
+          '<div class="tp-card"><h3>Morning routine</h3><p class="tp-sub">Items stay · checks reset every day · ' +
+          tpToday() +
+          "</p>" +
+          (morningList.length
+            ? morningList
+                .map(function (item) {
+                  var on = mornDone.indexOf(item.id) >= 0;
+                  return (
+                    '<label class="tp-check ' +
+                    (on ? "done" : "") +
+                    '"><input type="checkbox" data-tp-routine="morning" data-id="' +
+                    item.id +
+                    '" ' +
+                    (on ? "checked" : "") +
+                    "><span>" +
+                    item.text +
+                    "</span></label>"
+                  );
+                })
+                .join("")
+            : '<p class="tp-empty">No morning steps yet — add them under Morning.</p>') +
+          "</div>" +
+          '<div class="tp-card"><h3>Night routine</h3><p class="tp-sub">Items stay · checks reset every day · ' +
+          tpToday() +
+          "</p>" +
+          (nightList.length
+            ? nightList
+                .map(function (item) {
+                  var on = nightDone.indexOf(item.id) >= 0;
+                  return (
+                    '<label class="tp-check ' +
+                    (on ? "done" : "") +
+                    '"><input type="checkbox" data-tp-routine="night" data-id="' +
+                    item.id +
+                    '" ' +
+                    (on ? "checked" : "") +
+                    "><span>" +
+                    item.text +
+                    "</span></label>"
+                  );
+                })
+                .join("")
+            : '<p class="tp-empty">No night steps yet — add them under Night.</p>') +
+          "</div>" +
+          '<div class="tp-card"><h3>Active goals (' +
+          openGoals +
+          " open)</h3>" +
+          (topGoals.length
+            ? topGoals
+                .map(function (g) {
+                  return (
+                    '<div class="tp-item"><div class="tp-item-head"><strong>' +
+                    g.title +
+                    '</strong><span class="tp-tag">' +
+                    g.cat +
+                    '</span></div><div class="tp-progress"><i style="width:' +
+                    Math.min(100, g.progress || 0) +
+                    '%"></i></div><div class="meta" style="font-size:0.72rem;color:var(--ink-soft)">' +
+                    (g.progress || 0) +
+                    "%" +
+                    (g.deadline ? " · due " + g.deadline : "") +
+                    "</div></div>"
+                  );
+                })
+                .join("")
+            : '<p class="tp-empty">Add goals under Goals.</p>') +
+          "</div>"
+        );
       }
 
       function tpViewHabits() {
         var goals = tpDayGoals();
-        return '<div class="tp-card"><h3>Daily goals</h3><p class="tp-sub">Reset every day · '+tpToday()+'</p><div>' +
-          (goals.map(function(g){
-            if (tpIsEditing("dgoal", g.id)) {
-              return '<div class="tp-check"><div style="flex:1" class="tp-row" style="margin:0"><input data-tp-edit-input="dgoal" data-id="'+g.id+'" value="'+tpEsc(g.text)+'" style="flex:1"><button type="button" class="tp-btn sm" data-tp-save-edit="dgoal" data-id="'+g.id+'">Save</button><button type="button" class="tp-btn outline sm" data-tp-cancel-edit>Cancel</button></div></div>';
-            }
-            return '<label class="tp-check '+(g.done?'done':'')+'"><input type="checkbox" data-tp-goal="'+g.id+'" '+(g.done?'checked':'')+'><span style="flex:1">'+tpEsc(g.text)+'</span><button type="button" class="tp-btn outline sm" data-tp-edit-dgoal="'+g.id+'" title="Edit">✎</button><button type="button" class="tp-btn danger sm" data-tp-del-goal="'+g.id+'">✕</button></label>';
-          }).join('') || '<p class="tp-empty">No goals for today.</p>') +
+        return '<div class="tp-card"><h3>Daily goals</h3><p class="tp-sub">Only for today · list clears after midnight · '+tpToday()+'</p><div>' +
+          (goals.map(function(g){ return '<label class="tp-check '+(g.done?'done':'')+'"><input type="checkbox" data-tp-goal="'+g.id+'" '+(g.done?'checked':'')+'><span style="flex:1">'+g.text+'</span><button type="button" class="tp-btn danger sm" data-tp-del-goal="'+g.id+'">✕</button></label>'; }).join('') || '<p class="tp-empty">No goals for today.</p>') +
           '</div><div class="tp-row"><input id="tpNewGoal" placeholder="Add a goal for today…"><button type="button" class="tp-btn" id="tpAddGoal">Add</button></div></div>' +
-          '<div class="tp-card"><h3>Habits</h3><p class="tp-sub">Streaks update when you check them off</p>' +
-          tpData.habits.map(function(h){
-            var on=h.log&&h.log[tpToday()];
-            if (tpIsEditing("habit", h.id)) {
-              return '<div class="tp-check"><div style="flex:1" class="tp-row" style="margin:0"><input data-tp-edit-input="habit" data-id="'+h.id+'" value="'+tpEsc(h.name)+'" style="flex:1"><button type="button" class="tp-btn sm" data-tp-save-edit="habit" data-id="'+h.id+'">Save</button><button type="button" class="tp-btn outline sm" data-tp-cancel-edit>Cancel</button></div></div>';
-            }
-            return '<label class="tp-check '+(on?'done':'')+'"><input type="checkbox" data-tp-habit="'+h.id+'" '+(on?'checked':'')+'><div style="flex:1"><span>'+tpEsc(h.name)+'</span><div class="meta">🔥 '+(h.streak||0)+' · best '+(h.best||0)+'</div></div><button type="button" class="tp-btn outline sm" data-tp-edit-habit="'+h.id+'" title="Edit">✎</button><button type="button" class="tp-btn danger sm" data-tp-del-habit="'+h.id+'">✕</button></label>';
-          }).join('') +
+          '<div class="tp-card"><h3>Habits</h3><p class="tp-sub">Items stay · checks reset every day · streaks keep going</p>' +
+          tpData.habits.map(function(h){ var on=h.log&&h.log[tpToday()]; return '<label class="tp-check '+(on?'done':'')+'"><input type="checkbox" data-tp-habit="'+h.id+'" '+(on?'checked':'')+'><div style="flex:1"><span>'+h.name+'</span><div class="meta">🔥 '+(h.streak||0)+' · best '+(h.best||0)+'</div></div><button type="button" class="tp-btn danger sm" data-tp-del-habit="'+h.id+'">✕</button></label>'; }).join('') +
           '<div class="tp-row"><input id="tpNewHabit" placeholder="New habit…"><button type="button" class="tp-btn" id="tpAddHabit">Add habit</button></div></div>';
       }
 
@@ -16060,15 +16183,9 @@
         var day = tpToday();
         var log = (tpData.routineLog[day] && tpData.routineLog[day][kind]) || [];
         var title = kind === "morning" ? "Morning routine" : "Night routine";
-        var sub = kind === "morning" ? "Start the day with intention" : "Close the day & prepare tomorrow";
+        var sub = kind === "morning" ? "Start the day with intention · checks reset daily" : "Close the day & prepare tomorrow · checks reset daily";
         var html = '<div class="tp-card"><h3>'+title+'</h3><p class="tp-sub">'+sub+' · '+day+'</p>' +
-          (list.map(function(item){
-            var on=log.indexOf(item.id)>=0;
-            if (tpIsEditing("routine", item.id, kind)) {
-              return '<div class="tp-check"><div style="flex:1" class="tp-row" style="margin:0"><input data-tp-edit-input="routine" data-id="'+item.id+'" data-kind="'+kind+'" value="'+tpEsc(item.text)+'" style="flex:1"><button type="button" class="tp-btn sm" data-tp-save-edit="routine" data-id="'+item.id+'" data-kind="'+kind+'">Save</button><button type="button" class="tp-btn outline sm" data-tp-cancel-edit>Cancel</button></div></div>';
-            }
-            return '<label class="tp-check '+(on?'done':'')+'"><input type="checkbox" data-tp-routine="'+kind+'" data-id="'+item.id+'" '+(on?'checked':'')+'><span style="flex:1">'+tpEsc(item.text)+'</span><button type="button" class="tp-btn outline sm" data-tp-edit-routine="'+kind+'" data-id="'+item.id+'" title="Edit">✎</button><button type="button" class="tp-btn danger sm" data-tp-del-routine="'+kind+'" data-id="'+item.id+'">✕</button></label>';
-          }).join('') || '<p class="tp-empty">Empty routine.</p>') +
+          (list.map(function(item){ var on=log.indexOf(item.id)>=0; return '<label class="tp-check '+(on?'done':'')+'"><input type="checkbox" data-tp-routine="'+kind+'" data-id="'+item.id+'" '+(on?'checked':'')+'><span style="flex:1">'+item.text+'</span><button type="button" class="tp-btn danger sm" data-tp-del-routine="'+kind+'" data-id="'+item.id+'">✕</button></label>'; }).join('') || '<p class="tp-empty">Empty routine.</p>') +
           '<div class="tp-row"><input id="tpNewRoutine" placeholder="Add step…"><button type="button" class="tp-btn" id="tpAddRoutine" data-kind="'+kind+'">Add</button></div></div>';
         if (kind === "night") {
           html += '<div class="tp-card"><h3>Daily reflection</h3><p class="tp-sub">What went well? What will you improve?</p><textarea id="tpReflection" placeholder="Write a few lines…">'+(tpData.reflections[day]||'')+'</textarea><div class="tp-row"><button type="button" class="tp-btn" id="tpSaveReflection">Save reflection</button></div></div>';
@@ -16082,17 +16199,13 @@
         var text = list[idx] || "I grow a little every day.";
         var practiced = !!(tpData.affirmations.practiced && tpData.affirmations.practiced[tpToday()]);
         return '<div class="tp-card"><h3>Today\'s affirmation</h3><p class="tp-sub">'+(practiced?"Practiced today ✓":"Read it slowly. Feel it as true.")+'</p>' +
-          '<div class="tp-affirm" id="tpAffirmText">'+tpEsc(text)+'</div><div class="tp-row" style="justify-content:center">' +
+          '<div class="tp-affirm" id="tpAffirmText">'+text+'</div><div class="tp-row" style="justify-content:center">' +
           '<button type="button" class="tp-btn outline" id="tpAffirmNext">Another</button>' +
-          '<button type="button" class="tp-btn" id="tpAffirmPractice">'+(practiced?"Practiced":"Mark practiced")+'</button></div></div>' +
+          '<button type="button" class="tp-btn" id="tpAffirmPractice">'+(practiced?"Practiced":"Mark practiced")+'</button>' +
+          '<button type="button" class="tp-btn outline" id="tpAffirmApi">Fetch online</button></div></div>' +
           '<div class="tp-card"><h3>Future self</h3><p class="tp-sub">Who are you becoming?</p><textarea id="tpFutureSelf" placeholder="Describe your future self in vivid present tense…">'+(tpData.affirmations.futureSelf||'')+'</textarea><div class="tp-row"><button type="button" class="tp-btn" id="tpSaveFutureSelf">Save</button></div></div>' +
           '<div class="tp-card"><h3>Your affirmations</h3>' +
-          list.map(function(t,i){
-            if (tpIsEditing("affirm", String(i))) {
-              return '<div class="tp-item"><div class="tp-row" style="margin:0"><input data-tp-edit-input="affirm" data-id="'+i+'" value="'+tpEsc(t)+'" style="flex:1"><button type="button" class="tp-btn sm" data-tp-save-edit="affirm" data-id="'+i+'">Save</button><button type="button" class="tp-btn outline sm" data-tp-cancel-edit>Cancel</button></div></div>';
-            }
-            return '<div class="tp-item"><div class="tp-item-head"><span>'+tpEsc(t)+'</span><span><button type="button" class="tp-btn outline sm" data-tp-edit-affirm="'+i+'" title="Edit">✎</button> <button type="button" class="tp-btn danger sm" data-tp-del-affirm="'+i+'">✕</button></span></div></div>';
-          }).join('') +
+          list.map(function(t,i){ return '<div class="tp-item"><div class="tp-item-head"><span>'+t+'</span><button type="button" class="tp-btn danger sm" data-tp-del-affirm="'+i+'">✕</button></div></div>'; }).join('') +
           '<div class="tp-row"><input id="tpNewAffirm" placeholder="Add affirmation…"><button type="button" class="tp-btn" id="tpAddAffirm">Add</button></div></div>';
       }
 
@@ -16100,17 +16213,7 @@
         return ["career","romantic","personal"].map(function(cat){
           var items = tpData.goals[cat] || [];
           return '<div class="tp-card"><h3>'+cat.charAt(0).toUpperCase()+cat.slice(1)+' goals</h3>' +
-            (items.map(function(g){
-              if (tpIsEditing("goal", g.id, cat)) {
-                return '<div class="tp-item"><div class="tp-row" style="margin:0;flex-wrap:wrap">' +
-                  '<input data-tp-edit-input="goal-title" data-id="'+g.id+'" data-cat="'+cat+'" value="'+tpEsc(g.title)+'" placeholder="Title" style="flex:1;min-width:140px">' +
-                  '<input data-tp-edit-input="goal-deadline" data-id="'+g.id+'" data-cat="'+cat+'" type="date" value="'+tpEsc(g.deadline||'')+'" style="flex:0.6;min-width:120px">' +
-                  '<input data-tp-edit-input="goal-ms" data-id="'+g.id+'" data-cat="'+cat+'" value="'+tpEsc(g.milestone||'')+'" placeholder="Milestone" style="flex:1;min-width:120px">' +
-                  '<button type="button" class="tp-btn sm" data-tp-save-edit="goal" data-id="'+g.id+'" data-cat="'+cat+'">Save</button>' +
-                  '<button type="button" class="tp-btn outline sm" data-tp-cancel-edit>Cancel</button></div></div>';
-              }
-              return '<div class="tp-item"><div class="tp-item-head"><strong>'+tpEsc(g.title)+'</strong><span>'+(g.done?'<span class="tp-tag done">done</span> ':'')+'<button type="button" class="tp-btn sm outline" data-tp-goal-prog="'+g.id+'" data-cat="'+cat+'">+10%</button> <button type="button" class="tp-btn outline sm" data-tp-edit-goal="'+g.id+'" data-cat="'+cat+'" title="Edit">✎</button> <button type="button" class="tp-btn danger sm" data-tp-del-gcat="'+cat+'" data-id="'+g.id+'">✕</button></span></div><div class="tp-progress"><i style="width:'+Math.min(100,g.progress||0)+'%"></i></div><div class="meta" style="font-size:0.72rem;color:var(--ink-soft)">'+(g.progress||0)+'%'+(g.deadline?' · '+tpEsc(g.deadline):'')+(g.milestone?' · '+tpEsc(g.milestone):'')+'</div></div>';
-            }).join('') || '<p class="tp-empty">No goals yet.</p>') +
+            (items.map(function(g){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+g.title+'</strong><span>'+(g.done?'<span class="tp-tag done">done</span> ':'')+'<button type="button" class="tp-btn sm outline" data-tp-goal-prog="'+g.id+'" data-cat="'+cat+'">+10%</button> <button type="button" class="tp-btn danger sm" data-tp-del-gcat="'+cat+'" data-id="'+g.id+'">✕</button></span></div><div class="tp-progress"><i style="width:'+Math.min(100,g.progress||0)+'%"></i></div><div class="meta" style="font-size:0.72rem;color:var(--ink-soft)">'+(g.progress||0)+'%'+(g.deadline?' · '+g.deadline:'')+(g.milestone?' · '+g.milestone:'')+'</div></div>'; }).join('') || '<p class="tp-empty">No goals yet.</p>') +
             '<div class="tp-row"><input data-new-goal-title="'+cat+'" placeholder="Goal title…"><input data-new-goal-deadline="'+cat+'" type="date" style="flex:0.6"><input data-new-goal-ms="'+cat+'" placeholder="Next milestone…"><button type="button" class="tp-btn" data-tp-add-gcat="'+cat+'">Add</button></div></div>';
         }).join('');
       }
@@ -16118,172 +16221,23 @@
       function tpViewWishlist() {
         var pri = { high: "hi", medium: "mid", low: "lo" };
         return '<div class="tp-card"><h3>Wishlist</h3><p class="tp-sub">Things to buy or achieve</p>' +
-          ((tpData.wishlist||[]).map(function(w){
-            if (tpIsEditing("wish", w.id)) {
-              return '<div class="tp-item"><div class="tp-row" style="margin:0;flex-wrap:wrap">' +
-                '<input data-tp-edit-input="wish-title" data-id="'+w.id+'" value="'+tpEsc(w.title)+'" placeholder="Item" style="flex:1;min-width:120px">' +
-                '<select data-tp-edit-input="wish-pri" data-id="'+w.id+'"><option value="high"'+(w.priority==="high"?" selected":"")+'>High</option><option value="medium"'+(w.priority!=="high"&&w.priority!=="low"?" selected":"")+'>Medium</option><option value="low"'+(w.priority==="low"?" selected":"")+'>Low</option></select>' +
-                '<input data-tp-edit-input="wish-notes" data-id="'+w.id+'" value="'+tpEsc(w.notes||'')+'" placeholder="Notes" style="flex:1;min-width:120px">' +
-                '<button type="button" class="tp-btn sm" data-tp-save-edit="wish" data-id="'+w.id+'">Save</button>' +
-                '<button type="button" class="tp-btn outline sm" data-tp-cancel-edit>Cancel</button></div></div>';
-            }
-            return '<div class="tp-item"><div class="tp-item-head"><strong>'+tpEsc(w.title)+'</strong><span><span class="tp-tag '+(pri[w.priority]||'mid')+'">'+(w.priority||'medium')+'</span> <span class="tp-tag '+(w.status==='got'?'done':'')+'">'+(w.status||'want')+'</span> <button type="button" class="tp-btn sm outline" data-tp-wish-status="'+w.id+'">Toggle</button> <button type="button" class="tp-btn outline sm" data-tp-edit-wish="'+w.id+'" title="Edit">✎</button> <button type="button" class="tp-btn danger sm" data-tp-del-wish="'+w.id+'">✕</button></span></div>'+(w.notes?'<div class="meta" style="font-size:0.78rem;color:var(--ink-soft)">'+tpEsc(w.notes)+'</div>':'')+'</div>';
-          }).join('') || '<p class="tp-empty">Wishlist is empty.</p>') +
+          ((tpData.wishlist||[]).map(function(w){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+w.title+'</strong><span><span class="tp-tag '+(pri[w.priority]||'mid')+'">'+(w.priority||'medium')+'</span> <span class="tp-tag '+(w.status==='got'?'done':'')+'">'+(w.status||'want')+'</span> <button type="button" class="tp-btn sm outline" data-tp-wish-status="'+w.id+'">Toggle</button> <button type="button" class="tp-btn danger sm" data-tp-del-wish="'+w.id+'">✕</button></span></div>'+(w.notes?'<div class="meta" style="font-size:0.78rem;color:var(--ink-soft)">'+w.notes+'</div>':'')+'</div>'; }).join('') || '<p class="tp-empty">Wishlist is empty.</p>') +
           '<div class="tp-row"><input id="tpWishTitle" placeholder="Item…"><select id="tpWishPri"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select><input id="tpWishNotes" placeholder="Notes (optional)"><button type="button" class="tp-btn" id="tpAddWish">Add</button></div></div>';
       }
 
       function tpViewBucket() {
         return '<div class="tp-card"><h3>Life bucket list</h3><p class="tp-sub">Experiences you want — separate from the shared couple list</p>' +
-          ((tpData.bucket||[]).map(function(b){
-            if (tpIsEditing("bucket", b.id)) {
-              return '<div class="tp-check"><div style="flex:1" class="tp-row" style="margin:0"><input data-tp-edit-input="bucket" data-id="'+b.id+'" value="'+tpEsc(b.title)+'" style="flex:1"><button type="button" class="tp-btn sm" data-tp-save-edit="bucket" data-id="'+b.id+'">Save</button><button type="button" class="tp-btn outline sm" data-tp-cancel-edit>Cancel</button></div></div>';
-            }
-            return '<label class="tp-check '+(b.done?'done':'')+'"><input type="checkbox" data-tp-bucket="'+b.id+'" '+(b.done?'checked':'')+'><div style="flex:1"><span>'+tpEsc(b.title)+'</span>'+(b.done&&b.dateDone?'<div class="meta">Done '+tpEsc(b.dateDone)+'</div>':'')+'</div><button type="button" class="tp-btn outline sm" data-tp-edit-bucket="'+b.id+'" title="Edit">✎</button><button type="button" class="tp-btn danger sm" data-tp-del-bucket="'+b.id+'">✕</button></label>';
-          }).join('') || '<p class="tp-empty">Add experiences you want in this lifetime.</p>') +
+          ((tpData.bucket||[]).map(function(b){ return '<label class="tp-check '+(b.done?'done':'')+'"><input type="checkbox" data-tp-bucket="'+b.id+'" '+(b.done?'checked':'')+'><div style="flex:1"><span>'+b.title+'</span>'+(b.done&&b.dateDone?'<div class="meta">Done '+b.dateDone+'</div>':'')+'</div><button type="button" class="tp-btn danger sm" data-tp-del-bucket="'+b.id+'">✕</button></label>'; }).join('') || '<p class="tp-empty">Add experiences you want in this lifetime.</p>') +
           '<div class="tp-row"><input id="tpBucketTitle" placeholder="Experience…"><button type="button" class="tp-btn" id="tpAddBucket">Add</button></div></div>';
       }
 
       function tpViewRomantic() {
         return '<div class="tp-card"><h3>Romantic life</h3><p class="tp-sub">Date ideas, surprises, plans, memories to create</p>' +
-          ((tpData.romantic||[]).map(function(r){
-            if (tpIsEditing("rom", r.id)) {
-              var types = ["date","surprise","plan","memory","goal"];
-              return '<div class="tp-item"><div class="tp-row" style="margin:0;flex-wrap:wrap">' +
-                '<input data-tp-edit-input="rom-title" data-id="'+r.id+'" value="'+tpEsc(r.title)+'" placeholder="Title" style="flex:1;min-width:120px">' +
-                '<select data-tp-edit-input="rom-type" data-id="'+r.id+'">'+types.map(function(t){ return '<option value="'+t+'"'+(r.type===t?' selected':'')+'>'+t.charAt(0).toUpperCase()+t.slice(1)+'</option>'; }).join('')+'</select>' +
-                '<input data-tp-edit-input="rom-notes" data-id="'+r.id+'" value="'+tpEsc(r.notes||'')+'" placeholder="Notes" style="flex:1;min-width:120px">' +
-                '<button type="button" class="tp-btn sm" data-tp-save-edit="rom" data-id="'+r.id+'">Save</button>' +
-                '<button type="button" class="tp-btn outline sm" data-tp-cancel-edit>Cancel</button></div></div>';
-            }
-            return '<div class="tp-item"><div class="tp-item-head"><strong>'+tpEsc(r.title)+'</strong><span><span class="tp-tag">'+(r.type||'idea')+'</span> <span class="tp-tag '+(r.status==='done'?'done':'')+'">'+(r.status||'idea')+'</span> <button type="button" class="tp-btn sm outline" data-tp-rom-status="'+r.id+'">Cycle</button> <button type="button" class="tp-btn outline sm" data-tp-edit-rom="'+r.id+'" title="Edit">✎</button> <button type="button" class="tp-btn danger sm" data-tp-del-rom="'+r.id+'">✕</button></span></div>'+(r.notes?'<div class="meta" style="font-size:0.78rem;color:var(--ink-soft)">'+tpEsc(r.notes)+'</div>':'')+'</div>';
-          }).join('') || '<p class="tp-empty">Start collecting romantic ideas.</p>') +
+          ((tpData.romantic||[]).map(function(r){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+r.title+'</strong><span><span class="tp-tag">'+(r.type||'idea')+'</span> <span class="tp-tag '+(r.status==='done'?'done':'')+'">'+(r.status||'idea')+'</span> <button type="button" class="tp-btn sm outline" data-tp-rom-status="'+r.id+'">Cycle</button> <button type="button" class="tp-btn danger sm" data-tp-del-rom="'+r.id+'">✕</button></span></div>'+(r.notes?'<div class="meta" style="font-size:0.78rem;color:var(--ink-soft)">'+r.notes+'</div>':'')+'</div>'; }).join('') || '<p class="tp-empty">Start collecting romantic ideas.</p>') +
           '<div class="tp-row"><input id="tpRomTitle" placeholder="Title…"><select id="tpRomType"><option value="date">Date</option><option value="surprise">Surprise</option><option value="plan">Plan</option><option value="memory">Memory</option><option value="goal">Goal</option></select><input id="tpRomNotes" placeholder="Notes…"><button type="button" class="tp-btn" id="tpAddRom">Add</button></div></div>';
       }
 
       function tpBindView() {
-        // ---- Edit: start / cancel / save ----
-        document.querySelectorAll("[data-tp-cancel-edit]").forEach(function(b){
-          b.addEventListener("click", function(e){ e.preventDefault(); tpCancelEdit(); });
-        });
-        document.querySelectorAll("[data-tp-edit-dgoal]").forEach(function(b){
-          b.addEventListener("click", function(e){ e.preventDefault(); e.stopPropagation(); tpStartEdit("dgoal", b.getAttribute("data-tp-edit-dgoal")); });
-        });
-        document.querySelectorAll("[data-tp-edit-habit]").forEach(function(b){
-          b.addEventListener("click", function(e){ e.preventDefault(); e.stopPropagation(); tpStartEdit("habit", b.getAttribute("data-tp-edit-habit")); });
-        });
-        document.querySelectorAll("[data-tp-edit-routine]").forEach(function(b){
-          b.addEventListener("click", function(e){ e.preventDefault(); e.stopPropagation(); tpStartEdit("routine", b.getAttribute("data-id"), b.getAttribute("data-tp-edit-routine")); });
-        });
-        document.querySelectorAll("[data-tp-edit-affirm]").forEach(function(b){
-          b.addEventListener("click", function(e){ e.preventDefault(); tpStartEdit("affirm", b.getAttribute("data-tp-edit-affirm")); });
-        });
-        document.querySelectorAll("[data-tp-edit-goal]").forEach(function(b){
-          b.addEventListener("click", function(e){ e.preventDefault(); tpStartEdit("goal", b.getAttribute("data-tp-edit-goal"), b.getAttribute("data-cat")); });
-        });
-        document.querySelectorAll("[data-tp-edit-wish]").forEach(function(b){
-          b.addEventListener("click", function(e){ e.preventDefault(); tpStartEdit("wish", b.getAttribute("data-tp-edit-wish")); });
-        });
-        document.querySelectorAll("[data-tp-edit-bucket]").forEach(function(b){
-          b.addEventListener("click", function(e){ e.preventDefault(); e.stopPropagation(); tpStartEdit("bucket", b.getAttribute("data-tp-edit-bucket")); });
-        });
-        document.querySelectorAll("[data-tp-edit-rom]").forEach(function(b){
-          b.addEventListener("click", function(e){ e.preventDefault(); tpStartEdit("rom", b.getAttribute("data-tp-edit-rom")); });
-        });
-        document.querySelectorAll("[data-tp-save-edit]").forEach(function(b){
-          b.addEventListener("click", function(e){
-            e.preventDefault();
-            var kind = b.getAttribute("data-tp-save-edit");
-            var id = b.getAttribute("data-id");
-            var cat = b.getAttribute("data-cat");
-            if (kind === "dgoal") {
-              var inp = document.querySelector('[data-tp-edit-input="dgoal"][data-id="'+id+'"]');
-              var t = inp ? inp.value.trim() : "";
-              if (!t) return;
-              var g = tpDayGoals().find(function(x){ return x.id === id; });
-              if (g) g.text = t;
-            } else if (kind === "habit") {
-              var inp = document.querySelector('[data-tp-edit-input="habit"][data-id="'+id+'"]');
-              var t = inp ? inp.value.trim() : "";
-              if (!t) return;
-              var h = tpData.habits.find(function(x){ return x.id === id; });
-              if (h) h.name = t;
-            } else if (kind === "routine") {
-              var rkind = b.getAttribute("data-kind");
-              var inp = document.querySelector('[data-tp-edit-input="routine"][data-id="'+id+'"]');
-              var t = inp ? inp.value.trim() : "";
-              if (!t) return;
-              var item = (tpData[rkind] || []).find(function(x){ return x.id === id; });
-              if (item) item.text = t;
-            } else if (kind === "affirm") {
-              var inp = document.querySelector('[data-tp-edit-input="affirm"][data-id="'+id+'"]');
-              var t = inp ? inp.value.trim() : "";
-              if (!t) return;
-              var i = parseInt(id, 10);
-              if (!isNaN(i) && tpData.affirmations.custom[i] != null) tpData.affirmations.custom[i] = t;
-            } else if (kind === "goal") {
-              var g = (tpData.goals[cat] || []).find(function(x){ return x.id === id; });
-              if (!g) return;
-              var titleEl = document.querySelector('[data-tp-edit-input="goal-title"][data-id="'+id+'"]');
-              var dlEl = document.querySelector('[data-tp-edit-input="goal-deadline"][data-id="'+id+'"]');
-              var msEl = document.querySelector('[data-tp-edit-input="goal-ms"][data-id="'+id+'"]');
-              var title = titleEl ? titleEl.value.trim() : "";
-              if (!title) return;
-              g.title = title;
-              g.deadline = dlEl ? dlEl.value : "";
-              g.milestone = msEl ? msEl.value.trim() : "";
-            } else if (kind === "wish") {
-              var w = tpData.wishlist.find(function(x){ return x.id === id; });
-              if (!w) return;
-              var titleEl = document.querySelector('[data-tp-edit-input="wish-title"][data-id="'+id+'"]');
-              var priEl = document.querySelector('[data-tp-edit-input="wish-pri"][data-id="'+id+'"]');
-              var notesEl = document.querySelector('[data-tp-edit-input="wish-notes"][data-id="'+id+'"]');
-              var title = titleEl ? titleEl.value.trim() : "";
-              if (!title) return;
-              w.title = title;
-              w.priority = priEl ? priEl.value : "medium";
-              w.notes = notesEl ? notesEl.value.trim() : "";
-            } else if (kind === "bucket") {
-              var inp = document.querySelector('[data-tp-edit-input="bucket"][data-id="'+id+'"]');
-              var t = inp ? inp.value.trim() : "";
-              if (!t) return;
-              var item = tpData.bucket.find(function(x){ return x.id === id; });
-              if (item) item.title = t;
-            } else if (kind === "rom") {
-              var r = tpData.romantic.find(function(x){ return x.id === id; });
-              if (!r) return;
-              var titleEl = document.querySelector('[data-tp-edit-input="rom-title"][data-id="'+id+'"]');
-              var typeEl = document.querySelector('[data-tp-edit-input="rom-type"][data-id="'+id+'"]');
-              var notesEl = document.querySelector('[data-tp-edit-input="rom-notes"][data-id="'+id+'"]');
-              var title = titleEl ? titleEl.value.trim() : "";
-              if (!title) return;
-              r.title = title;
-              r.type = typeEl ? typeEl.value : "date";
-              r.notes = notesEl ? notesEl.value.trim() : "";
-            }
-            tpEdit = { kind: null, id: null, cat: null };
-            tpSave();
-            if (typeof showToast === "function") showToast("Updated", "updated");
-            tpRender();
-          });
-        });
-        // Enter key saves active edit input
-        document.querySelectorAll("[data-tp-edit-input]").forEach(function(inp){
-          inp.addEventListener("keydown", function(e){
-            if (e.key === "Enter" && inp.tagName !== "TEXTAREA") {
-              e.preventDefault();
-              var btn = document.querySelector("[data-tp-save-edit]");
-              if (btn) btn.click();
-            } else if (e.key === "Escape") {
-              tpCancelEdit();
-            }
-          });
-          // Autofocus first edit field
-          if (!document.querySelector("[data-tp-edit-input].tp-focused")) {
-            inp.classList.add("tp-focused");
-            try { inp.focus(); inp.select && inp.select(); } catch (err) {}
-          }
-        });
-
         document.querySelectorAll("[data-tp-habit]").forEach(function(el){ el.addEventListener("change", function(){ tpHabitMark(el.getAttribute("data-tp-habit"), el.checked); tpRender(); }); });
         document.querySelectorAll("[data-tp-goal]").forEach(function(el){ el.addEventListener("change", function(){ var g=tpDayGoals().find(function(x){return x.id===el.getAttribute("data-tp-goal");}); if(g){ g.done=el.checked; tpSave(); tpRender(); } }); });
         var addGoal=document.getElementById("tpAddGoal");
@@ -16307,6 +16261,8 @@
         if(affNext) affNext.addEventListener("click", function(){ var n=(tpData.affirmations.custom||[]).length||1; tpData.affirmations.lastIndex=((tpData.affirmations.lastIndex||0)+1)%n; tpSave(); tpRender(); });
         var affPr=document.getElementById("tpAffirmPractice");
         if(affPr) affPr.addEventListener("click", function(){ tpData.affirmations.practiced=tpData.affirmations.practiced||{}; tpData.affirmations.practiced[tpToday()]=true; tpSave(); tpRender(); });
+        var affApi=document.getElementById("tpAffirmApi");
+        if(affApi) affApi.addEventListener("click", async function(){ var el=document.getElementById("tpAffirmText"); try{ var text=null; try{ var r=await fetch("https://www.affirmations.dev/"); if(r.ok){ var j=await r.json(); text=j.affirmation; } }catch(e){} if(!text){ try{ var r2=await fetch("https://api.quotable.io/random?tags=inspirational"); if(r2.ok){ var j2=await r2.json(); text=j2.content; } }catch(e){} } if(text&&el) el.textContent=text; else if(typeof showToast==="function") showToast("Could not fetch affirmation","updated"); }catch(e){ if(typeof showToast==="function") showToast("Could not fetch affirmation","updated"); } });
         var addAff=document.getElementById("tpAddAffirm");
         if(addAff) addAff.addEventListener("click", function(){ var t=((document.getElementById("tpNewAffirm")||{}).value||"").trim(); if(!t) return; tpData.affirmations.custom.push(t); tpSave(); tpRender(); });
         document.querySelectorAll("[data-tp-del-affirm]").forEach(function(b){ b.addEventListener("click", function(){ tpData.affirmations.custom.splice(parseInt(b.getAttribute("data-tp-del-affirm"),10),1); tpSave(); tpRender(); }); });
@@ -16333,6 +16289,25 @@
         tpLoad();
         tpPomodoro.mode = "focus";
         tpPomodoro.left = tpModeSeconds("focus");
+        // When the calendar day changes: daily goals clear; habits/routines uncheck
+        var tpLastDayKey = tpToday();
+        function tpCheckNewDay() {
+          var now = tpToday();
+          if (now === tpLastDayKey) return;
+          tpLastDayKey = now;
+          if (tpIsUnlocked()) {
+            if (typeof showToast === "function")
+              showToast(
+                "New day — daily goals cleared · habits & routines unchecked",
+                "updated",
+              );
+            tpRender();
+          }
+        }
+        setInterval(tpCheckNewDay, 30000);
+        document.addEventListener("visibilitychange", function () {
+          if (document.visibilityState === "visible") tpCheckNewDay();
+        });
         var unlockBtn = document.getElementById("tpUnlockBtn");
         if (unlockBtn) unlockBtn.addEventListener("click", function() {
           var v = ((document.getElementById("tpPassInput") || {}).value) || "";
