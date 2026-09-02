@@ -4344,7 +4344,19 @@
       html[data-theme="dark"] textarea.tp-notes {
         border-color: rgba(255, 255, 255, 0.12); background: var(--cream-dim);
       }
-      .tp-course-card { margin-top: 12px; }
+      .tp-reps {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-weight: 700; font-variant-numeric: tabular-nums;
+      }
+      .tp-reps button {
+        width: 28px; height: 28px; border-radius: 8px;
+        border: 1px solid rgba(43, 38, 34, 0.12); background: var(--cream-dim);
+        color: var(--ink); font-weight: 700; line-height: 1;
+      }
+      .tp-reps button:hover { border-color: var(--green); color: var(--green-deep); }
+      html[data-theme="dark"] .tp-reps button {
+        border-color: rgba(255, 255, 255, 0.12); background: var(--cream-dim);
+      }
 
       .tp-row textarea { min-height: 64px; width: 100%; flex: 1 1 100%; }
       .tp-btn {
@@ -5848,6 +5860,7 @@
               <button type="button" data-tp="wishlist">Wishlist</button>
               <button type="button" data-tp="bucket">Bucket List</button>
               <button type="button" data-tp="romantic">Romantic Life</button>
+              <button type="button" data-tp="workout">Workout</button>
               <button type="button" data-tp="study">Study</button>
             </nav>
             <div class="tp-main" id="tpMain">
@@ -16944,44 +16957,14 @@
           });
         });
       }
-      function tpNormalizeStudy(study) {
-        // Migrate legacy { course, subjects } → { courses: [{ id, name, description, subjects }] }
-        if (!study || typeof study !== "object") return { courses: [] };
-        if (Array.isArray(study)) {
-          return {
-            courses: [
-              {
-                id: "course_legacy",
-                name: "My course",
-                description: "",
-                subjects: study,
-              },
-            ],
-          };
+      function tpEnsureWorkouts() {
+        if (!tpData.workouts || typeof tpData.workouts !== "object") {
+          tpData.workouts = { exercises: [], routines: [], session: null, log: {} };
         }
-        if (Array.isArray(study.courses)) {
-          study.courses = study.courses.map(function (c) {
-            return {
-              id: c.id || "c_" + Math.random().toString(36).slice(2, 8),
-              name: c.name || "",
-              description: c.description || "",
-              subjects: Array.isArray(c.subjects) ? c.subjects : [],
-            };
-          });
-          return study;
-        }
-        var subjects = Array.isArray(study.subjects) ? study.subjects : [];
-        var course = study.course || {};
-        var courses = [];
-        if (course.name || course.description || subjects.length) {
-          courses.push({
-            id: course.id || "course_legacy",
-            name: course.name || "My course",
-            description: course.description || "",
-            subjects: subjects,
-          });
-        }
-        return { courses: courses };
+        if (!Array.isArray(tpData.workouts.exercises)) tpData.workouts.exercises = [];
+        if (!Array.isArray(tpData.workouts.routines)) tpData.workouts.routines = [];
+        if (!tpData.workouts.log || typeof tpData.workouts.log !== "object") tpData.workouts.log = {};
+        return tpData.workouts;
       }
 
       function tpDefaultData() {
@@ -16997,7 +16980,8 @@
           wishlist: [],
           bucket: [],
           romantic: [],
-          study: { courses: [] },
+          workouts: { exercises: [], routines: [], session: null, log: {} },
+          study: { course: { name: "", description: "" }, subjects: [] },
           morning: [
             { id: "m1", text: "Make bed" },
             { id: "m2", text: "Hydrate + light stretch" },
@@ -17044,7 +17028,11 @@
             tpData.goals = Object.assign({ career: [], romantic: [], personal: [] }, tpData.goals || {});
             tpData.affirmations = Object.assign(d.affirmations, tpData.affirmations || {});
             tpData.pomodoro = Object.assign(d.pomodoro, tpData.pomodoro || {});
-            tpData.study = tpNormalizeStudy(tpData.study);
+            var legacyStudy = Array.isArray(tpData.study) ? tpData.study : [];
+            if (!tpData.study || Array.isArray(tpData.study)) tpData.study = { course: { name: "", description: "" }, subjects: legacyStudy };
+            tpData.study.course = Object.assign({ name: "", description: "" }, tpData.study.course || {});
+            tpData.study.subjects = tpData.study.subjects || [];
+            tpEnsureWorkouts();
           } else tpData = tpDefaultData();
         } catch (e) { tpData = tpDefaultData(); }
       }
@@ -17224,6 +17212,7 @@
         else if (tpView === "wishlist") main.innerHTML = tpViewWishlist();
         else if (tpView === "bucket") main.innerHTML = tpViewBucket();
         else if (tpView === "romantic") main.innerHTML = tpViewRomantic();
+        else if (tpView === "workout") main.innerHTML = tpViewWorkout();
         else if (tpView === "study") main.innerHTML = tpViewStudy();
         tpBindView();
       }
@@ -17437,28 +17426,12 @@
         var day = tpToday();
         var log = (tpData.routineLog[day] && tpData.routineLog[day][kind]) || [];
         var title = kind === "morning" ? "Morning routine" : "Night routine";
-        var sub = kind === "morning"
-          ? "Start the day with intention · checks reset daily"
-          : "Close the day & prepare tomorrow · checks reset daily";
-        var html = '<div class="tp-card"><h3>' + title + '</h3><p class="tp-sub">' + sub + " · " + day + "</p>";
-        html += list.map(function (item) {
-          var on = log.indexOf(item.id) >= 0;
-          return (
-            '<label class="tp-check ' + (on ? "done" : "") + '">' +
-            '<input type="checkbox" data-tp-routine="' + kind + '" data-id="' + item.id + '" ' + (on ? "checked" : "") + ">" +
-            '<span style="flex:1">' + item.text + "</span>" +
-            '<button type="button" class="tp-btn danger sm" data-tp-del-routine="' + kind + '" data-id="' + item.id + '">✕</button></label>'
-          );
-        }).join("") || '<p class="tp-empty">Empty routine.</p>';
-        html += '<div class="tp-row"><input id="tpNewRoutine" placeholder="Add step…"><button type="button" class="tp-btn" id="tpAddRoutine" data-kind="' + kind + '">Add</button></div></div>';
+        var sub = kind === "morning" ? "Start the day with intention · checks reset daily" : "Close the day & prepare tomorrow · checks reset daily";
+        var html = '<div class="tp-card"><h3>'+title+'</h3><p class="tp-sub">'+sub+' · '+day+'</p>' +
+          (list.map(function(item){ var on=log.indexOf(item.id)>=0; return '<label class="tp-check '+(on?'done':'')+'"><input type="checkbox" data-tp-routine="'+kind+'" data-id="'+item.id+'" '+(on?'checked':'')+'><span style="flex:1">'+item.text+'</span><button type="button" class="tp-btn danger sm" data-tp-del-routine="'+kind+'" data-id="'+item.id+'">✕</button></label>'; }).join('') || '<p class="tp-empty">Empty routine.</p>') +
+          '<div class="tp-row"><input id="tpNewRoutine" placeholder="Add step…"><button type="button" class="tp-btn" id="tpAddRoutine" data-kind="'+kind+'">Add</button></div></div>';
         if (kind === "night") {
-          var ref = tpData.reflections[day] || "";
-          html += '<div class="tp-card"><h3>Daily reflection</h3>';
-          html += '<p class="tp-sub">What went well? What will you improve?</p>';
-          if (ref) html += '<div class="meta tp-md" style="margin-bottom:10px">' + tpMd(ref) + "</div>";
-          html += tpFmtBar("#tpReflection");
-          html += '<textarea id="tpReflection" class="tp-notes" placeholder="Write a few lines…">' + ref + "</textarea>";
-          html += '<div class="tp-row"><button type="button" class="tp-btn" id="tpSaveReflection">Save reflection</button></div></div>';
+          html += '<div class="tp-card"><h3>Daily reflection</h3><p class="tp-sub">What went well? What will you improve?</p><textarea id="tpReflection" placeholder="Write a few lines…">'+(tpData.reflections[day]||'')+'</textarea><div class="tp-row"><button type="button" class="tp-btn" id="tpSaveReflection">Save reflection</button></div></div>';
         }
         return html;
       }
@@ -17466,28 +17439,17 @@
       function tpViewAffirm() {
         var list = tpData.affirmations.custom || [];
         var idx = (tpData.affirmations.lastIndex || 0) % (list.length || 1);
-        var atext = list[idx] || "I grow a little every day.";
+        var text = list[idx] || "I grow a little every day.";
         var practiced = !!(tpData.affirmations.practiced && tpData.affirmations.practiced[tpToday()]);
-        var fs = tpData.affirmations.futureSelf || "";
-        var html = "";
-        html += '<div class="tp-card"><h3>Today\'s affirmation</h3>';
-        html += '<p class="tp-sub">' + (practiced ? "Practiced today ✓" : "Read it slowly. Feel it as true.") + "</p>";
-        html += '<div class="tp-affirm" id="tpAffirmText">' + atext + "</div>";
-        html += '<div class="tp-row" style="justify-content:center">';
-        html += '<button type="button" class="tp-btn outline" id="tpAffirmNext">Another</button>';
-        html += '<button type="button" class="tp-btn" id="tpAffirmPractice">' + (practiced ? "Practiced" : "Mark practiced") + "</button>";
-        html += "</div></div>";
-        html += '<div class="tp-card"><h3>Future self</h3><p class="tp-sub">Who are you becoming?</p>';
-        if (fs) html += '<div class="meta tp-md" style="margin-bottom:10px">' + tpMd(fs) + "</div>";
-        html += tpFmtBar("#tpFutureSelf");
-        html += '<textarea id="tpFutureSelf" class="tp-notes" placeholder="Describe your future self…">' + fs + "</textarea>";
-        html += '<div class="tp-row"><button type="button" class="tp-btn" id="tpSaveFutureSelf">Save</button></div></div>';
-        html += '<div class="tp-card"><h3>Your affirmations</h3>';
-        html += list.map(function (t, i) {
-          return '<div class="tp-item"><div class="tp-item-head"><span>' + t + '</span><button type="button" class="tp-btn danger sm" data-tp-del-affirm="' + i + '">✕</button></div></div>';
-        }).join("");
-        html += '<div class="tp-row"><input id="tpNewAffirm" placeholder="Add affirmation…"><button type="button" class="tp-btn" id="tpAddAffirm">Add</button></div></div>';
-        return html;
+        return '<div class="tp-card"><h3>Today\'s affirmation</h3><p class="tp-sub">'+(practiced?"Practiced today ✓":"Read it slowly. Feel it as true.")+'</p>' +
+          '<div class="tp-affirm" id="tpAffirmText">'+text+'</div><div class="tp-row" style="justify-content:center">' +
+          '<button type="button" class="tp-btn outline" id="tpAffirmNext">Another</button>' +
+          '<button type="button" class="tp-btn" id="tpAffirmPractice">'+(practiced?"Practiced":"Mark practiced")+'</button>' +
+          '<button type="button" class="tp-btn outline" id="tpAffirmApi">Fetch online</button></div></div>' +
+          '<div class="tp-card"><h3>Future self</h3><p class="tp-sub">Who are you becoming?</p><textarea id="tpFutureSelf" placeholder="Describe your future self in vivid present tense…">'+(tpData.affirmations.futureSelf||'')+'</textarea><div class="tp-row"><button type="button" class="tp-btn" id="tpSaveFutureSelf">Save</button></div></div>' +
+          '<div class="tp-card"><h3>Your affirmations</h3>' +
+          list.map(function(t,i){ return '<div class="tp-item"><div class="tp-item-head"><span>'+t+'</span><button type="button" class="tp-btn danger sm" data-tp-del-affirm="'+i+'">✕</button></div></div>'; }).join('') +
+          '<div class="tp-row"><input id="tpNewAffirm" placeholder="Add affirmation…"><button type="button" class="tp-btn" id="tpAddAffirm">Add</button></div></div>';
       }
 
       function tpViewGoals() {
@@ -17501,25 +17463,9 @@
 
       function tpViewWishlist() {
         var pri = { high: "hi", medium: "mid", low: "lo" };
-        var items = (tpData.wishlist || []).map(function (w) {
-          var html = '<div class="tp-item"><div class="tp-item-head"><strong>' + w.title + '</strong><span>';
-          html += '<span class="tp-tag ' + (pri[w.priority] || "mid") + '">' + (w.priority || "medium") + "</span> ";
-          html += '<span class="tp-tag ' + (w.status === "got" ? "done" : "") + '">' + (w.status || "want") + "</span> ";
-          html += '<button type="button" class="tp-btn sm outline" data-tp-wish-status="' + w.id + '">Toggle</button> ';
-          html += '<button type="button" class="tp-btn danger sm" data-tp-del-wish="' + w.id + '">✕</button></span></div>';
-          if (w.notes) html += '<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft)">' + tpMd(w.notes) + "</div>";
-          if (w.link) html += '<div class="meta" style="font-size:0.78rem"><a href="' + tpAttr(w.link) + '" target="_blank" rel="noopener" style="color:var(--sage)">' + w.link + "</a></div>";
-          html += "</div>";
-          return html;
-        }).join("");
-        if (!items) items = '<p class="tp-empty">Wishlist is empty.</p>';
-        return (
-          '<div class="tp-card"><h3>Wishlist</h3><p class="tp-sub">Things to buy or achieve</p>' +
-          items +
-          '<div class="tp-row"><input id="tpWishTitle" placeholder="Item…"><select id="tpWishPri"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select><input id="tpWishLink" placeholder="Link (optional)"></div>' +
-          tpFmtBar("#tpWishNotes") +
-          '<div class="tp-row"><textarea id="tpWishNotes" class="tp-notes" placeholder="Notes (optional)"></textarea><button type="button" class="tp-btn" id="tpAddWish">Add</button></div></div>'
-        );
+        return '<div class="tp-card"><h3>Wishlist</h3><p class="tp-sub">Things to buy or achieve</p>' +
+          ((tpData.wishlist||[]).map(function(w){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+w.title+'</strong><span><span class="tp-tag '+(pri[w.priority]||'mid')+'">'+(w.priority||'medium')+'</span> <span class="tp-tag '+(w.status==='got'?'done':'')+'">'+(w.status||'want')+'</span> <button type="button" class="tp-btn sm outline" data-tp-wish-status="'+w.id+'">Toggle</button> <button type="button" class="tp-btn danger sm" data-tp-del-wish="'+w.id+'">✕</button></span></div>'+(w.notes?'<div class="meta" style="font-size:0.78rem;color:var(--ink-soft)">'+w.notes+'</div>':'')+(w.link?'<div class="meta" style="font-size:0.78rem"><a href="'+tpAttr(w.link)+'" target="_blank" rel="noopener" style="color:var(--sage)">'+w.link+'</a></div>':'')+'</div>'; }).join('') || '<p class="tp-empty">Wishlist is empty.</p>') +
+          '<div class="tp-row"><input id="tpWishTitle" placeholder="Item…"><select id="tpWishPri"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select><input id="tpWishLink" placeholder="Link (optional)"><input id="tpWishNotes" placeholder="Notes (optional)"><button type="button" class="tp-btn" id="tpAddWish">Add</button></div></div>';
       }
 
       function tpViewBucket() {
@@ -17529,97 +17475,148 @@
       }
 
       function tpViewRomantic() {
-        var items = (tpData.romantic || []).map(function (r) {
-          var html = '<div class="tp-item"><div class="tp-item-head"><strong>' + r.title + '</strong><span>';
-          html += '<span class="tp-tag">' + (r.type || "idea") + "</span> ";
-          html += '<span class="tp-tag ' + (r.status === "done" ? "done" : "") + '">' + (r.status || "idea") + "</span> ";
-          html += '<button type="button" class="tp-btn sm outline" data-tp-rom-status="' + r.id + '">Cycle</button> ';
-          html += '<button type="button" class="tp-btn danger sm" data-tp-del-rom="' + r.id + '">✕</button></span></div>';
-          if (r.notes) html += '<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft)">' + tpMd(r.notes) + "</div>";
-          html += "</div>";
-          return html;
+        return '<div class="tp-card"><h3>Romantic life</h3><p class="tp-sub">Date ideas, surprises, plans, memories to create</p>' +
+          ((tpData.romantic||[]).map(function(r){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+r.title+'</strong><span><span class="tp-tag">'+(r.type||'idea')+'</span> <span class="tp-tag '+(r.status==='done'?'done':'')+'">'+(r.status||'idea')+'</span> <button type="button" class="tp-btn sm outline" data-tp-rom-status="'+r.id+'">Cycle</button> <button type="button" class="tp-btn danger sm" data-tp-del-rom="'+r.id+'">✕</button></span></div>'+(r.notes?'<div class="meta" style="font-size:0.78rem;color:var(--ink-soft)">'+r.notes+'</div>':'')+'</div>'; }).join('') || '<p class="tp-empty">Start collecting romantic ideas.</p>') +
+          '<div class="tp-row"><input id="tpRomTitle" placeholder="Title…"><select id="tpRomType"><option value="date">Date</option><option value="surprise">Surprise</option><option value="plan">Plan</option><option value="memory">Memory</option><option value="goal">Goal</option></select><input id="tpRomNotes" placeholder="Notes…"><button type="button" class="tp-btn" id="tpAddRom">Add</button></div></div>';
+      }
+
+function tpViewWorkout() {
+        var w = tpEnsureWorkouts();
+        var day = tpToday();
+        var dayLog = w.log[day] || {};
+        var session = w.session;
+        var html = "";
+
+        // Active session
+        if (session && session.routineId) {
+          var routine = (w.routines || []).find(function (r) { return r.id === session.routineId; });
+          var rname = routine ? routine.name : "Workout";
+          html += '<div class="tp-card"><h3>Session · ' + rname + '</h3>';
+          html += '<p class="tp-sub">Check exercises as you finish · adjust reps · ' + day + "</p>";
+          var doneCount = 0;
+          var total = (session.exerciseIds || []).length;
+          (session.exerciseIds || []).forEach(function (eid) {
+            var ex = (w.exercises || []).find(function (e) { return e.id === eid; });
+            if (!ex) return;
+            var done = !!(session.done && session.done[eid]);
+            if (done) doneCount++;
+            var reps = (session.reps && session.reps[eid] != null) ? session.reps[eid] : (ex.targetReps || 10);
+            html += '<div class="tp-item">';
+            html += '<div class="tp-item-head">';
+            html += '<label class="tp-check ' + (done ? "done" : "") + '" style="flex:1;margin:0">';
+            html += '<input type="checkbox" data-tp-session-ex="' + eid + '" ' + (done ? "checked" : "") + ">";
+            html += "<span><strong>" + ex.name + "</strong>";
+            html += '<div class="meta">' + (ex.targetSets || 3) + " sets · target " + (ex.targetReps || 10) + " " + (ex.unit || "reps") + "</div>";
+            html += "</span></label>";
+            html += '<span class="tp-reps">';
+            html += '<button type="button" data-tp-session-reps="' + eid + '" data-dir="-1">−</button>';
+            html += "<span>" + reps + "</span>";
+            html += '<button type="button" data-tp-session-reps="' + eid + '" data-dir="1">+</button>';
+            html += "</span></div>";
+            if (ex.description) html += '<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft);margin-top:6px">' + tpMd(ex.description) + "</div>";
+            html += "</div>";
+          });
+          html += '<p class="tp-sub">' + doneCount + " / " + total + " done</p>";
+          html += '<div class="tp-row"><button type="button" class="tp-btn" id="tpFinishSession">Finish workout</button>';
+          html += '<button type="button" class="tp-btn outline" id="tpCancelSession">Cancel</button></div></div>';
+        }
+
+        // Routines
+        html += '<div class="tp-card"><h3>Workout routines</h3><p class="tp-sub">Group exercises into a routine and run it</p>';
+        if (!(w.routines || []).length) {
+          html += '<p class="tp-empty">No routines yet — create one below.</p>';
+        } else {
+          (w.routines || []).forEach(function (r) {
+            var doneToday = !!(dayLog.routines && dayLog.routines[r.id]);
+            var names = (r.exerciseIds || []).map(function (eid) {
+              var ex = (w.exercises || []).find(function (e) { return e.id === eid; });
+              return ex ? ex.name : null;
+            }).filter(Boolean);
+            html += '<div class="tp-item">';
+            html += '<div class="tp-item-head"><strong>' + r.name + "</strong><span>";
+            if (doneToday) html += '<span class="tp-tag done">done today</span> ';
+            html += '<button type="button" class="tp-btn sm" data-tp-start-routine="' + r.id + '">Start</button> ';
+            html += '<button type="button" class="tp-btn danger sm" data-tp-del-routine="' + r.id + '">✕</button>';
+            html += "</span></div>";
+            if (r.description) html += '<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft)">' + tpMd(r.description) + "</div>";
+            html += '<div class="meta" style="font-size:0.72rem;color:var(--ink-soft)">' + (names.length ? names.join(" · ") : "No exercises linked") + "</div>";
+            html += "</div>";
+          });
+        }
+        // New routine form
+        html += '<div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(43,38,34,0.08)">';
+        html += '<p class="tp-sub">New routine</p>';
+        html += '<div class="tp-row"><input id="tpRoutineName" placeholder="Routine name (e.g. Push day)…"></div>';
+        html += tpFmtBar("#tpRoutineDesc");
+        html += '<textarea id="tpRoutineDesc" class="tp-notes" placeholder="Description (optional)…"></textarea>';
+        var exOpts = (w.exercises || []).map(function (e) {
+          return '<label style="display:flex;align-items:center;gap:8px;margin:4px 0;font-size:0.86rem"><input type="checkbox" data-tp-routine-ex="' + e.id + '"> ' + e.name + "</label>";
         }).join("");
-        if (!items) items = '<p class="tp-empty">Start collecting romantic ideas.</p>';
-        return (
-          '<div class="tp-card"><h3>Romantic life</h3><p class="tp-sub">Date ideas, surprises, plans, memories to create</p>' +
-          items +
-          '<div class="tp-row"><input id="tpRomTitle" placeholder="Title…"><select id="tpRomType"><option value="date">Date</option><option value="surprise">Surprise</option><option value="plan">Plan</option><option value="memory">Memory</option><option value="goal">Goal</option></select></div>' +
-          tpFmtBar("#tpRomNotes") +
-          '<div class="tp-row"><textarea id="tpRomNotes" class="tp-notes" placeholder="Notes…"></textarea><button type="button" class="tp-btn" id="tpAddRom">Add</button></div></div>'
-        );
+        html += exOpts ? ('<div style="margin:8px 0">' + exOpts + "</div>") : '<p class="tp-empty">Add exercises first, then attach them here.</p>';
+        html += '<div class="tp-row"><button type="button" class="tp-btn" id="tpAddRoutineWo">Add routine</button></div>';
+        html += "</div></div>";
+
+        // Exercises library
+        html += '<div class="tp-card"><h3>Exercises</h3><p class="tp-sub">CRUD library · bump target reps with + / −</p>';
+        if (!(w.exercises || []).length) {
+          html += '<p class="tp-empty">No exercises yet.</p>';
+        } else {
+          (w.exercises || []).forEach(function (ex) {
+            html += '<div class="tp-item">';
+            html += '<div class="tp-item-head"><strong>' + ex.name + "</strong><span>";
+            html += '<span class="tp-reps" title="Target reps">';
+            html += '<button type="button" data-tp-ex-reps="' + ex.id + '" data-dir="-1">−</button>';
+            html += "<span>" + (ex.targetReps || 10) + "</span>";
+            html += '<button type="button" data-tp-ex-reps="' + ex.id + '" data-dir="1">+</button>';
+            html += "</span> ";
+            html += '<button type="button" class="tp-btn danger sm" data-tp-del-ex="' + ex.id + '">✕</button>';
+            html += "</span></div>";
+            html += '<div class="meta" style="font-size:0.72rem;color:var(--ink-soft)">' + (ex.targetSets || 3) + " sets · " + (ex.targetReps || 10) + " " + (ex.unit || "reps");
+            if (ex.muscle) html += " · " + ex.muscle;
+            html += "</div>";
+            if (ex.description) html += '<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft);margin-top:4px">' + tpMd(ex.description) + "</div>";
+            // inline edit
+            html += '<div class="tp-row" style="margin-top:8px"><input data-edit-ex-name="' + ex.id + '" placeholder="Name" value="' + tpAttr(ex.name) + '">';
+            html += '<input data-edit-ex-sets="' + ex.id + '" type="number" min="1" style="max-width:70px" value="' + (ex.targetSets || 3) + '" title="Sets">';
+            html += '<input data-edit-ex-muscle="' + ex.id + '" placeholder="Muscle group" value="' + tpAttr(ex.muscle || "") + '">';
+            html += '<button type="button" class="tp-btn outline sm" data-tp-save-ex="' + ex.id + '">Save</button></div>';
+            html += tpFmtBar('[data-edit-ex-desc="' + ex.id + '"]');
+            html += '<textarea data-edit-ex-desc="' + ex.id + '" class="tp-notes" placeholder="Description…">' + (ex.description || "") + "</textarea>";
+            html += "</div>";
+          });
+        }
+        html += '<div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(43,38,34,0.08)">';
+        html += '<p class="tp-sub">New exercise</p>';
+        html += '<div class="tp-row"><input id="tpExName" placeholder="Exercise name…">';
+        html += '<input id="tpExSets" type="number" min="1" value="3" style="max-width:70px" title="Sets">';
+        html += '<input id="tpExReps" type="number" min="1" value="10" style="max-width:70px" title="Reps">';
+        html += '<input id="tpExMuscle" placeholder="Muscle (optional)"></div>';
+        html += tpFmtBar("#tpExDesc");
+        html += '<textarea id="tpExDesc" class="tp-notes" placeholder="Form cues, notes… **bold** *italic* - bullets"></textarea>';
+        html += '<div class="tp-row"><button type="button" class="tp-btn" id="tpAddEx">Add exercise</button></div>';
+        html += "</div></div>";
+
+        return html;
       }
 
       function tpViewStudy() {
-        var study = tpNormalizeStudy(tpData.study);
-        tpData.study = study;
-        var courses = study.courses || [];
-        var html = "";
-
-        if (!courses.length) {
-          html += '<p class="tp-empty">No courses yet — add one below.</p>';
-        }
-
-        courses.forEach(function (course) {
-          var subs = course.subjects || [];
-          html += '<div class="tp-card tp-course-card">';
-          html += '<div class="tp-item-head"><h3>' + (course.name || "Untitled course") + '</h3>';
-          html += '<button type="button" class="tp-btn danger sm" data-tp-del-course="' + course.id + '" title="Delete course">✕</button></div>';
-          if (course.description) {
-            html += '<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft);margin-bottom:10px">' + tpMd(course.description) + "</div>";
-          }
-
-          // Edit course fields
-          html += '<div class="tp-row"><input data-edit-course-name="' + course.id + '" placeholder="Course name…" value="' + tpAttr(course.name) + '"></div>';
-          html += tpFmtBar('[data-edit-course-desc="' + course.id + '"]');
-          html += '<div class="tp-row"><textarea data-edit-course-desc="' + course.id + '" class="tp-notes" placeholder="Course description…">' + (course.description || "") + "</textarea></div>";
-          html += '<div class="tp-row"><button type="button" class="tp-btn outline sm" data-tp-save-course="' + course.id + '">Save course</button></div>';
-
-          // Subjects
-          if (subs.length) {
-            html += subs.map(function (s) {
-              var portions = s.portions || [];
-              var done = portions.filter(function (p) { return p.done; }).length;
-              var block = '<div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(43,38,34,0.08)">';
-              block += '<div class="tp-item-head"><strong>' + s.name + '</strong>';
-              block += '<button type="button" class="tp-btn danger sm" data-tp-del-subject="' + s.id + '" data-course="' + course.id + '">✕</button></div>';
-              if (s.description) block += '<div class="tp-sub tp-md">' + tpMd(s.description) + "</div>";
-              block += '<p class="tp-sub">' + done + " / " + portions.length + " portions applied</p>";
-              if (portions.length) {
-                block += portions.map(function (p) {
-                  return (
-                    '<label class="tp-check ' + (p.done ? "done" : "") + '">' +
-                    '<input type="checkbox" data-tp-portion="' + p.id + '" data-subject="' + s.id + '" data-course="' + course.id + '" ' + (p.done ? "checked" : "") + ">" +
-                    '<span style="flex:1">' + p.text + "</span>" +
-                    '<button type="button" class="tp-btn danger sm" data-tp-del-portion="' + p.id + '" data-subject="' + s.id + '" data-course="' + course.id + '">✕</button></label>'
-                  );
-                }).join("");
-              } else {
-                block += '<p class="tp-empty">No portions yet.</p>';
-              }
-              block += '<div class="tp-row"><input data-new-portion="' + s.id + '" data-course="' + course.id + '" placeholder="Add a portion…"><button type="button" class="tp-btn" data-tp-add-portion="' + s.id + '" data-course="' + course.id + '">Add</button></div>';
-              block += '<div class="tp-row"><input data-edit-subject-name="' + s.id + '" data-course="' + course.id + '" placeholder="Subject name…" value="' + tpAttr(s.name) + '"></div>';
-              block += tpFmtBar('[data-edit-subject-desc="' + s.id + '"]');
-              block += '<div class="tp-row"><textarea data-edit-subject-desc="' + s.id + '" data-course="' + course.id + '" class="tp-notes" placeholder="Description…">' + (s.description || "") + '</textarea>';
-              block += '<button type="button" class="tp-btn outline sm" data-tp-save-subject="' + s.id + '" data-course="' + course.id + '">Save</button></div>';
-              block += "</div>";
-              return block;
-            }).join("");
-          } else {
-            html += '<p class="tp-empty" style="margin-top:10px">No subjects in this course yet.</p>';
-          }
-
-          html += '<div class="tp-row" style="margin-top:10px"><input data-new-subject-name="' + course.id + '" placeholder="New subject name…"><button type="button" class="tp-btn" data-tp-add-subject-to="' + course.id + '">Add subject</button></div>';
-          html += tpFmtBar('[data-new-subject-desc="' + course.id + '"]');
-          html += '<div class="tp-row"><textarea data-new-subject-desc="' + course.id + '" class="tp-notes" placeholder="Subject description (optional)…"></textarea></div>';
-          html += "</div>";
-        });
-
-        // Add new course
-        html += '<div class="tp-card"><h3>New course</h3><p class="tp-sub">Add another course you\'re studying</p>';
-        html += '<div class="tp-row"><input id="tpNewCourseName" placeholder="Course name…"></div>';
-        html += tpFmtBar("#tpNewCourseDesc");
-        html += '<div class="tp-row"><textarea id="tpNewCourseDesc" class="tp-notes" placeholder="Course description (optional)…"></textarea>';
-        html += '<button type="button" class="tp-btn" id="tpAddCourse">Add course</button></div></div>';
+        var study = tpData.study || { course: { name: "", description: "" }, subjects: [] };
+        var course = study.course || { name: "", description: "" };
+        var subs = study.subjects || [];
+        var html = '<div class="tp-card"><h3>Course</h3><p class="tp-sub">What you\'re studying overall</p>' +
+          (course.name ? '<div class="tp-item"><strong>'+course.name+'</strong>'+(course.description?'<div class="meta" style="font-size:0.78rem;color:var(--ink-soft)">'+course.description+'</div>':'')+'</div>' : '<p class="tp-empty">No course set yet.</p>') +
+          '<div class="tp-row"><input id="tpCourseName" placeholder="Course name…" value="'+tpAttr(course.name)+'"><input id="tpCourseDesc" placeholder="Course description…" value="'+tpAttr(course.description)+'"><button type="button" class="tp-btn" id="tpSaveCourse">Save</button></div></div>';
+        html += (subs.length ? subs.map(function(s){
+          var portions = s.portions || [];
+          var done = portions.filter(function(p){ return p.done; }).length;
+          return '<div class="tp-card"><div class="tp-item-head"><h3>'+s.name+'</h3><button type="button" class="tp-btn danger sm" data-tp-del-subject="'+s.id+'">✕</button></div>' +
+            (s.description ? '<p class="tp-sub">'+s.description+'</p>' : '') +
+            '<p class="tp-sub">'+done+' / '+portions.length+' portions applied</p>' +
+            (portions.length ? portions.map(function(p){ return '<label class="tp-check '+(p.done?'done':'')+'"><input type="checkbox" data-tp-portion="'+p.id+'" data-subject="'+s.id+'" '+(p.done?'checked':'')+'><span style="flex:1">'+p.text+'</span><button type="button" class="tp-btn danger sm" data-tp-del-portion="'+p.id+'" data-subject="'+s.id+'">✕</button></label>'; }).join('') : '<p class="tp-empty">No portions added yet.</p>') +
+            '<div class="tp-row"><input data-new-portion="'+s.id+'" placeholder="Add a portion you\'re applying to…"><button type="button" class="tp-btn" data-tp-add-portion="'+s.id+'">Add</button></div>' +
+            '<div class="tp-row"><input data-edit-subject-name="'+s.id+'" placeholder="Subject name…" value="'+tpAttr(s.name)+'"><input data-edit-subject-desc="'+s.id+'" placeholder="Description…" value="'+tpAttr(s.description)+'"><button type="button" class="tp-btn outline sm" data-tp-save-subject="'+s.id+'">Save</button></div></div>';
+        }).join('') : '<p class="tp-empty">No subjects yet — add one below.</p>');
+        html += '<div class="tp-card"><h3>New subject</h3><p class="tp-sub">Add a subject you\'re studying</p><div class="tp-row"><input id="tpNewSubject" placeholder="Subject name…"><input id="tpNewSubjectDesc" placeholder="Description (optional)…"><button type="button" class="tp-btn" id="tpAddSubject">Add subject</button></div></div>';
         return html;
       }
 
@@ -17670,135 +17667,185 @@
         if(addRom) addRom.addEventListener("click", function(){ var title=((document.getElementById("tpRomTitle")||{}).value||"").trim(); if(!title) return; tpData.romantic.push({id:tpUid(),title:title,type:((document.getElementById("tpRomType")||{}).value)||"date",notes:((document.getElementById("tpRomNotes")||{}).value)||"",status:"idea"}); tpSave(); tpRender(); });
         document.querySelectorAll("[data-tp-rom-status]").forEach(function(b){ b.addEventListener("click", function(){ var r=tpData.romantic.find(function(x){return x.id===b.getAttribute("data-tp-rom-status");}); if(!r) return; var cycle=["idea","planned","done"]; r.status=cycle[(cycle.indexOf(r.status||"idea")+1)%cycle.length]; tpSave(); tpRender(); }); });
         document.querySelectorAll("[data-tp-del-rom]").forEach(function(b){ b.addEventListener("click", function(){ tpData.romantic=tpData.romantic.filter(function(x){return x.id!==b.getAttribute("data-tp-del-rom");}); tpSave(); tpRender(); }); });
-        function tpFindCourse(cid) {
-          tpData.study = tpNormalizeStudy(tpData.study);
-          return (tpData.study.courses || []).find(function (c) { return c.id === cid; });
-        }
-        function tpFindSubject(cid, sid) {
-          var c = tpFindCourse(cid);
-          if (!c) return null;
-          return (c.subjects || []).find(function (s) { return s.id === sid; });
-        }
-        var addCourse = document.getElementById("tpAddCourse");
-        if (addCourse) addCourse.addEventListener("click", function () {
-          var n = ((document.getElementById("tpNewCourseName") || {}).value || "").trim();
-          if (!n) return;
-          var d = ((document.getElementById("tpNewCourseDesc") || {}).value || "").trim();
-          tpData.study = tpNormalizeStudy(tpData.study);
-          tpData.study.courses.push({ id: tpUid(), name: n, description: d, subjects: [] });
+        var addSubject=document.getElementById("tpAddSubject");
+        if(addSubject) addSubject.addEventListener("click", function(){ var t=((document.getElementById("tpNewSubject")||{}).value||"").trim(); if(!t) return; var d=((document.getElementById("tpNewSubjectDesc")||{}).value||"").trim(); tpData.study=tpData.study||{course:{name:"",description:""},subjects:[]}; tpData.study.subjects=tpData.study.subjects||[]; tpData.study.subjects.push({id:tpUid(),name:t,description:d,portions:[]}); tpSave(); tpRender(); });
+        document.querySelectorAll("[data-tp-save-subject]").forEach(function(b){ b.addEventListener("click", function(){ var sid=b.getAttribute("data-tp-save-subject"); var s=(tpData.study.subjects||[]).find(function(x){return x.id===sid;}); if(!s) return; var nameEl=document.querySelector('[data-edit-subject-name="'+sid+'"]'); var descEl=document.querySelector('[data-edit-subject-desc="'+sid+'"]'); var n=((nameEl||{}).value||"").trim(); if(n) s.name=n; s.description=((descEl||{}).value||"").trim(); tpSave(); tpRender(); }); });
+        var saveCourse=document.getElementById("tpSaveCourse");
+        if(saveCourse) saveCourse.addEventListener("click", function(){ var n=((document.getElementById("tpCourseName")||{}).value||"").trim(); var d=((document.getElementById("tpCourseDesc")||{}).value||"").trim(); tpData.study=tpData.study||{course:{name:"",description:""},subjects:[]}; tpData.study.course={name:n,description:d}; tpSave(); tpRender(); });
+        document.querySelectorAll("[data-tp-del-subject]").forEach(function(b){ b.addEventListener("click", function(e){ e.preventDefault(); tpData.study.subjects=(tpData.study.subjects||[]).filter(function(x){return x.id!==b.getAttribute("data-tp-del-subject");}); tpSave(); tpRender(); }); });
+        document.querySelectorAll("[data-tp-add-portion]").forEach(function(b){ b.addEventListener("click", function(){ var sid=b.getAttribute("data-tp-add-portion"); var input=document.querySelector('[data-new-portion="'+sid+'"]'); var t=((input||{}).value||"").trim(); if(!t) return; var s=(tpData.study.subjects||[]).find(function(x){return x.id===sid;}); if(!s) return; s.portions=s.portions||[]; s.portions.push({id:tpUid(),text:t,done:false}); tpSave(); tpRender(); }); });
+        document.querySelectorAll("[data-tp-portion]").forEach(function(el){ el.addEventListener("change", function(){ var sid=el.getAttribute("data-subject"); var pid=el.getAttribute("data-tp-portion"); var s=(tpData.study.subjects||[]).find(function(x){return x.id===sid;}); if(!s) return; var p=(s.portions||[]).find(function(x){return x.id===pid;}); if(p){ p.done=el.checked; tpSave(); tpRender(); } }); });
+
+        // ---- Workout handlers ----
+        var addEx = document.getElementById("tpAddEx");
+        if (addEx) addEx.addEventListener("click", function () {
+          var name = ((document.getElementById("tpExName") || {}).value || "").trim();
+          if (!name) return;
+          var sets = parseInt(((document.getElementById("tpExSets") || {}).value) || "3", 10) || 3;
+          var reps = parseInt(((document.getElementById("tpExReps") || {}).value) || "10", 10) || 10;
+          var muscle = ((document.getElementById("tpExMuscle") || {}).value || "").trim();
+          var desc = ((document.getElementById("tpExDesc") || {}).value || "").trim();
+          var w = tpEnsureWorkouts();
+          w.exercises.push({
+            id: tpUid(),
+            name: name,
+            description: desc,
+            targetSets: sets,
+            targetReps: reps,
+            unit: "reps",
+            muscle: muscle,
+          });
           tpSave();
-          if (typeof showToast === "function") showToast("Course added", "updated");
           tpRender();
         });
-        document.querySelectorAll("[data-tp-save-course]").forEach(function (b) {
-          b.addEventListener("click", function () {
-            var cid = b.getAttribute("data-tp-save-course");
-            var c = tpFindCourse(cid);
-            if (!c) return;
-            var nameEl = document.querySelector('[data-edit-course-name="' + cid + '"]');
-            var descEl = document.querySelector('[data-edit-course-desc="' + cid + '"]');
-            var n = ((nameEl || {}).value || "").trim();
-            if (n) c.name = n;
-            c.description = ((descEl || {}).value || "").trim();
-            tpSave();
-            if (typeof showToast === "function") showToast("Course saved", "updated");
-            tpRender();
-          });
-        });
-        document.querySelectorAll("[data-tp-del-course]").forEach(function (b) {
+        document.querySelectorAll("[data-tp-del-ex]").forEach(function (b) {
           b.addEventListener("click", function (e) {
             e.preventDefault();
-            var cid = b.getAttribute("data-tp-del-course");
-            tpData.study = tpNormalizeStudy(tpData.study);
-            tpData.study.courses = tpData.study.courses.filter(function (c) { return c.id !== cid; });
-            tpSave();
-            if (typeof showToast === "function") showToast("Course deleted", "updated");
-            tpRender();
-          });
-        });
-        document.querySelectorAll("[data-tp-add-subject-to]").forEach(function (b) {
-          b.addEventListener("click", function () {
-            var cid = b.getAttribute("data-tp-add-subject-to");
-            var c = tpFindCourse(cid);
-            if (!c) return;
-            var nameEl = document.querySelector('[data-new-subject-name="' + cid + '"]');
-            var descEl = document.querySelector('[data-new-subject-desc="' + cid + '"]');
-            var t = ((nameEl || {}).value || "").trim();
-            if (!t) return;
-            var d = ((descEl || {}).value || "").trim();
-            c.subjects = c.subjects || [];
-            c.subjects.push({ id: tpUid(), name: t, description: d, portions: [] });
+            var id = b.getAttribute("data-tp-del-ex");
+            var w = tpEnsureWorkouts();
+            w.exercises = w.exercises.filter(function (x) { return x.id !== id; });
+            w.routines.forEach(function (r) {
+              r.exerciseIds = (r.exerciseIds || []).filter(function (eid) { return eid !== id; });
+            });
             tpSave();
             tpRender();
           });
         });
-        document.querySelectorAll("[data-tp-save-subject]").forEach(function (b) {
+        document.querySelectorAll("[data-tp-ex-reps]").forEach(function (b) {
           b.addEventListener("click", function () {
-            var sid = b.getAttribute("data-tp-save-subject");
-            var cid = b.getAttribute("data-course");
-            var s = tpFindSubject(cid, sid);
-            if (!s) return;
-            var nameEl = document.querySelector('[data-edit-subject-name="' + sid + '"]');
-            var descEl = document.querySelector('[data-edit-subject-desc="' + sid + '"]');
+            var id = b.getAttribute("data-tp-ex-reps");
+            var dir = parseInt(b.getAttribute("data-dir"), 10) || 0;
+            var w = tpEnsureWorkouts();
+            var ex = w.exercises.find(function (x) { return x.id === id; });
+            if (!ex) return;
+            ex.targetReps = Math.max(1, (ex.targetReps || 10) + dir);
+            tpSave();
+            tpRender();
+          });
+        });
+        document.querySelectorAll("[data-tp-save-ex]").forEach(function (b) {
+          b.addEventListener("click", function () {
+            var id = b.getAttribute("data-tp-save-ex");
+            var w = tpEnsureWorkouts();
+            var ex = w.exercises.find(function (x) { return x.id === id; });
+            if (!ex) return;
+            var nameEl = document.querySelector('[data-edit-ex-name="' + id + '"]');
+            var setsEl = document.querySelector('[data-edit-ex-sets="' + id + '"]');
+            var muscleEl = document.querySelector('[data-edit-ex-muscle="' + id + '"]');
+            var descEl = document.querySelector('[data-edit-ex-desc="' + id + '"]');
             var n = ((nameEl || {}).value || "").trim();
-            if (n) s.name = n;
-            s.description = ((descEl || {}).value || "").trim();
+            if (n) ex.name = n;
+            ex.targetSets = Math.max(1, parseInt(((setsEl || {}).value) || "3", 10) || 3);
+            ex.muscle = ((muscleEl || {}).value || "").trim();
+            ex.description = ((descEl || {}).value || "").trim();
             tpSave();
+            if (typeof showToast === "function") showToast("Exercise saved", "updated");
             tpRender();
           });
         });
-        document.querySelectorAll("[data-tp-del-subject]").forEach(function (b) {
+        var addRoutineWo = document.getElementById("tpAddRoutineWo");
+        if (addRoutineWo) addRoutineWo.addEventListener("click", function () {
+          var name = ((document.getElementById("tpRoutineName") || {}).value || "").trim();
+          if (!name) return;
+          var desc = ((document.getElementById("tpRoutineDesc") || {}).value || "").trim();
+          var ids = [];
+          document.querySelectorAll("[data-tp-routine-ex]:checked").forEach(function (cb) {
+            ids.push(cb.getAttribute("data-tp-routine-ex"));
+          });
+          var w = tpEnsureWorkouts();
+          w.routines.push({ id: tpUid(), name: name, description: desc, exerciseIds: ids });
+          tpSave();
+          tpRender();
+        });
+        document.querySelectorAll("[data-tp-del-routine]").forEach(function (b) {
           b.addEventListener("click", function (e) {
             e.preventDefault();
-            var sid = b.getAttribute("data-tp-del-subject");
-            var cid = b.getAttribute("data-course");
-            var c = tpFindCourse(cid);
-            if (!c) return;
-            c.subjects = (c.subjects || []).filter(function (x) { return x.id !== sid; });
+            var id = b.getAttribute("data-tp-del-routine");
+            var w = tpEnsureWorkouts();
+            w.routines = w.routines.filter(function (r) { return r.id !== id; });
+            if (w.session && w.session.routineId === id) w.session = null;
             tpSave();
             tpRender();
           });
         });
-        document.querySelectorAll("[data-tp-add-portion]").forEach(function (b) {
+        document.querySelectorAll("[data-tp-start-routine]").forEach(function (b) {
           b.addEventListener("click", function () {
-            var sid = b.getAttribute("data-tp-add-portion");
-            var cid = b.getAttribute("data-course");
-            var s = tpFindSubject(cid, sid);
-            if (!s) return;
-            var input = document.querySelector('[data-new-portion="' + sid + '"][data-course="' + cid + '"]') ||
-              document.querySelector('[data-new-portion="' + sid + '"]');
-            var t = ((input || {}).value || "").trim();
-            if (!t) return;
-            s.portions = s.portions || [];
-            s.portions.push({ id: tpUid(), text: t, done: false });
+            var id = b.getAttribute("data-tp-start-routine");
+            var w = tpEnsureWorkouts();
+            var r = w.routines.find(function (x) { return x.id === id; });
+            if (!r) return;
+            var reps = {};
+            (r.exerciseIds || []).forEach(function (eid) {
+              var ex = w.exercises.find(function (e) { return e.id === eid; });
+              reps[eid] = ex ? (ex.targetReps || 10) : 10;
+            });
+            w.session = {
+              routineId: id,
+              exerciseIds: (r.exerciseIds || []).slice(),
+              done: {},
+              reps: reps,
+              startedAt: new Date().toISOString(),
+            };
             tpSave();
             tpRender();
           });
         });
-        document.querySelectorAll("[data-tp-portion]").forEach(function (el) {
+        document.querySelectorAll("[data-tp-session-ex]").forEach(function (el) {
           el.addEventListener("change", function () {
-            var sid = el.getAttribute("data-subject");
-            var cid = el.getAttribute("data-course");
-            var pid = el.getAttribute("data-tp-portion");
-            var s = tpFindSubject(cid, sid);
-            if (!s) return;
-            var p = (s.portions || []).find(function (x) { return x.id === pid; });
-            if (p) { p.done = el.checked; tpSave(); tpRender(); }
-          });
-        });
-        document.querySelectorAll("[data-tp-del-portion]").forEach(function (b) {
-          b.addEventListener("click", function (e) {
-            e.preventDefault();
-            var sid = b.getAttribute("data-subject");
-            var cid = b.getAttribute("data-course");
-            var pid = b.getAttribute("data-tp-del-portion");
-            var s = tpFindSubject(cid, sid);
-            if (!s) return;
-            s.portions = (s.portions || []).filter(function (x) { return x.id !== pid; });
+            var w = tpEnsureWorkouts();
+            if (!w.session) return;
+            w.session.done = w.session.done || {};
+            w.session.done[el.getAttribute("data-tp-session-ex")] = el.checked;
             tpSave();
             tpRender();
           });
         });
+        document.querySelectorAll("[data-tp-session-reps]").forEach(function (b) {
+          b.addEventListener("click", function () {
+            var w = tpEnsureWorkouts();
+            if (!w.session) return;
+            var eid = b.getAttribute("data-tp-session-reps");
+            var dir = parseInt(b.getAttribute("data-dir"), 10) || 0;
+            w.session.reps = w.session.reps || {};
+            w.session.reps[eid] = Math.max(1, (w.session.reps[eid] || 10) + dir);
+            tpSave();
+            tpRender();
+          });
+        });
+        var finish = document.getElementById("tpFinishSession");
+        if (finish) finish.addEventListener("click", function () {
+          var w = tpEnsureWorkouts();
+          if (!w.session) return;
+          var day = tpToday();
+          w.log[day] = w.log[day] || { routines: {}, exercises: {} };
+          w.log[day].routines = w.log[day].routines || {};
+          w.log[day].routines[w.session.routineId] = true;
+          (w.session.exerciseIds || []).forEach(function (eid) {
+            w.log[day].exercises = w.log[day].exercises || {};
+            w.log[day].exercises[eid] = {
+              reps: (w.session.reps && w.session.reps[eid]) || 0,
+              done: !!(w.session.done && w.session.done[eid]),
+            };
+            if (w.session.done && w.session.done[eid]) {
+              var ex = w.exercises.find(function (e) { return e.id === eid; });
+              if (ex && w.session.reps && w.session.reps[eid] > (ex.targetReps || 0)) {
+                ex.targetReps = w.session.reps[eid];
+              }
+            }
+          });
+          w.session = null;
+          tpSave();
+          if (typeof showToast === "function") showToast("Workout finished · nice work", "updated");
+          tpRender();
+        });
+        var cancel = document.getElementById("tpCancelSession");
+        if (cancel) cancel.addEventListener("click", function () {
+          var w = tpEnsureWorkouts();
+          w.session = null;
+          tpSave();
+          tpRender();
+        });
+
       }
 
       function initThommyPersonal() {
