@@ -4349,7 +4349,7 @@
         border: 1.5px solid rgba(43,38,34,0.12); background: var(--cream-dim); color: var(--ink); font: inherit;
       }
       .tp-md { white-space: normal; line-height: 1.55; word-break: break-word; }
-      .tp-md ul { margin: 6px 0 6px 1.15em; padding: 0; }
+      .tp-md ul, .tp-md ol { margin: 6px 0 6px 1.15em; padding: 0; }
       .tp-md li { margin: 3px 0; }
       .tp-md strong { font-weight: 700; color: var(--ink); }
       .tp-md em { font-style: italic; }
@@ -16895,20 +16895,31 @@
         s = s.replace(/(^|[^\w])_([^_\n]+)_(?!\w)/g, "$1<em>$2</em>");
         var lines = s.split(/\n/);
         var out = [];
-        var inList = false;
+        var inUl = false;
+        var inOl = false;
+        function closeLists() {
+          if (inUl) { out.push("</ul>"); inUl = false; }
+          if (inOl) { out.push("</ol>"); inOl = false; }
+        }
         for (var i = 0; i < lines.length; i++) {
           var line = lines[i];
           var bm = line.match(/^\s*[-*•]\s+(.+)$/);
+          var nm = line.match(/^\s*(\d+)[.)]\s+(.+)$/);
           if (bm) {
-            if (!inList) { out.push("<ul>"); inList = true; }
+            if (inOl) { out.push("</ol>"); inOl = false; }
+            if (!inUl) { out.push("<ul>"); inUl = true; }
             out.push("<li>" + bm[1] + "</li>");
+          } else if (nm) {
+            if (inUl) { out.push("</ul>"); inUl = false; }
+            if (!inOl) { out.push("<ol>"); inOl = true; }
+            out.push("<li>" + nm[2] + "</li>");
           } else {
-            if (inList) { out.push("</ul>"); inList = false; }
+            closeLists();
             out.push(line);
             if (i < lines.length - 1) out.push("<br>");
           }
         }
-        if (inList) out.push("</ul>");
+        closeLists();
         return out.join("");
       }
       function tpFmtBar(targetSel) {
@@ -16917,7 +16928,8 @@
           '<button type="button" data-tp-fmt="bold" title="Bold (Ctrl+B)"><b>B</b></button>' +
           '<button type="button" data-tp-fmt="italic" title="Italic (Ctrl+I)"><i>I</i></button>' +
           '<button type="button" data-tp-fmt="bullet" title="Bullet list">• List</button>' +
-          '<span class="tp-md-hint">Ctrl+B · Ctrl+I · or **bold** *italic* - bullets</span>' +
+          '<button type="button" data-tp-fmt="number" title="Numbered list">1. List</button>' +
+          '<span class="tp-md-hint">Ctrl+B · Ctrl+I · or **bold** *italic* - bullets · 1. numbers</span>' +
           "</div>"
         );
       }
@@ -16961,6 +16973,7 @@
         if (kind === "bold") tpWrapSelection(ta, "**", "**");
         else if (kind === "italic") tpWrapSelection(ta, "*", "*");
         else if (kind === "bullet") tpToggleLinePrefix(ta, "- ");
+        else if (kind === "number") tpToggleLinePrefix(ta, "1. ");
       }
       function tpBindFormatControls(root) {
         root = root || document;
@@ -17462,7 +17475,11 @@
           (list.map(function(item){ var on=log.indexOf(item.id)>=0; return '<label class="tp-check '+(on?'done':'')+'"><input type="checkbox" data-tp-routine="'+kind+'" data-id="'+item.id+'" '+(on?'checked':'')+'><span style="flex:1">'+item.text+'</span><button type="button" class="tp-btn danger sm" data-tp-del-routine="'+kind+'" data-id="'+item.id+'">✕</button></label>'; }).join('') || '<p class="tp-empty">Empty routine.</p>') +
           '<div class="tp-row"><input id="tpNewRoutine" placeholder="Add step…"><button type="button" class="tp-btn" id="tpAddRoutine" data-kind="'+kind+'">Add</button></div></div>';
         if (kind === "night") {
-          html += '<div class="tp-card"><h3>Daily reflection</h3><p class="tp-sub">What went well? What will you improve?</p><textarea id="tpReflection" placeholder="Write a few lines…">'+(tpData.reflections[day]||'')+'</textarea><div class="tp-row"><button type="button" class="tp-btn" id="tpSaveReflection">Save reflection</button></div></div>';
+          html += '<div class="tp-card"><h3>Daily reflection</h3><p class="tp-sub">What went well? What will you improve?</p>' +
+            tpFmtBar("#tpReflection") +
+            '<textarea id="tpReflection" class="tp-notes" placeholder="Write a few lines… **bold** *italic* - bullets">'+(tpData.reflections[day]||'')+'</textarea>' +
+            (tpData.reflections[day] ? '<div class="meta tp-md" style="margin-top:10px;font-size:0.9rem;color:var(--ink-soft)">'+tpMd(tpData.reflections[day])+'</div>' : '') +
+            '<div class="tp-row"><button type="button" class="tp-btn" id="tpSaveReflection">Save reflection</button></div></div>';
         }
         return html;
       }
@@ -17477,7 +17494,11 @@
           '<button type="button" class="tp-btn outline" id="tpAffirmNext">Another</button>' +
           '<button type="button" class="tp-btn" id="tpAffirmPractice">'+(practiced?"Practiced":"Mark practiced")+'</button>' +
           '<button type="button" class="tp-btn outline" id="tpAffirmApi">Fetch online</button></div></div>' +
-          '<div class="tp-card"><h3>Future self</h3><p class="tp-sub">Who are you becoming?</p><textarea id="tpFutureSelf" placeholder="Describe your future self in vivid present tense…">'+(tpData.affirmations.futureSelf||'')+'</textarea><div class="tp-row"><button type="button" class="tp-btn" id="tpSaveFutureSelf">Save</button></div></div>' +
+          '<div class="tp-card"><h3>Future self</h3><p class="tp-sub">Who are you becoming?</p>' +
+          tpFmtBar("#tpFutureSelf") +
+          '<textarea id="tpFutureSelf" class="tp-notes" placeholder="Describe your future self… **bold** *italic* - bullets">'+(tpData.affirmations.futureSelf||'')+'</textarea>' +
+          (tpData.affirmations.futureSelf ? '<div class="meta tp-md" style="margin-top:10px;font-size:0.92rem;color:var(--ink)">' + tpMd(tpData.affirmations.futureSelf) + '</div>' : '') +
+          '<div class="tp-row"><button type="button" class="tp-btn" id="tpSaveFutureSelf">Save</button></div></div>' +
           '<div class="tp-card"><h3>Your affirmations</h3>' +
           list.map(function(t,i){ return '<div class="tp-item"><div class="tp-item-head"><span>'+t+'</span><button type="button" class="tp-btn danger sm" data-tp-del-affirm="'+i+'">✕</button></div></div>'; }).join('') +
           '<div class="tp-row"><input id="tpNewAffirm" placeholder="Add affirmation…"><button type="button" class="tp-btn" id="tpAddAffirm">Add</button></div></div>';
@@ -17495,8 +17516,11 @@
       function tpViewWishlist() {
         var pri = { high: "hi", medium: "mid", low: "lo" };
         return '<div class="tp-card"><h3>Wishlist</h3><p class="tp-sub">Things to buy or achieve</p>' +
-          ((tpData.wishlist||[]).map(function(w){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+w.title+'</strong><span><span class="tp-tag '+(pri[w.priority]||'mid')+'">'+(w.priority||'medium')+'</span> <span class="tp-tag '+(w.status==='got'?'done':'')+'">'+(w.status||'want')+'</span> <button type="button" class="tp-btn sm outline" data-tp-wish-status="'+w.id+'">Toggle</button> <button type="button" class="tp-btn danger sm" data-tp-del-wish="'+w.id+'">✕</button></span></div>'+(w.notes?'<div class="meta" style="font-size:0.78rem;color:var(--ink-soft)">'+w.notes+'</div>':'')+(w.link?'<div class="meta" style="font-size:0.78rem"><a href="'+tpAttr(w.link)+'" target="_blank" rel="noopener" style="color:var(--sage)">'+w.link+'</a></div>':'')+'</div>'; }).join('') || '<p class="tp-empty">Wishlist is empty.</p>') +
-          '<div class="tp-row"><input id="tpWishTitle" placeholder="Item…"><select id="tpWishPri"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select><input id="tpWishLink" placeholder="Link (optional)"><input id="tpWishNotes" placeholder="Notes (optional)"><button type="button" class="tp-btn" id="tpAddWish">Add</button></div></div>';
+          ((tpData.wishlist||[]).map(function(w){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+w.title+'</strong><span><span class="tp-tag '+(pri[w.priority]||'mid')+'">'+(w.priority||'medium')+'</span> <span class="tp-tag '+(w.status==='got'?'done':'')+'">'+(w.status||'want')+'</span> <button type="button" class="tp-btn sm outline" data-tp-wish-status="'+w.id+'">Toggle</button> <button type="button" class="tp-btn danger sm" data-tp-del-wish="'+w.id+'">✕</button></span></div>'+(w.notes?'<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft)">'+tpMd(w.notes)+'</div>':'')+(w.link?'<div class="meta" style="font-size:0.78rem"><a href="'+tpAttr(w.link)+'" target="_blank" rel="noopener" style="color:var(--sage)">'+w.link+'</a></div>':'')+'</div>'; }).join('') || '<p class="tp-empty">Wishlist is empty.</p>') +
+          '<div class="tp-row"><input id="tpWishTitle" placeholder="Item…"><select id="tpWishPri"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select><input id="tpWishLink" placeholder="Link (optional)"></div>' +
+          tpFmtBar("#tpWishNotes") +
+          '<textarea id="tpWishNotes" class="tp-notes" placeholder="Notes (optional)… **bold** *italic* - bullets"></textarea>' +
+          '<div class="tp-row"><button type="button" class="tp-btn" id="tpAddWish">Add</button></div></div>';
       }
 
       function tpViewBucket() {
@@ -17507,8 +17531,11 @@
 
       function tpViewRomantic() {
         return '<div class="tp-card"><h3>Romantic life</h3><p class="tp-sub">Date ideas, surprises, plans, memories to create</p>' +
-          ((tpData.romantic||[]).map(function(r){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+r.title+'</strong><span><span class="tp-tag">'+(r.type||'idea')+'</span> <span class="tp-tag '+(r.status==='done'?'done':'')+'">'+(r.status||'idea')+'</span> <button type="button" class="tp-btn sm outline" data-tp-rom-status="'+r.id+'">Cycle</button> <button type="button" class="tp-btn danger sm" data-tp-del-rom="'+r.id+'">✕</button></span></div>'+(r.notes?'<div class="meta" style="font-size:0.78rem;color:var(--ink-soft)">'+r.notes+'</div>':'')+'</div>'; }).join('') || '<p class="tp-empty">Start collecting romantic ideas.</p>') +
-          '<div class="tp-row"><input id="tpRomTitle" placeholder="Title…"><select id="tpRomType"><option value="date">Date</option><option value="surprise">Surprise</option><option value="plan">Plan</option><option value="memory">Memory</option><option value="goal">Goal</option></select><input id="tpRomNotes" placeholder="Notes…"><button type="button" class="tp-btn" id="tpAddRom">Add</button></div></div>';
+          ((tpData.romantic||[]).map(function(r){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+r.title+'</strong><span><span class="tp-tag">'+(r.type||'idea')+'</span> <span class="tp-tag '+(r.status==='done'?'done':'')+'">'+(r.status||'idea')+'</span> <button type="button" class="tp-btn sm outline" data-tp-rom-status="'+r.id+'">Cycle</button> <button type="button" class="tp-btn danger sm" data-tp-del-rom="'+r.id+'">✕</button></span></div>'+(r.notes?'<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft)">'+tpMd(r.notes)+'</div>':'')+'</div>'; }).join('') || '<p class="tp-empty">Start collecting romantic ideas.</p>') +
+          '<div class="tp-row"><input id="tpRomTitle" placeholder="Title…"><select id="tpRomType"><option value="date">Date</option><option value="surprise">Surprise</option><option value="plan">Plan</option><option value="memory">Memory</option><option value="goal">Goal</option></select></div>' +
+          tpFmtBar("#tpRomNotes") +
+          '<textarea id="tpRomNotes" class="tp-notes" placeholder="Notes… **bold** *italic* - bullets"></textarea>' +
+          '<div class="tp-row"><button type="button" class="tp-btn" id="tpAddRom">Add</button></div></div>';
       }
 
 function tpViewWorkout() {
@@ -17635,19 +17662,29 @@ function tpViewWorkout() {
         var course = study.course || { name: "", description: "" };
         var subs = study.subjects || [];
         var html = '<div class="tp-card"><h3>Course</h3><p class="tp-sub">What you\'re studying overall</p>' +
-          (course.name ? '<div class="tp-item"><strong>'+course.name+'</strong>'+(course.description?'<div class="meta" style="font-size:0.78rem;color:var(--ink-soft)">'+course.description+'</div>':'')+'</div>' : '<p class="tp-empty">No course set yet.</p>') +
-          '<div class="tp-row"><input id="tpCourseName" placeholder="Course name…" value="'+tpAttr(course.name)+'"><input id="tpCourseDesc" placeholder="Course description…" value="'+tpAttr(course.description)+'"><button type="button" class="tp-btn" id="tpSaveCourse">Save</button></div></div>';
+          (course.name ? '<div class="tp-item"><strong>'+course.name+'</strong>'+(course.description?'<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft)">'+tpMd(course.description)+'</div>':'')+'</div>' : '<p class="tp-empty">No course set yet.</p>') +
+          '<div class="tp-row"><input id="tpCourseName" placeholder="Course name…" value="'+tpAttr(course.name)+'"></div>' +
+          tpFmtBar("#tpCourseDesc") +
+          '<textarea id="tpCourseDesc" class="tp-notes" placeholder="Course description… **bold** *italic* - bullets">'+tpAttr(course.description)+'</textarea>' +
+          '<div class="tp-row"><button type="button" class="tp-btn" id="tpSaveCourse">Save</button></div></div>';
         html += (subs.length ? subs.map(function(s){
           var portions = s.portions || [];
           var done = portions.filter(function(p){ return p.done; }).length;
           return '<div class="tp-card"><div class="tp-item-head"><h3>'+s.name+'</h3><button type="button" class="tp-btn danger sm" data-tp-del-subject="'+s.id+'">✕</button></div>' +
-            (s.description ? '<p class="tp-sub">'+s.description+'</p>' : '') +
+            (s.description ? '<div class="meta tp-md" style="font-size:0.85rem;color:var(--ink-soft);margin-bottom:8px">'+tpMd(s.description)+'</div>' : '') +
             '<p class="tp-sub">'+done+' / '+portions.length+' portions applied</p>' +
             (portions.length ? portions.map(function(p){ return '<label class="tp-check '+(p.done?'done':'')+'"><input type="checkbox" data-tp-portion="'+p.id+'" data-subject="'+s.id+'" '+(p.done?'checked':'')+'><span style="flex:1">'+p.text+'</span><button type="button" class="tp-btn danger sm" data-tp-del-portion="'+p.id+'" data-subject="'+s.id+'">✕</button></label>'; }).join('') : '<p class="tp-empty">No portions added yet.</p>') +
             '<div class="tp-row"><input data-new-portion="'+s.id+'" placeholder="Add a portion you\'re applying to…"><button type="button" class="tp-btn" data-tp-add-portion="'+s.id+'">Add</button></div>' +
-            '<div class="tp-row"><input data-edit-subject-name="'+s.id+'" placeholder="Subject name…" value="'+tpAttr(s.name)+'"><input data-edit-subject-desc="'+s.id+'" placeholder="Description…" value="'+tpAttr(s.description)+'"><button type="button" class="tp-btn outline sm" data-tp-save-subject="'+s.id+'">Save</button></div></div>';
+            '<div class="tp-row"><input data-edit-subject-name="'+s.id+'" placeholder="Subject name…" value="'+tpAttr(s.name)+'"></div>' +
+            tpFmtBar('[data-edit-subject-desc="'+s.id+'"]') +
+            '<textarea data-edit-subject-desc="'+s.id+'" class="tp-notes" placeholder="Description… **bold** *italic* - bullets">'+tpAttr(s.description)+'</textarea>' +
+            '<div class="tp-row"><button type="button" class="tp-btn outline sm" data-tp-save-subject="'+s.id+'">Save</button></div></div>';
         }).join('') : '<p class="tp-empty">No subjects yet — add one below.</p>');
-        html += '<div class="tp-card"><h3>New subject</h3><p class="tp-sub">Add a subject you\'re studying</p><div class="tp-row"><input id="tpNewSubject" placeholder="Subject name…"><input id="tpNewSubjectDesc" placeholder="Description (optional)…"><button type="button" class="tp-btn" id="tpAddSubject">Add subject</button></div></div>';
+        html += '<div class="tp-card"><h3>New subject</h3><p class="tp-sub">Add a subject you\'re studying</p>' +
+          '<div class="tp-row"><input id="tpNewSubject" placeholder="Subject name…"></div>' +
+          tpFmtBar("#tpNewSubjectDesc") +
+          '<textarea id="tpNewSubjectDesc" class="tp-notes" placeholder="Description (optional)… **bold** *italic* - bullets"></textarea>' +
+          '<div class="tp-row"><button type="button" class="tp-btn" id="tpAddSubject">Add subject</button></div></div>';
         return html;
       }
 
