@@ -16969,16 +16969,7 @@
       function tpNormalizeStudy(study) {
         if (!study || typeof study !== "object") return { courses: [] };
         if (Array.isArray(study)) {
-          return {
-            courses: [
-              {
-                id: "course_legacy",
-                name: "My course",
-                description: "",
-                subjects: study,
-              },
-            ],
-          };
+          return { courses: [{ id: "course_legacy", name: "My course", description: "", subjects: study }] };
         }
         if (Array.isArray(study.courses)) {
           study.courses = study.courses.map(function (c) {
@@ -17053,6 +17044,8 @@
 
       let tpData = null;
       let tpView = "dash";
+      let tpEditCourseId = null;
+      let tpEditSubjectId = null;
       let tpPomodoro = { running: false, endsAt: 0, left: 25 * 60, mode: "focus", timer: null };
 
       function tpLoad() {
@@ -17647,27 +17640,35 @@ function tpViewWorkout() {
 
         courses.forEach(function (course) {
           var subs = course.subjects || [];
+          var editing = tpEditCourseId === course.id;
           html += '<div class="tp-card">';
-          html += '<div class="tp-item-head"><h3>' + (course.name || "Untitled course") + '</h3>';
-          html += '<button type="button" class="tp-btn danger sm" data-tp-del-course="' + course.id + '" title="Delete course">✕</button></div>';
-          if (course.description) {
+          html += '<div class="tp-item-head"><h3>' + (course.name || "Untitled course") + '</h3><span>';
+          html += '<button type="button" class="tp-btn sm outline" data-tp-edit-course="' + course.id + '" title="Edit course">' + (editing ? "Close" : "✎") + "</button> ";
+          html += '<button type="button" class="tp-btn danger sm" data-tp-del-course="' + course.id + '" title="Delete course">✕</button>';
+          html += "</span></div>";
+          if (course.description && !editing) {
             html += '<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft);margin-bottom:10px">' + tpMd(course.description) + "</div>";
           }
-
-          html += '<div class="tp-row"><input data-edit-course-name="' + course.id + '" placeholder="Course name…" value="' + tpAttr(course.name) + '"></div>';
-          html += tpFmtBar('[data-edit-course-desc="' + course.id + '"]');
-          html += '<div class="tp-row"><textarea data-edit-course-desc="' + course.id + '" class="tp-notes" placeholder="Course description…">' + (course.description || "") + "</textarea></div>";
-          html += '<div class="tp-row"><button type="button" class="tp-btn outline sm" data-tp-save-course="' + course.id + '">Save course</button></div>';
+          if (editing) {
+            html += '<div class="tp-row"><input data-edit-course-name="' + course.id + '" placeholder="Course name…" value="' + tpAttr(course.name) + '"></div>';
+            html += tpFmtBar('[data-edit-course-desc="' + course.id + '"]');
+            html += '<div class="tp-row"><textarea data-edit-course-desc="' + course.id + '" class="tp-notes" placeholder="Course description…">' + (course.description || "") + "</textarea></div>";
+            html += '<div class="tp-row"><button type="button" class="tp-btn outline sm" data-tp-save-course="' + course.id + '">Save course</button> ';
+            html += '<button type="button" class="tp-btn sm" data-tp-edit-course="' + course.id + '">Cancel</button></div>';
+          }
 
           if (subs.length) {
             html += subs.map(function (s) {
               var portions = s.portions || [];
               var done = portions.filter(function (p) { return p.done; }).length;
+              var subEditing = tpEditSubjectId === s.id;
               var block = '<div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(43,38,34,0.08)">';
-              block += '<div class="tp-item-head"><strong>' + s.name + '</strong>';
-              block += '<button type="button" class="tp-btn danger sm" data-tp-del-subject="' + s.id + '" data-course="' + course.id + '">✕</button></div>';
-              if (s.description) block += '<div class="tp-sub tp-md">' + tpMd(s.description) + "</div>";
-              block += '<p class="tp-sub">' + done + " / " + portions.length + " portions · tied to " + (course.name || "this course") + "</p>";
+              block += '<div class="tp-item-head"><strong>' + s.name + '</strong><span>';
+              block += '<button type="button" class="tp-btn sm outline" data-tp-edit-subject="' + s.id + '" data-course="' + course.id + '" title="Edit subject">' + (subEditing ? "Close" : "✎") + "</button> ";
+              block += '<button type="button" class="tp-btn danger sm" data-tp-del-subject="' + s.id + '" data-course="' + course.id + '">✕</button>';
+              block += "</span></div>";
+              if (s.description && !subEditing) block += '<div class="tp-sub tp-md">' + tpMd(s.description) + "</div>";
+              block += '<p class="tp-sub">' + done + " / " + portions.length + " portions · " + (course.name || "this course") + "</p>";
               if (portions.length) {
                 block += portions.map(function (p) {
                   return (
@@ -17681,10 +17682,12 @@ function tpViewWorkout() {
                 block += '<p class="tp-empty">No portions yet.</p>';
               }
               block += '<div class="tp-row"><input data-new-portion="' + s.id + '" data-course="' + course.id + '" placeholder="Add a portion…"><button type="button" class="tp-btn" data-tp-add-portion="' + s.id + '" data-course="' + course.id + '">Add</button></div>';
-              block += '<div class="tp-row"><input data-edit-subject-name="' + s.id + '" data-course="' + course.id + '" placeholder="Subject name…" value="' + tpAttr(s.name) + '"></div>';
-              block += tpFmtBar('[data-edit-subject-desc="' + s.id + '"]');
-              block += '<div class="tp-row"><textarea data-edit-subject-desc="' + s.id + '" data-course="' + course.id + '" class="tp-notes" placeholder="Description…">' + (s.description || "") + '</textarea>';
-              block += '<button type="button" class="tp-btn outline sm" data-tp-save-subject="' + s.id + '" data-course="' + course.id + '">Save</button></div>';
+              if (subEditing) {
+                block += '<div class="tp-row"><input data-edit-subject-name="' + s.id + '" data-course="' + course.id + '" placeholder="Subject name…" value="' + tpAttr(s.name) + '"></div>';
+                block += tpFmtBar('[data-edit-subject-desc="' + s.id + '"]');
+                block += '<div class="tp-row"><textarea data-edit-subject-desc="' + s.id + '" data-course="' + course.id + '" class="tp-notes" placeholder="Description…">' + (s.description || "") + '</textarea>';
+                block += '<button type="button" class="tp-btn outline sm" data-tp-save-subject="' + s.id + '" data-course="' + course.id + '">Save</button></div>';
+              }
               block += "</div>";
               return block;
             }).join("");
@@ -17753,7 +17756,7 @@ function tpViewWorkout() {
         if(addRom) addRom.addEventListener("click", function(){ var title=((document.getElementById("tpRomTitle")||{}).value||"").trim(); if(!title) return; tpData.romantic.push({id:tpUid(),title:title,type:((document.getElementById("tpRomType")||{}).value)||"date",notes:((document.getElementById("tpRomNotes")||{}).value)||"",status:"idea"}); tpSave(); tpRender(); });
         document.querySelectorAll("[data-tp-rom-status]").forEach(function(b){ b.addEventListener("click", function(){ var r=tpData.romantic.find(function(x){return x.id===b.getAttribute("data-tp-rom-status");}); if(!r) return; var cycle=["idea","planned","done"]; r.status=cycle[(cycle.indexOf(r.status||"idea")+1)%cycle.length]; tpSave(); tpRender(); }); });
         document.querySelectorAll("[data-tp-del-rom]").forEach(function(b){ b.addEventListener("click", function(){ tpData.romantic=tpData.romantic.filter(function(x){return x.id!==b.getAttribute("data-tp-del-rom");}); tpSave(); tpRender(); }); });
-        function tpFindCourse(cid) {
+                function tpFindCourse(cid) {
           tpData.study = tpNormalizeStudy(tpData.study);
           return (tpData.study.courses || []).find(function (c) { return c.id === cid; });
         }
@@ -17773,6 +17776,20 @@ function tpViewWorkout() {
           if (typeof showToast === "function") showToast("Course added", "updated");
           tpRender();
         });
+        document.querySelectorAll("[data-tp-edit-course]").forEach(function (b) {
+          b.addEventListener("click", function () {
+            var cid = b.getAttribute("data-tp-edit-course");
+            tpEditCourseId = tpEditCourseId === cid ? null : cid;
+            tpRender();
+          });
+        });
+        document.querySelectorAll("[data-tp-edit-subject]").forEach(function (b) {
+          b.addEventListener("click", function () {
+            var sid = b.getAttribute("data-tp-edit-subject");
+            tpEditSubjectId = tpEditSubjectId === sid ? null : sid;
+            tpRender();
+          });
+        });
         document.querySelectorAll("[data-tp-save-course]").forEach(function (b) {
           b.addEventListener("click", function () {
             var cid = b.getAttribute("data-tp-save-course");
@@ -17783,6 +17800,7 @@ function tpViewWorkout() {
             var n = ((nameEl || {}).value || "").trim();
             if (n) c.name = n;
             c.description = ((descEl || {}).value || "").trim();
+            tpEditCourseId = null;
             tpSave();
             if (typeof showToast === "function") showToast("Course saved", "updated");
             tpRender();
@@ -17794,6 +17812,7 @@ function tpViewWorkout() {
             var cid = b.getAttribute("data-tp-del-course");
             tpData.study = tpNormalizeStudy(tpData.study);
             tpData.study.courses = tpData.study.courses.filter(function (c) { return c.id !== cid; });
+            if (tpEditCourseId === cid) tpEditCourseId = null;
             tpSave();
             if (typeof showToast === "function") showToast("Course deleted", "updated");
             tpRender();
@@ -17826,6 +17845,7 @@ function tpViewWorkout() {
             var n = ((nameEl || {}).value || "").trim();
             if (n) s.name = n;
             s.description = ((descEl || {}).value || "").trim();
+            tpEditSubjectId = null;
             tpSave();
             tpRender();
           });
@@ -17838,6 +17858,7 @@ function tpViewWorkout() {
             var c = tpFindCourse(cid);
             if (!c) return;
             c.subjects = (c.subjects || []).filter(function (x) { return x.id !== sid; });
+            if (tpEditSubjectId === sid) tpEditSubjectId = null;
             tpSave();
             tpRender();
           });
