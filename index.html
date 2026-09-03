@@ -14495,6 +14495,7 @@
 
       function daycardIsExpired(card) {
         if (!card) return false;
+        if (card.saved) return false;
         const exp = daycardTimeMs(card.expiresAt);
         if (!exp) {
           const created = daycardTimeMs(card.createdAt);
@@ -14506,6 +14507,7 @@
 
       function daycardRemainingLabel(card) {
         const isPt = currentLanguage() === "pt";
+        if (card.saved) return isPt ? "Guardado" : "Saved";
         let exp = daycardTimeMs(card.expiresAt);
         if (!exp) {
           const created = daycardTimeMs(card.createdAt);
@@ -14585,7 +14587,7 @@
           el.innerHTML = `
             <div class="daycard-meta">
               <span class="daycard-from">${name}</span>
-              <span class="daycard-badge">${daycardRemainingLabel(card)}</span>
+              <span class="daycard-badge${card.saved ? " saved" : ""}">${daycardRemainingLabel(card)}</span>
             </div>
             ${hasText ? `<div class="daycard-text"></div>` : ""}
             ${hasAudio ? `<audio class="daycard-player" controls preload="metadata" src=""></audio>` : ""}
@@ -14595,6 +14597,9 @@
                   ? `<button type="button" data-act="speak">${tr("Listen")} 🔊</button>`
                   : ""
               }
+              <button type="button" data-act="${card.saved ? "unsave" : "save"}">${
+                card.saved ? `${tr("Unsave")} ★` : `${tr("Save")} ☆`
+              }</button>
               <button type="button" class="danger" data-act="del">${tr("Delete")}</button>
             </div>
           `;
@@ -14613,6 +14618,13 @@
           el.querySelector('[data-act="del"]').addEventListener("click", () =>
             deleteDaycard(card),
           );
+          const saveToggleBtn = el.querySelector(
+            '[data-act="save"], [data-act="unsave"]',
+          );
+          if (saveToggleBtn)
+            saveToggleBtn.addEventListener("click", () =>
+              card.saved ? unsaveDaycard(card) : saveDaycard(card),
+            );
           list.appendChild(el);
         });
       }
