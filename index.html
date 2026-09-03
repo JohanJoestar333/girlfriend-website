@@ -4267,16 +4267,47 @@
       }
       .tp-gate .tp-err { color: #c45; font-size: 0.82rem; min-height: 1.2em; margin-bottom: 8px; }
       .tp-layout { display: grid; grid-template-columns: 200px 1fr; gap: 22px; align-items: start; }
+      .tp-main { min-width: 0; position: relative; z-index: 1; }
       @media (max-width: 800px) {
-        .tp-layout { grid-template-columns: 1fr; }
-        .tp-nav { display: flex; flex-wrap: wrap; gap: 6px; position: sticky; top: 70px; z-index: 5;
-          background: var(--cream); padding: 8px 0; }
-        .tp-nav button { flex: 1 1 auto; text-align: left; }
+        .tp-layout {
+          grid-template-columns: 1fr;
+          gap: 14px;
+        }
+        /* Mobile: nav sits above content and scrolls away — never overlays sections */
+        .tp-nav {
+          position: relative !important;
+          top: auto !important;
+          z-index: 1 !important;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          max-height: none;
+          overflow: visible;
+          background: var(--surface);
+          padding: 10px;
+        }
+        .tp-nav button {
+          width: auto;
+          flex: 1 1 calc(50% - 6px);
+          min-width: 120px;
+          margin-bottom: 0;
+          text-align: center;
+        }
+        .tp-main {
+          position: relative;
+          z-index: 1;
+          clear: both;
+        }
+      }
+      @media (min-width: 801px) {
+        .tp-nav {
+          position: sticky;
+          top: 80px;
+        }
       }
       .tp-nav {
         background: var(--surface); border-radius: var(--radius-md); padding: 12px;
         border: 1px solid rgba(43,38,34,0.07); box-shadow: var(--shadow-tiny);
-        position: sticky; top: 80px;
       }
       .tp-nav button {
         display: block; width: 100%; text-align: left; padding: 9px 12px;
@@ -17014,8 +17045,6 @@
 
       let tpData = null;
       let tpView = "dash";
-      let tpEditSubjectId = null;
-      let tpShowNewSubjectPortions = false;
       let tpPomodoro = { running: false, endsAt: 0, left: 25 * 60, mode: "focus", timer: null };
 
       function tpLoad() {
@@ -17605,69 +17634,20 @@ function tpViewWorkout() {
         var study = tpData.study || { course: { name: "", description: "" }, subjects: [] };
         var course = study.course || { name: "", description: "" };
         var subs = study.subjects || [];
-        var html = '<div class="tp-card"><h3>Course</h3><p class="tp-sub">What you\'re studying overall</p>';
-        if (course.name) {
-          html += '<div class="tp-item"><strong>' + course.name + "</strong>";
-          if (course.description) {
-            html += '<div class="meta' + (typeof tpMd === "function" ? " tp-md" : "") + '" style="font-size:0.78rem;color:var(--ink-soft)">' +
-              (typeof tpMd === "function" ? tpMd(course.description) : course.description) + "</div>";
-          }
-          html += "</div>";
-        } else {
-          html += '<p class="tp-empty">No course set yet.</p>';
-        }
-        html += '<div class="tp-row"><input id="tpCourseName" placeholder="Course name…" value="' + tpAttr(course.name) + '">';
-        html += '<input id="tpCourseDesc" placeholder="Course description…" value="' + tpAttr(course.description) + '">';
-        html += '<button type="button" class="tp-btn" id="tpSaveCourse">Save</button></div></div>';
-
-        if (subs.length) {
-          html += subs.map(function (s) {
-            var portions = s.portions || [];
-            var done = portions.filter(function (p) { return p.done; }).length;
-            var editing = tpEditSubjectId === s.id;
-            var block = '<div class="tp-card"><div class="tp-item-head"><h3>' + s.name + "</h3><span>";
-            block += '<button type="button" class="tp-btn sm outline" data-tp-edit-subject="' + s.id + '" title="Edit subject">' + (editing ? "Close" : "✎") + "</button> ";
-            block += '<button type="button" class="tp-btn danger sm" data-tp-del-subject="' + s.id + '">✕</button>';
-            block += "</span></div>";
-            if (s.description && !editing) {
-              block += '<p class="tp-sub' + (typeof tpMd === "function" ? " tp-md" : "") + '">' +
-                (typeof tpMd === "function" ? tpMd(s.description) : s.description) + "</p>";
-            }
-            block += '<p class="tp-sub">' + done + " / " + portions.length + " portions applied</p>";
-
-            // Portions + edit fields only while editing this subject
-            if (editing) {
-              if (portions.length) {
-                block += portions.map(function (p) {
-                  return (
-                    '<label class="tp-check ' + (p.done ? "done" : "") + '">' +
-                    '<input type="checkbox" data-tp-portion="' + p.id + '" data-subject="' + s.id + '" ' + (p.done ? "checked" : "") + ">" +
-                    '<span style="flex:1">' + p.text + "</span>" +
-                    '<button type="button" class="tp-btn danger sm" data-tp-del-portion="' + p.id + '" data-subject="' + s.id + '">✕</button></label>'
-                  );
-                }).join("");
-              } else {
-                block += '<p class="tp-empty">No portions yet.</p>';
-              }
-              block += '<div class="tp-row"><input data-new-portion="' + s.id + '" placeholder="Add a portion…"><button type="button" class="tp-btn" data-tp-add-portion="' + s.id + '">Add portion</button></div>';
-              block += '<div class="tp-row"><input data-edit-subject-name="' + s.id + '" placeholder="Subject name…" value="' + tpAttr(s.name) + '">';
-              block += '<input data-edit-subject-desc="' + s.id + '" placeholder="Description…" value="' + tpAttr(s.description) + '">';
-              block += '<button type="button" class="tp-btn outline sm" data-tp-save-subject="' + s.id + '">Save</button></div>';
-            } else if (portions.length) {
-              // Compact: allow checking off without full edit UI? User said portions only when edit — hide list entirely
-            }
-            block += "</div>";
-            return block;
-          }).join("");
-        } else {
-          html += '<p class="tp-empty">No subjects yet — add one below.</p>';
-        }
-
-        html += '<div class="tp-card"><h3>New subject</h3><p class="tp-sub">Add a subject you\'re studying</p>';
-        html += '<div class="tp-row"><input id="tpNewSubject" placeholder="Subject name…"><input id="tpNewSubjectDesc" placeholder="Description (optional)…"><button type="button" class="tp-btn" id="tpAddSubject">Add subject</button></div>';
-        // Optional first portion only on create form (not mixed into other subjects)
-        html += '<div class="tp-row"><input id="tpNewSubjectPortion" placeholder="Optional first portion…"><span class="tp-sub" style="margin:0">only used when creating</span></div>';
-        html += "</div>";
+        var html = '<div class="tp-card"><h3>Course</h3><p class="tp-sub">What you\'re studying overall</p>' +
+          (course.name ? '<div class="tp-item"><strong>'+course.name+'</strong>'+(course.description?'<div class="meta" style="font-size:0.78rem;color:var(--ink-soft)">'+course.description+'</div>':'')+'</div>' : '<p class="tp-empty">No course set yet.</p>') +
+          '<div class="tp-row"><input id="tpCourseName" placeholder="Course name…" value="'+tpAttr(course.name)+'"><input id="tpCourseDesc" placeholder="Course description…" value="'+tpAttr(course.description)+'"><button type="button" class="tp-btn" id="tpSaveCourse">Save</button></div></div>';
+        html += (subs.length ? subs.map(function(s){
+          var portions = s.portions || [];
+          var done = portions.filter(function(p){ return p.done; }).length;
+          return '<div class="tp-card"><div class="tp-item-head"><h3>'+s.name+'</h3><button type="button" class="tp-btn danger sm" data-tp-del-subject="'+s.id+'">✕</button></div>' +
+            (s.description ? '<p class="tp-sub">'+s.description+'</p>' : '') +
+            '<p class="tp-sub">'+done+' / '+portions.length+' portions applied</p>' +
+            (portions.length ? portions.map(function(p){ return '<label class="tp-check '+(p.done?'done':'')+'"><input type="checkbox" data-tp-portion="'+p.id+'" data-subject="'+s.id+'" '+(p.done?'checked':'')+'><span style="flex:1">'+p.text+'</span><button type="button" class="tp-btn danger sm" data-tp-del-portion="'+p.id+'" data-subject="'+s.id+'">✕</button></label>'; }).join('') : '<p class="tp-empty">No portions added yet.</p>') +
+            '<div class="tp-row"><input data-new-portion="'+s.id+'" placeholder="Add a portion you\'re applying to…"><button type="button" class="tp-btn" data-tp-add-portion="'+s.id+'">Add</button></div>' +
+            '<div class="tp-row"><input data-edit-subject-name="'+s.id+'" placeholder="Subject name…" value="'+tpAttr(s.name)+'"><input data-edit-subject-desc="'+s.id+'" placeholder="Description…" value="'+tpAttr(s.description)+'"><button type="button" class="tp-btn outline sm" data-tp-save-subject="'+s.id+'">Save</button></div></div>';
+        }).join('') : '<p class="tp-empty">No subjects yet — add one below.</p>');
+        html += '<div class="tp-card"><h3>New subject</h3><p class="tp-sub">Add a subject you\'re studying</p><div class="tp-row"><input id="tpNewSubject" placeholder="Subject name…"><input id="tpNewSubjectDesc" placeholder="Description (optional)…"><button type="button" class="tp-btn" id="tpAddSubject">Add subject</button></div></div>';
         return html;
       }
 
@@ -17718,27 +17698,9 @@ function tpViewWorkout() {
         if(addRom) addRom.addEventListener("click", function(){ var title=((document.getElementById("tpRomTitle")||{}).value||"").trim(); if(!title) return; tpData.romantic.push({id:tpUid(),title:title,type:((document.getElementById("tpRomType")||{}).value)||"date",notes:((document.getElementById("tpRomNotes")||{}).value)||"",status:"idea"}); tpSave(); tpRender(); });
         document.querySelectorAll("[data-tp-rom-status]").forEach(function(b){ b.addEventListener("click", function(){ var r=tpData.romantic.find(function(x){return x.id===b.getAttribute("data-tp-rom-status");}); if(!r) return; var cycle=["idea","planned","done"]; r.status=cycle[(cycle.indexOf(r.status||"idea")+1)%cycle.length]; tpSave(); tpRender(); }); });
         document.querySelectorAll("[data-tp-del-rom]").forEach(function(b){ b.addEventListener("click", function(){ tpData.romantic=tpData.romantic.filter(function(x){return x.id!==b.getAttribute("data-tp-del-rom");}); tpSave(); tpRender(); }); });
-        document.querySelectorAll("[data-tp-edit-subject]").forEach(function(b){
-          b.addEventListener("click", function(){
-            var sid = b.getAttribute("data-tp-edit-subject");
-            tpEditSubjectId = tpEditSubjectId === sid ? null : sid;
-            tpRender();
-          });
-        });
         var addSubject=document.getElementById("tpAddSubject");
-        if(addSubject) addSubject.addEventListener("click", function(){
-          var t=((document.getElementById("tpNewSubject")||{}).value||"").trim();
-          if(!t) return;
-          var d=((document.getElementById("tpNewSubjectDesc")||{}).value||"").trim();
-          var p0=((document.getElementById("tpNewSubjectPortion")||{}).value||"").trim();
-          tpData.study=tpData.study||{course:{name:"",description:""},subjects:[]};
-          tpData.study.subjects=tpData.study.subjects||[];
-          var portions = p0 ? [{ id: tpUid(), text: p0, done: false }] : [];
-          tpData.study.subjects.push({id:tpUid(),name:t,description:d,portions:portions});
-          tpSave();
-          tpRender();
-        });
-        document.querySelectorAll("[data-tp-save-subject]").forEach(function(b){ b.addEventListener("click", function(){ var sid=b.getAttribute("data-tp-save-subject"); var s=(tpData.study.subjects||[]).find(function(x){return x.id===sid;}); if(!s) return; var nameEl=document.querySelector('[data-edit-subject-name="'+sid+'"]'); var descEl=document.querySelector('[data-edit-subject-desc="'+sid+'"]'); var n=((nameEl||{}).value||"").trim(); if(n) s.name=n; s.description=((descEl||{}).value||"").trim(); tpEditSubjectId=null; tpSave(); tpRender(); }); });
+        if(addSubject) addSubject.addEventListener("click", function(){ var t=((document.getElementById("tpNewSubject")||{}).value||"").trim(); if(!t) return; var d=((document.getElementById("tpNewSubjectDesc")||{}).value||"").trim(); tpData.study=tpData.study||{course:{name:"",description:""},subjects:[]}; tpData.study.subjects=tpData.study.subjects||[]; tpData.study.subjects.push({id:tpUid(),name:t,description:d,portions:[]}); tpSave(); tpRender(); });
+        document.querySelectorAll("[data-tp-save-subject]").forEach(function(b){ b.addEventListener("click", function(){ var sid=b.getAttribute("data-tp-save-subject"); var s=(tpData.study.subjects||[]).find(function(x){return x.id===sid;}); if(!s) return; var nameEl=document.querySelector('[data-edit-subject-name="'+sid+'"]'); var descEl=document.querySelector('[data-edit-subject-desc="'+sid+'"]'); var n=((nameEl||{}).value||"").trim(); if(n) s.name=n; s.description=((descEl||{}).value||"").trim(); tpSave(); tpRender(); }); });
         var saveCourse=document.getElementById("tpSaveCourse");
         if(saveCourse) saveCourse.addEventListener("click", function(){ var n=((document.getElementById("tpCourseName")||{}).value||"").trim(); var d=((document.getElementById("tpCourseDesc")||{}).value||"").trim(); tpData.study=tpData.study||{course:{name:"",description:""},subjects:[]}; tpData.study.course={name:n,description:d}; tpSave(); tpRender(); });
         document.querySelectorAll("[data-tp-del-subject]").forEach(function(b){ b.addEventListener("click", function(e){ e.preventDefault(); tpData.study.subjects=(tpData.study.subjects||[]).filter(function(x){return x.id!==b.getAttribute("data-tp-del-subject");}); tpSave(); tpRender(); }); });
