@@ -1,993 +1,448 @@
-Here's the complete tutorial in Markdown format that you can save as `README.md` in your project:
+# 💚 Girlfriend Website — Complete Beginner's Tutorial
 
-```markdown
-# 💚 Girlfriend Website: Beginner's Tutorial
-
-> A complete guide to personalizing your website — no coding experience needed.
+> A full guide to understanding, personalizing, and deploying your website.  
+> No coding experience needed for most changes.
 
 **Tip:** Open this file in VS Code and press `Cmd + Shift + V` (Mac) or `Ctrl + Shift + V` (Windows) to view it as a nicely formatted preview.
 
 ---
 
-## 📖 What You Have
+## 📖 What You Have Now (File Separation)
 
-Your website is a **single HTML file** called `index.html`. It contains everything:
+The site is **no longer a single giant HTML file**. It was carefully split so everything is easier to maintain:
 
-- **Structure** (HTML)
-- **Design** (CSS)
-- **Interactions** (JavaScript)
-- **Your content** (CONFIG section)
+```
+girlfriend-website/
+├── index.html          ← Structure (the page layout & all the tabs)
+├── style.css           ← Design (colors, fonts, layout, animations)
+├── app.js              ← Logic + CONFIG (almost everything you edit lives here)
+├── gate.js             ← Password gate (the lock screen)
+├── photos/             ← Your images
+├── news-backend/       ← Optional Cloudflare Worker for better news
+├── .github/workflows/  ← Automatic deploy + secret injection
+├── firebase_setup.md   ← How to connect Firebase (sync)
+├── memories_setup.md   ← How to connect Cloudinary (photo uploads)
+├── SECURITY.md
+└── website_tutorial.md ← This file
+```
 
-Most of what you'll want to change is in one place — the `CONFIG` object at the bottom of the file. **You don't need to understand all the code.**
+### What each main file does
+
+| File        | Purpose                                      | Do you edit it often? |
+|-------------|----------------------------------------------|-----------------------|
+| `index.html`| HTML structure, tabs, modals                 | Rarely                |
+| `style.css` | All visual design (colors, spacing, fonts)   | Only for design tweaks|
+| `app.js`    | **CONFIG** + all interactive features        | **Yes — main file**   |
+| `gate.js`   | Password lock screen                         | Only to change password|
+
+**Most of the time you only need to open `app.js` and edit the `CONFIG` object.**
 
 ---
 
-## 🛠️ 1. Install VS Code on Your Mac
+## 🛠️ 1. Tools You Need
 
-If you don't have VS Code:
+1. **VS Code** (free) → https://code.visualstudio.com/
+2. A modern browser (Chrome, Firefox, Safari, Edge)
+3. Optional but recommended: **Git** + a **GitHub** account (for publishing)
 
-1. Go to: https://code.visualstudio.com/
-2. Download the Mac version
-3. Open the downloaded file and move VS Code to your Applications folder
-4. Open VS Code
-
-**You don't need Node.js, Python, Git, or anything else just to edit this website.**
+You do **not** need Node.js, Python, or any other language for normal personalization.
 
 ---
 
-## 📁 2. Set Up Your Project Folder
-
-1. Open Finder
-2. Go to **Documents**
-3. Create a folder called **Girlfriend Website**
-4. Put `index.html` inside it
-
-Your folder should look like:
-
-```
-Girlfriend Website/
-└── index.html
-```
-
-### When you add photos:
+## 📁 2. Project Structure After Separation
 
 ```
 Girlfriend Website/
 ├── index.html
-└── photos/
-    ├── hero.jpg
-    ├── final.jpg
-    ├── photo1.jpg
-    ├── photo2.jpg
-    └── ...
+├── style.css
+├── app.js              ← edit CONFIG here
+├── gate.js
+├── photos/
+│   ├── hero.jpeg
+│   ├── final.jpeg
+│   └── ... (all your album photos)
+├── news-backend/       (optional)
+└── .github/
+    └── workflows/
+        └── deploy.yml  (handles Firebase + Cloudinary secrets)
 ```
 
 ---
 
-## 📝 3. Open the Website in VS Code
+## ⭐ 3. The Most Important Rule
 
-1. Open VS Code
-2. Choose **File → Open Folder...**
-3. Select **Documents → Girlfriend Website**
-4. Click **Open**
+**Almost everything editable lives in one place:**
 
-On the left side, you should see:
-
-```
-Girlfriend Website
-└── index.html
-```
-
-Click `index.html` to open it.
-
-**Don't worry about understanding all the code.** For personalization, you only need to edit the `CONFIG` section.
-
----
-
-## ⭐ 4. The Most Important Rule
-
-**Everything editable lives in one place.**
-
-Press `Cmd + F` (Mac) or `Ctrl + F` (Windows) and search for:
+Open `app.js` and search for:
 
 ```javascript
 const CONFIG = {
 ```
 
-This is where you'll personalize:
-
-| What | What to change |
-|------|----------------|
-| Names | Your names |
-| Introduction | The welcome message |
-| Dates | When you started dating, when you'll meet next |
-| Locations | Your cities, weather coordinates |
-| Photos | Hero photo, final photo |
-| Things I Miss | What you miss about her |
-| "You Made Me Better" | How she helped you grow |
-| Little Things | Small things you love |
-| Album | Photos and captions |
-| Favorites | Favorite things |
-| Fun Facts | Fun facts about you two |
-| Firsts | Milestones |
-| Open When | Messages for different moods |
-| Secret Message | Hidden message |
-| Quizzes | Questions and answers |
-| Music | Playlists and songs |
+This is the only section most people ever need to touch.
 
 ---
 
-## ✏️ 5. How to Edit Safely
+## 🗂️ 4. All the Tabs & Features
 
-You'll see things like:
+The site currently has these main sections:
 
-```javascript
-names: { me: "M", her: "Your Name" },
-```
+| Tab              | What it contains                                      | Synced?                  |
+|------------------|-------------------------------------------------------|--------------------------|
+| **Our Story**    | Hero, countdown, weather, “Things I Miss”, growth, little things, Today widget | Local + some Firebase   |
+| **Our Album**    | Photo categories + live “Our Memories” uploads        | Photos → Cloudinary<br>Metadata → Firebase |
+| **Us**           | Favorites, Fun Facts, Firsts                          | Local                    |
+| **Open When...** | Special messages she can open                         | Local                    |
+| **Bucket List**  | Shared to-do list you both can edit                   | **Firebase**             |
+| **Quizzes**      | Multiple interactive quizzes                          | Local                    |
+| **Music**        | Playlists + ability to add/reorder songs              | **Firebase**             |
+| **Calendar**     | Shared calendar / events                              | **Firebase**             |
+| **Day Cards**    | Special day cards                                     | **Firebase**             |
+| **Our Games**    | Fun little games for the two of you                   | Local                    |
+| **Thommy Personal** | Private personal area (password protected inside)  | Optional Firebase        |
 
-**Change only the content inside the quotation marks:**
+### Extra features
 
-```javascript
-names: { me: "Thomas", her: "Eduarda" },
-```
-
-### ✅ Correct:
-```javascript
-her: "Eduarda"
-```
-
-### ❌ Incorrect:
-```javascript
-her: Eduarda  // Missing quotation marks!
-```
-
-### 🛡️ Safe Rule:
-
-**Change the text, not the structure.**
-
-- Keep quotation marks: `" "`
-- Keep commas: `,`
-- Keep colons: `:`
-- Keep brackets: `{ } [ ]`
-
-When in doubt, **only change what's between the quotation marks**.
+- **Bilingual** — full English / Portuguese toggle (language is remembered)
+- **Password Gate** — the whole site starts locked (`gate.js`)
+- **Secret messages**:
+  - Click the footer heart **5 times** → secret message
+  - Click the header “us” brand **9 times** → longer secret card
+- **Today widget** (on Our Story) — news, daily quote, mood, notes
+- **Attention dots** — blue dots appear on tabs when new shared content arrives
+- **Live photo uploads** in Album → “Our Memories”
+- **Weather** for both cities
+- **Countdown** to the next reunion
+- **News** (via Cloudflare Worker or public proxies)
 
 ---
 
-## 📊 6. Change the Relationship Counter
+## 📝 5. How to Edit Content (CONFIG)
 
-Find:
+Open `app.js` and find `const CONFIG = {`.
 
-```javascript
-relationshipStart: "2023-06-14T00:00:00",
-```
-
-Change the date to when your relationship started.
-
-**Format:** `YYYY-MM-DDTHH:MM:SS`
-
-Example:
+### Basic identity & dates
 
 ```javascript
-relationshipStart: "2026-03-15T00:00:00",
+names: { me: "Thommy", her: "Fiel" },
+
+relationshipStart: "2026-05-02T03:00:00",
+reunionDate: "2026-12-20T10:00:00",
+
+myLocation: { city: "Florianopolis, Brazil", lat: -27.59, lon: -48.55 },
+herLocation: { city: "San Francisco, US", lat: 37.77, lon: -122.41 },
 ```
 
-The counter automatically calculates:
-- Years
-- Months
-- Days
-- Hours
-- Minutes
-- Seconds
-
-**Updates every second.** No manual calculation needed.
-
----
-
-## ⏱️ 7. Change the Reunion Countdown
-
-Find:
+### Hero section
 
 ```javascript
-reunionDate: "2026-12-20T15:00:00",
+hero: {
+  eyebrow: "a little place that's just ours",
+  title: "For You, My Love",
+  subtitle: "...",
+  message: "...",
+},
 ```
 
-Change it to when you'll see each other again.
-
-**Format:** `YYYY-MM-DDTHH:MM:SS`
-
-Example:
-
-```javascript
-reunionDate: "2026-09-15T18:30:00",
-```
-
-When the countdown hits zero, the website shows:
-
-> **Today. Finally. ♥**
-
----
-
-## 🌍 8. Change Your Cities
-
-Find:
-
-```javascript
-myLocation:  { city: "São Paulo, Brazil", lat: -23.55, lon: -46.63 },
-herLocation: { city: "Lisbon, Portugal",  lat: 38.72, lon: -9.14 },
-```
-
-Change the city names and coordinates.
-
-Example:
-
-```javascript
-myLocation:  { city: "Florianópolis, Brazil", lat: -27.59, lon: -48.55 },
-herLocation: { city: "San Francisco, USA", lat: 37.77, lon: -122.42 },
-```
-
-**City name** = What's displayed on the website
-**Latitude/Longitude** = Used for weather (get these from Google Maps)
-
----
-
-## ☀️ 9. Weather (No API Key Needed!)
-
-The website uses **Open-Meteo** — completely free, no API key required.
-
-Weather automatically uses the latitude/longitude from your city settings.
-
-**Shows:**
-- Current temperature
-- Weather condition
-- "Feels like" temperature
-- Humidity
-
-**Effects:**
-- ☀️ Sun glow
-- 🌧️ Rain drops
-- 🌙 Stars at night
-
-**Updates every 15 minutes.**
-
----
-
-## 🌙 10. Moon Phase (No API Key Needed!)
-
-The moon phase is calculated astronomically — no API required.
-
-**Shows:**
-- Moon phase name
-- Percentage illuminated
-- Visual moon
-
-**Updates every hour.**
-
----
-
-## 📸 11. Add Your Photos
-
-Find:
+### Photos (static ones)
 
 ```javascript
 photos: {
-  hero: null,
-  final: null
+  hero: "photos/hero.jpeg",
+  final: "photos/final.jpeg",
 },
 ```
 
-1. Create a `photos` folder inside your project folder
-2. Add your images (use `.jpg`, `.jpeg`, `.png`, or `.webp`)
-3. Update the config:
+### Things I Miss / You Made Me Better / Little Things
 
-```javascript
-photos: {
-  hero: "photos/hero.jpg",
-  final: "photos/final.jpg"
-},
-```
+These are simple arrays of objects. Just edit the text or add new items following the same pattern.
 
-**Important:** The filename must match **exactly** (including capitalization).
-
----
-
-## 💭 12. "Things I Miss"
-
-Find:
-
-```javascript
-thingsIMiss: [
-```
-
-Each entry:
-
-```javascript
-{ icon: "🤗", text: "Your warm hugs that make everything better.", extra: "" },
-```
-
-- `icon`: The emoji shown
-- `text`: The main message
-- `extra`: A second message revealed when clicked (leave `""` if none)
-
-### Example with extra message:
-
-```javascript
-{
-  icon: "🤗",
-  text: "Your warm hugs that make everything better.",
-  extra: "I don't think you realize how much I miss them."
-},
-```
-
----
-
-## 🌱 13. "You Made Me Better"
-
-Find:
-
-```javascript
-youMadeMeBetter: [
-```
-
-Each paragraph is a separate string:
-
-```javascript
-youMadeMeBetter: [
-  "You helped me become more patient and understanding.",
-  "You motivated me to take my goals and studying more seriously.",
-  "You made me want to become a better version of myself.",
-  "You showed me a deeper kind of love and companionship."
-],
-```
-
-Add, remove, or rewrite as many as you want.
-
----
-
-## 💕 14. "Little Things I Love About Us"
-
-Find:
-
-```javascript
-littleThings: [
-```
-
-Each item becomes a small chip/card:
-
-```javascript
-littleThings: [
-  "Your laugh",
-  "Our stupid jokes",
-  "Late-night conversations",
-  "Being able to be ourselves",
-  "Talking about our future"
-],
-```
-
-Add as many as you want.
-
----
-
-## 🖼️ 15. Our Album
-
-Find:
+### Album (static photo folders)
 
 ```javascript
 album: [
-```
-
-Album has **categories** with **items**:
-
-```javascript
-{
-  category: "Us",
-  items: [
-    { caption: "Us, somewhere ordinary", date: "August 15, 2026", img: "photos/us1.jpg" },
-    { caption: "That afternoon we didn't want to end", date: "August 14, 2026", img: "photos/us2.jpg" }
-  ]
-}
-```
-
-**Fields:**
-- `category`: Section title
-- `caption`: Photo description
-- `date`: When it was taken (optional)
-- `img`: Path to the photo
-
-**Photos show in a grid** (3 across on desktop, 2 on mobile).
-
----
-
-## ⭐ 16. Favorites
-
-Find:
-
-```javascript
-favorites: {
-```
-
-```javascript
-favorites: {
-  "Favorite food": "Sushi",
-  "Favorite movie": "Interstellar",
-  "Favorite song": "Our song",
-  "Favorite place": "The beach",
-  "Favorite activity": "Late-night drives",
-  "Favorite inside joke": "That one thing we never explain"
-},
-```
-
-Replace the dash `"—"` with your actual answers.
-
----
-
-## 🎯 17. Fun Facts
-
-Find:
-
-```javascript
-funFacts: [
-```
-
-Each line becomes a card:
-
-```javascript
-funFacts: [
-  "Who said \"I love you\" first: Me",
-  "Who is more stubborn: Her",
-  "Who takes longer to get ready: Her"
+  {
+    category: "Us",
+    items: [
+      {
+        caption: "Us, somewhere ordinary",
+        date: "08/02/2026",
+        img: "photos/us-1.jpeg",
+      },
+      // more photos...
+    ],
+  },
+  // more categories...
 ],
 ```
 
-**Note:** Use `\"` inside the text for quotation marks.
-
----
-
-## 📅 18. "Our Firsts"
-
-Find:
-
-```javascript
-firsts: [
-```
-
-Each item has:
-
-```javascript
-{
-  title: "First date",
-  date: "June 20, 2026",
-  desc: "The day everything started feeling a little different."
-}
-```
-
-Edit or add more milestones.
-
----
-
-## ✉️ 19. "Open When..." Messages
-
-Find:
+### Open When messages
 
 ```javascript
 openWhen: [
+  {
+    icon: "💚",
+    label: "Open when you're sad",
+    title: "Open When You're Sad",
+    text: "Hey. I know I can't be there...",
+  },
+  // more...
+],
 ```
 
-Each message:
+### Secret messages
 
 ```javascript
-{
-  icon:"💚",
-  label:"Open when you're sad",
-  title:"Open When You're Sad",
-  text:"Your personalized message goes here."
-}
-```
+secretMessage: "There's actually one more thing...",
 
-**Fields:**
-- `icon`: Emoji shown on the button
-- `label`: What's written on the button
-- `title`: Title inside the popup
-- `text`: The actual message she reads
-
-### 💡 Ideas:
-- Open when you're sad
-- Open when you're missing me
-- Open when you're happy
-- Open when you need motivation
-- Open when you're stressed
-- Open when you can't sleep
-- Open when you're angry
-- Open when you need a hug
-- Open when you're feeling insecure
-- Open when you need to smile
-- Open when you want to remember us
-- Open when you just want to hear from me
-
-Add as many as you want!
-
----
-
-## 💚 20. Green Heart Button
-
-The main page has a button:
-
-> **Click this ♥**
-
-When clicked:
-- 💚 Green hearts burst upward
-- Message appears: "Just a little reminder that I love you. 💚"
-
-**You don't need to edit anything here** — it's already working.
-
----
-
-## 🤫 21. Secret Message
-
-At the bottom of the page, there's a tiny heart `♥`.
-
-**Click it 5 times** and a secret message appears.
-
-To change the message:
-
-```javascript
-secretMessage: "There's actually one more thing I wanted you to know..."
-```
-
-Write something only she would understand.
-
----
-
-## ▶️ 22. How to Run the Website
-
-### Method 1: Simplest (Double-click)
-
-1. Save your file: `Cmd + S`
-2. Open Finder
-3. Go to: `Girlfriend Website/index.html`
-4. Double-click to open in your browser
-5. Refresh the page after making changes
-
-### Method 2: VS Code Live Server (Recommended)
-
-1. In VS Code, click the **Extensions** icon (left sidebar)
-2. Search for: **Live Server**
-3. Install it
-4. Right-click `index.html` → **Open with Live Server**
-5. Browser opens at: `http://127.0.0.1:5500/index.html`
-
-**Pro:** Auto-refreshes when you save changes.
-
-### Method 3: Python Server (For YouTube Embeds)
-
-Some features (like YouTube embeds) require a server:
-
-```bash
-# Navigate to your website folder
-cd ~/Documents/Girlfriend\ Website
-
-# Start the server
-python3 -m http.server 8000
-```
-
-Open your browser at: `http://localhost:8000`
-
-**To stop:** Press `Ctrl + C` in the terminal.
-
----
-
-## ❓ 23. If Something Goes Wrong
-
-### Website is completely blank
-- Check for missing `</script>` tag
-- Check for missing comma or quote in CONFIG
-
-### Photo doesn't appear
-- Is it in the `photos` folder?
-- Does the filename match exactly?
-- Did you use the correct path?
-
-### Weather doesn't work
-- Check latitude/longitude are numbers (not text)
-- Check internet connection
-- Try Live Server or Python server instead of double-clicking
-
-### YouTube embed doesn't work
-- **First:** Are you using a server? YouTube blocks embeds on `file://`
-- **Second:** Does the video allow embedding? Some labels (like UMG) block embeds
-
-**Test with a working video:**
-```javascript
-youtubeId: "5qap5aO4i9A"  // Always works
-```
-
-If the test works, your setup is fine — the specific video just doesn't allow embedding.
-
-### Website looks broken
-- You probably deleted a comma, quote, or bracket accidentally
-
-### Example of broken code (missing comma):
-```javascript
-// ❌ BROKEN
-hero: {
-  title: "For You"
-  subtitle: "Something special"
-},
-
-// ✅ FIXED
-hero: {
-  title: "For You",
-  subtitle: "Something special"
+brandSecret: {
+  clicks: 9,
+  eyebrow: "You found it 🔓",
+  title: "A little secret",
+  body: "For you, Eduarda.\n\nI did all of this for you...",
 },
 ```
 
----
+### Bucket List (starter items)
 
-## 🔑 24. Quick Reference: What NOT to Edit
-
-**DO NOT edit anything below** the closing `}` of the CONFIG object.
-
-The code below controls:
-- Counters and countdowns
-- Weather and moon
-- Animations
-- Album and lightbox
-- Modals
-- Navigation
-- Quiz logic
-- Music player
-
-**For basic personalization, leave it alone.**
-
----
-
-## 📝 25. Your Workflow
-
-**Don't try to do everything at once!** Follow this order:
-
-1. **Make it run** — Open the website successfully
-2. **Names** — Change your names
-3. **Dates** — Relationship start, reunion date
-4. **Locations** — Cities, coordinates
-5. **Photos** — Add hero and final photos
-6. **Content** — Things I Miss, "You Made Me Better", Little Things
-7. **Album** — Add photos and captions
-8. **Favorites/Fun Facts/Firsts** — Fill them in
-9. **Open When** — Write your messages
-10. **Secret Message** — Write something special
-11. **Test Everything** — Click every tab, button, and link
-
----
-
-## 🧠 26. Mental Model
-
-```
-index.html
-│
-├── CONFIG ← YOU EDIT THIS
-│   ├── Names
-│   ├── Introduction
-│   ├── Dates
-│   ├── Locations
-│   ├── Photos
-│   ├── Things I Miss
-│   ├── You Made Me Better
-│   ├── Little Things
-│   ├── Album
-│   ├── Favorites
-│   ├── Fun Facts
-│   ├── Firsts
-│   ├── Open When
-│   ├── Secret Message
-│   ├── QUIZ_DATA ← Quiz questions
-│   └── playlists ← Music playlists
-│
-└── Website Logic ← LEAVE THIS ALONE
-```
-
----
-
-## 🎵 27. Quizzes: How to Edit
-
-### Finding the Quizzes
-
-Inside CONFIG, find:
+These only appear the **first time** the database is empty. After that, everything is live from Firebase.
 
 ```javascript
-const QUIZ_DATA = {
-  eduarda: {
-    title: { en: "Eduarda Quiz", pt: "Quiz da Eduarda" },
-    questions: [
-      // Question objects go here
-    ]
-  },
-  thommy: {
-    title: { en: "Thommy Quiz", pt: "Quiz do Thommy" },
-    questions: [
-      // Question objects go here
-    ]
-  },
-  us: {
-    title: { en: "Us Together Quiz", pt: "Quiz de Nós Dois" },
-    questions: [
-      // Question objects go here
-    ]
-  }
-};
+bucketList: [
+  { text: "Watch the sunset from a rooftop together", done: false },
+  // ...
+],
 ```
 
-### Question Structure
-
-```javascript
-{
-  q: { en: "Question in English", pt: "Question in Portuguese" },
-  options: [
-    { en: "Option 1 English", pt: "Option 1 Portuguese" },
-    { en: "Option 2 English", pt: "Option 2 Portuguese" },
-    { en: "Option 3 English", pt: "Option 3 Portuguese" },
-    { en: "Option 4 English", pt: "Option 4 Portuguese" }
-  ],
-  correct: 0  // Index of correct answer (0, 1, 2, or 3)
-}
-```
-
-### Adding a New Question
-
-```javascript
-{
-  q: {
-    en: "What was the name of our first restaurant date?",
-    pt: "Qual era o nome do nosso primeiro restaurante no date?"
-  },
-  options: [
-    { en: "Bistro dos Sete Ais", pt: "Bistro dos Sete Ais" },
-    { en: "Arquipélago", pt: "Arquipélago" },
-    { en: "McDonald's", pt: "McDonald's" },
-    { en: "Artezanno", pt: "Artezanno" }
-  ],
-  correct: 0
-}
-```
-
-### Special Messages
-
-Add custom messages for correct/wrong answers:
-
-```javascript
-{
-  q: { en: "Who said 'I love you' first?", pt: "Quem disse 'eu te amo' primeiro?" },
-  options: [
-    { en: "You", pt: "Você" },
-    { en: "Me", pt: "Eu" }
-  ],
-  correct: 0,
-  correctSpecial: {
-    en: "You got it! 😊",
-    pt: "Você acertou! 😊"
-  },
-  wrongSpecial: {
-    en: "Really? It was definitely you! 😂",
-    pt: "Sério? Foi definitivamente você! 😂"
-  }
-}
-```
-
-### True/False Questions
-
-```javascript
-{
-  q: { en: "We met in May 2026. True or false?", pt: "A gente se conheceu em maio de 2026. Verdadeiro ou falso?" },
-  options: [
-    { en: "True", pt: "Verdadeiro" },
-    { en: "False", pt: "Falso" }
-  ],
-  correct: 0  // 0 = True, 1 = False
-}
-```
-
----
-
-## 🎶 28. Music: How to Edit Playlists
-
-### Finding the Music Section
-
-Inside CONFIG, find:
+### Music / Playlists
 
 ```javascript
 playlists: [
   {
-    id: "listen-when",
-    label: "Listen When…",
-    labelPt: "Ouça Quando…",
-    description: "Songs for specific moods and moments.",
-    descriptionPt: "Músicas para humores e momentos específicos.",
+    id: "our-playlist",          // never change once set
+    label: "Our Playlist",
+    labelPt: "Nossa Playlist",
+    description: "...",
+    descriptionPt: "...",
     songs: [
-      // Song objects go here
-    ]
-  }
-]
-```
-
-### Playlist Structure
-
-```javascript
-{
-  id: "unique-id",        // Must be unique (e.g., "our-songs")
-  label: "English name",  // Button label in English
-  labelPt: "Portuguese name",
-  description: "English description",
-  descriptionPt: "Portuguese description",
-  songs: [ /* array of song objects */ ]
-}
-```
-
-### Song Structure
-
-```javascript
-{
-  title: "Song Name",
-  artist: "Artist Name",
-  youtubeId: "XXXXXXXXXXX",  // 11-character YouTube ID
-  description: "English description",
-  descriptionPt: "Portuguese description"
-}
-```
-
-### How to Get a YouTube Video ID
-
-| URL Type | Example | ID |
-|----------|---------|-----|
-| Standard | `youtube.com/watch?v=dQw4w9WgXcQ` | `dQw4w9WgXcQ` |
-| Short | `youtu.be/dQw4w9WgXcQ` | `dQw4w9WgXcQ` |
-| With extras | `youtube.com/watch?v=dQw4w9WgXcQ&feature=shared` | `dQw4w9WgXcQ` |
-
-**The ID is always 11 characters long.**
-
-### Adding a New Playlist
-
-```javascript
-{
-  id: "road-trip",
-  label: "Road Trip Mix",
-  labelPt: "Mistura de Viagem",
-  description: "Songs for long drives.",
-  descriptionPt: "Músicas para viagens longas.",
-  songs: [
-    {
-      title: "Song Name",
-      artist: "Artist Name",
-      youtubeId: "XXXXXXXXXXX",
-      description: "Good driving song.",
-      descriptionPt: "Boa música para dirigir."
-    }
-  ]
-}
-```
-
-### Adding a New Song to an Existing Playlist
-
-```javascript
-songs: [
-  {
-    title: "Use Somebody",
-    artist: "Kings of Leon",
-    youtubeId: "gL55LKd7Ln0",
-    description: "One of our songs.",
-    descriptionPt: "Uma das nossas músicas."
+      {
+        title: "Song Name",
+        artist: "Artist Name",
+        youtubeId: "BW9Fzwuf43c",   // only the ID!
+        description: "Why this song matters",
+        descriptionPt: "...",
+      },
+    ],
   },
-  // ADD NEW SONGS HERE
-  {
-    title: "Your New Song",
-    artist: "Artist Name",
-    youtubeId: "XXXXXXXXXXX",
-    description: "Why this song matters.",
-    descriptionPt: "Por que essa música importa."
-  }
-]
+],
 ```
 
-### YouTube Embed Troubleshooting
+**Important YouTube tip:**  
+Use only the video ID (`BW9Fzwuf43c`), not the full URL.  
+Some videos block embedding — those will show a blank player.
 
-| Problem | Solution |
-|---------|----------|
-| **"Content blocked by UMG"** | Try a different upload (audio only, lyric video, or fan upload) |
-| **Video doesn't load at all** | Are you using a server? (Live Server or Python) |
-| **"Embedding disabled"** | The video owner disabled embeds — find another upload |
+### Firebase & Cloudinary (leave the placeholders)
 
-**Test with a known working video:**
 ```javascript
-youtubeId: "5qap5aO4i9A"  // Always works
+firebase: {
+  apiKey: "__FIREBASE_API_KEY__",
+  // ... other __PLACEHOLDERS__
+},
+
+cloudinary: {
+  cloudName: "__CLOUDINARY_CLOUD_NAME__",
+  uploadPreset: "__CLOUDINARY_UPLOAD_PRESET__",
+},
 ```
 
-If this works, your code is perfect — the problem is the specific video.
+These are automatically replaced during deploy by GitHub Actions using repository secrets.  
+**Never put the real keys in the code** if the repo is public.
 
 ---
 
-## 🚀 29. Publishing with GitHub Pages
+## 🔐 6. Password Gate
 
-1. **Create a GitHub account** (if you don't have one)
-2. **Create a new repository** (public is simpler for personal projects)
-3. **Upload your files**:
-   - `index.html`
-   - `photos/` folder
-4. **Enable GitHub Pages**:
-   - Go to **Settings → Pages**
-   - Under "Build and deployment", choose:
-     - Source: **"Deploy from a branch"**
-     - Branch: `main`
-     - Folder: `/ (root)`
-   - Click **Save**
-5. **Get your URL** after a minute or two:
+The lock screen is controlled by `gate.js`.
+
+To change the password, open `gate.js` and edit this line:
+
+```javascript
+var GATE_PASSWORD = "211200";
+```
+
+The unlock state is saved in the browser’s localStorage so she doesn’t have to type it every time.
+
+---
+
+## 🌐 7. Language (English ↔ Portuguese)
+
+The site is fully bilingual.  
+A language toggle appears on the page. The choice is remembered.
+
+Most UI strings are translated automatically.  
+For your own content in `CONFIG`, many places already support both languages (look for `label` / `labelPt`, `description` / `descriptionPt`, etc.).
+
+If you add new fixed text, you can extend the `PT_TRANSLATIONS` object in `app.js`.
+
+---
+
+## ☁️ 8. Syncing Data (Firebase + Cloudinary)
+
+### What needs Firebase (Cloud Firestore)
+- Bucket List
+- Music songs (the ones added on the live site)
+- Memories metadata (captions, dates, Cloudinary URLs)
+- Calendar events
+- Day Cards
+- Moods / Today widget shared data
+- (optional) Thommy Personal shared data
+
+### What needs Cloudinary
+- Actual photo / video files uploaded through “Our Memories”
+
+### Setup guides already included
+- **Firebase** → read `firebase_setup.md`
+- **Cloudinary** → read `memories_setup.md`
+
+### How secrets stay safe
+The real Firebase and Cloudinary values are stored as **GitHub repository secrets**.  
+The deploy workflow automatically injects them into `app.js` (and `index.html` as a safety net) right before publishing.
+
+Required secret names:
+- `FIREBASE_API_KEY`
+- `FIREBASE_AUTH_DOMAIN`
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_STORAGE_BUCKET`
+- `FIREBASE_MESSAGING_SENDER_ID`
+- `FIREBASE_APP_ID`
+- `CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_UPLOAD_PRESET`
+
+---
+
+## 🚀 9. Deploying to GitHub Pages
+
+1. Push your code to the `main` branch of your GitHub repository.
+2. The workflow in `.github/workflows/deploy.yml` will:
+   - Inject the secrets into `app.js`
+   - Build the site
+   - Publish it to GitHub Pages
+3. Your live URL will be something like:
    ```
    https://yourusername.github.io/your-repo-name/
    ```
 
-**That's the link you send her!** 🌸
+You can also trigger a deploy manually from the **Actions** tab → “Deploy to GitHub Pages” → “Run workflow”.
 
-Any time you update `index.html` and re-upload it, the site updates automatically within a minute.
+### After every deploy
+- Hard-refresh the live site (`Ctrl + Shift + R` / `Cmd + Shift + R`)
+- Or open it in a private window
+- Check the browser console (F12) if anything looks wrong
 
 ---
 
-## 🔗 30. Bucket List Sync (Optional)
+## 🛠️ 10. Local Testing
 
-The Bucket List tab lets you add, edit, and check off items right on the website.
+**Never open `index.html` by double-clicking** (file://).  
+YouTube embeds and some features break that way.
 
-**By default:** Changes only stay on your device.
+Instead run a tiny local server:
 
-**To sync between both of you:** See `FIREBASE_SETUP.md` — it's a free ~10 minute setup with Firebase.
+```bash
+cd path/to/girlfriend-website
+python3 -m http.server 8000
+```
+
+Then open: http://localhost:8000
+
+Or use the **Live Server** extension in VS Code.
+
+---
+
+## 🔧 11. Common Things People Want to Change
+
+| Goal                              | Where to edit                          |
+|-----------------------------------|----------------------------------------|
+| Names                             | `CONFIG.names` in `app.js`             |
+| Dates / countdown                 | `relationshipStart`, `reunionDate`     |
+| Cities & weather                  | `myLocation`, `herLocation`            |
+| Hero text                         | `CONFIG.hero`                          |
+| Static photos                     | `CONFIG.photos` + `CONFIG.album`       |
+| Open When messages                | `CONFIG.openWhen`                      |
+| Secret messages                   | `secretMessage` + `brandSecret`        |
+| Starting Bucket List              | `CONFIG.bucketList`                    |
+| Music playlists                   | `CONFIG.playlists`                     |
+| Password                          | `GATE_PASSWORD` in `gate.js`           |
+| Colors / fonts                    | `style.css` (CSS variables at the top) |
+| Add a completely new tab          | Advanced — edit `index.html` + `app.js`|
+
+---
+
+## 🆘 12. Troubleshooting
+
+**“Nothing is synced / yellow pills”**
+- Check that the GitHub secrets exist and the latest deploy succeeded
+- Open the live site → F12 → Console and look for Firebase errors
+- Confirm Firestore rules allow the collections you need
+
+**Photos upload but don’t appear for the other person**
+- Cloudinary worked, but Firebase metadata sync failed
+- Check the `memories` collection in Firestore and the rules
+
+**YouTube player is blank**
+- Don’t open via `file://`
+- Some videos have embedding disabled by the uploader
+
+**Site looks broken after a change**
+- Make sure there are no leftover git conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`)
+- Hard-refresh or clear cache
+
+**Password gate keeps appearing**
+- Clear localStorage for the site, or change the storage key in `gate.js`
+
+---
+
+## 📚 Quick Reference — CONFIG Sections
+
+| Section              | What it controls                          |
+|----------------------|-------------------------------------------|
+| `names`              | Your names                                |
+| `hero`               | Welcome / hero text                       |
+| `relationshipStart`  | Anniversary / “together since” counter    |
+| `reunionDate`        | Countdown target                          |
+| `myLocation` / `herLocation` | Cities + weather                   |
+| `photos`             | Hero & final photos                       |
+| `thingsIMiss`        | Things you miss                           |
+| `youMadeMeBetter`    | How she made you better                   |
+| `littleThings`       | Small things you love                     |
+| `album`              | Static photo categories                   |
+| `favorites`          | Favorite things                           |
+| `funFacts`           | Fun facts                                 |
+| `firsts`             | Relationship firsts                       |
+| `openWhen`           | Open-when messages                        |
+| `secretMessage`      | Footer heart secret                       |
+| `brandSecret`        | Header “us” secret card                   |
+| `bucketList`         | Initial bucket list items                 |
+| `playlists`          | Music categories & songs                  |
+| `firebase`           | Firebase config (injected at deploy)      |
+| `cloudinary`         | Cloudinary config (injected at deploy)    |
+| `newsBackendUrl`     | Optional Cloudflare Worker for news       |
 
 ---
 
 ## 🏁 Final Takeaway
 
-**You're not starting a programming project from scratch.**
+You are **not** building a website from scratch.
 
-Your job is simply to:
+Your job is simply:
 
-1. **Open** `index.html`
-2. **Find** `CONFIG = {`
-3. **Personalize** your content
-4. **Add** photos
-5. **Test** with Live Server or Python server
-6. **Publish** with GitHub Pages
+1. Open `app.js`
+2. Find `const CONFIG = {`
+3. Personalize the content
+4. Add photos to the `photos/` folder
+5. (Optional) Set up Firebase + Cloudinary once
+6. Push to GitHub → the site updates automatically
 
-**The complicated JavaScript underneath is already doing the work for you.** 💚
-
----
-
-## 📚 Quick Reference: CONFIG Sections
-
-| Section | What it changes |
-|---------|-----------------|
-| `names` | Your names |
-| `hero` | Welcome text |
-| `relationshipStart` | When you started dating |
-| `reunionDate` | When you'll meet next |
-| `myLocation` / `herLocation` | Cities and weather |
-| `photos` | Hero and final photos |
-| `thingsIMiss` | Things you miss about her |
-| `youMadeMeBetter` | How she helped you grow |
-| `littleThings` | Small things you love |
-| `album` | Photo album |
-| `favorites` | Favorite things |
-| `funFacts` | Fun facts about you two |
-| `firsts` | Relationship milestones |
-| `openWhen` | "Open When" messages |
-| `secretMessage` | Hidden message (5 clicks) |
-| `QUIZ_DATA` | Quiz questions |
-| `playlists` | Music playlists |
-
----
+The complicated JavaScript, the design, the syncing, the password gate, the bilingual support, and all the tabs are already done for you.
 
 **Made with love, just for you.** 💚
-```
-
----
-
-## 📥 How to Use This
-
-1. **Save this as `README.md`** in your project folder
-2. Open it in VS Code and press `Cmd + Shift + V` to preview
-3. Use it as your guide while personalizing the website
-
-This is a complete, beginner-friendly guide that covers everything from setup to publishing! 🚀

@@ -4361,6 +4361,20 @@
       }
 
       .tp-row textarea { min-height: 64px; width: 100%; flex: 1 1 100%; }
+      .tp-edit-modal-box { text-align: left; max-width: 560px; box-sizing: border-box; }
+      .tp-edit-body { max-height: 62vh; overflow-y: auto; padding-right: 2px; }
+      .tp-edit-field { display: flex; flex-direction: column; gap: 5px; margin: 0 0 12px; }
+      .tp-edit-field label { font-size: 0.76rem; font-weight: 700; color: var(--ink-soft); }
+      .tp-edit-field input, .tp-edit-field select, .tp-edit-field textarea {
+        width: 100%; max-width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: var(--radius-sm);
+        border: 1.5px solid rgba(43,38,34,0.12); background: var(--cream-dim); color: var(--ink); font: inherit;
+      }
+      .tp-edit-field textarea { min-height: 110px; resize: vertical; }
+      .tp-edit-field input:focus, .tp-edit-field select:focus, .tp-edit-field textarea:focus { outline: 2px solid var(--green); outline-offset: -2px; }
+      .tp-edit-checks { max-height: 190px; overflow-y: auto; padding: 8px 10px; border-radius: var(--radius-sm); background: var(--cream-dim); }
+      .tp-edit-check { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 0.84rem; }
+      .tp-edit-actions { justify-content: flex-end; margin-top: 14px; }
+      .tp-edit-actions .tp-btn { min-width: 90px; }
       .tp-btn {
         padding: 9px 14px; border-radius: 999px; background: var(--green); color: var(--cream);
         font-weight: 700; font-size: 0.82rem;
@@ -4380,6 +4394,15 @@
       .tp-tag.mid { background: var(--sage-dim); color: var(--green-deep); }
       .tp-tag.lo { background: var(--cream-dim); color: var(--ink-soft); }
       .tp-tag.done { background: var(--sage-dim); color: var(--green); }
+      .tp-tag.wish-want { background: #e8eefc; color: #315aa6; }
+      .tp-tag.wish-got { background: #dff3df; color: #287a3d; }
+      .tp-tag.rom-idea { background: #eee6ff; color: #6941a5; }
+      .tp-tag.rom-planned { background: #fff0cf; color: #9a6815; }
+      .tp-tag.rom-done { background: #dff3df; color: #287a3d; }
+      html[data-theme="dark"] .tp-tag.wish-want { background: #263454; color: #a9c1ff; }
+      html[data-theme="dark"] .tp-tag.wish-got, html[data-theme="dark"] .tp-tag.rom-done { background: #21442a; color: #9cdda9; }
+      html[data-theme="dark"] .tp-tag.rom-idea { background: #3b2b50; color: #d4b8ff; }
+      html[data-theme="dark"] .tp-tag.rom-planned { background: #4b3b1d; color: #f0c66c; }
       .tp-item {
         padding: 12px; border-radius: var(--radius-sm); background: var(--cream-dim); margin-bottom: 8px;
       }
