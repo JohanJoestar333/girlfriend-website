@@ -10999,7 +10999,7 @@
             { id: "h4", name: "No doomscroll after 22:00", streak: 0, best: 0, lastDone: "", log: {} },
           ],
           dailyGoals: {},
-          goals: { career: [], romantic: [], personal: [] },
+          goals: { career: [], personal: [] },
           wishlist: [],
           bucket: [],
           romantic: [],
@@ -11038,7 +11038,16 @@
       let tpData = null;
       let tpView = "dash";
       let tpRomTermFilter = "all";
+      let tpEditMode = {};
       let tpPomodoro = { running: false, endsAt: 0, left: 25 * 60, mode: "focus", timer: null };
+      function tpIsEdit(key) { return !!tpEditMode[key]; }
+      function tpEditToggleHtml(key) {
+        var on = tpIsEdit(key);
+        return '<button type="button" class="tp-btn sm ' + (on ? '' : 'outline') + ' tp-edit-toggle" data-tp-edit-toggle="' + key + '">' + (on ? 'Done' : 'Edit') + '</button>';
+      }
+      function tpCardHead(title, sub, key) {
+        return '<div class="tp-item-head"><div><h3>' + title + '</h3>' + (sub ? '<p class="tp-sub">' + sub + '</p>' : '') + '</div>' + tpEditToggleHtml(key) + '</div>';
+      }
 
       function tpLoad() {
         try {
@@ -11049,7 +11058,7 @@
             tpData.habits = tpData.habits && tpData.habits.length ? tpData.habits : d.habits;
             tpData.morning = tpData.morning && tpData.morning.length ? tpData.morning : d.morning;
             tpData.night = tpData.night && tpData.night.length ? tpData.night : d.night;
-            tpData.goals = Object.assign({ career: [], romantic: [], personal: [] }, tpData.goals || {});
+            tpData.goals = Object.assign({ career: [], personal: [] }, tpData.goals || {});
             tpData.affirmations = Object.assign(d.affirmations, tpData.affirmations || {});
             tpData.pomodoro = Object.assign(d.pomodoro, tpData.pomodoro || {});
             var legacyStudy = Array.isArray(tpData.study) ? tpData.study : [];
@@ -11252,11 +11261,11 @@
         const focusToday = tpData.focusByDay[tpToday()] || 0;
         const morn = tpRoutineStats("morning");
         const night = tpRoutineStats("night");
-        const openGoals = ["career", "romantic", "personal"].reduce(
+        const openGoals = ["career", "personal"].reduce(
           (n, k) => n + (tpData.goals[k] || []).filter((g) => !g.done).length,
           0,
         );
-        const topGoals = ["career", "romantic", "personal"]
+        const topGoals = ["career", "personal"]
           .flatMap((k) =>
             (tpData.goals[k] || [])
               .filter((g) => !g.done)
@@ -11598,12 +11607,13 @@
 
       function tpViewHabits() {
         var goals = tpDayGoals();
-        return '<div class="tp-card"><h3>Daily goals</h3><p class="tp-sub">Only for today · list clears after midnight · '+tpToday()+'</p><div>' +
-          (goals.map(function(g){ return '<label class="tp-check '+(g.done?'done':'')+'"><input type="checkbox" data-tp-goal="'+g.id+'" '+(g.done?'checked':'')+'><span style="flex:1">'+g.text+'</span><button type="button" class="tp-btn outline sm" data-tp-edit="dailyGoal" data-id="'+g.id+'">Edit</button><button type="button" class="tp-btn danger sm" data-tp-del-goal="'+g.id+'">✕</button></label>'; }).join('') || '<p class="tp-empty">No goals for today.</p>') +
-          '</div><div class="tp-row"><input id="tpNewGoal" placeholder="Add a goal for today…"><button type="button" class="tp-btn" id="tpAddGoal">Add</button></div></div>' +
+        var edit = tpIsEdit("habits");
+        return '<div class="tp-card">' + tpCardHead("Daily goals", "Only for today · list clears after midnight · "+tpToday(), "habits") + '<div>' +
+          (goals.map(function(g){ return '<label class="tp-check '+(g.done?'done':'')+'"><input type="checkbox" data-tp-goal="'+g.id+'" '+(g.done?'checked':'')+'><span style="flex:1">'+g.text+'</span>'+(edit?'<button type="button" class="tp-btn outline sm" data-tp-edit="dailyGoal" data-id="'+g.id+'">Edit</button><button type="button" class="tp-btn danger sm" data-tp-del-goal="'+g.id+'">✕</button>':'')+'</label>'; }).join('') || '<p class="tp-empty">No goals for today.</p>') +
+          '</div>' + (edit ? '<div class="tp-row"><input id="tpNewGoal" placeholder="Add a goal for today…"><button type="button" class="tp-btn" id="tpAddGoal">Add</button></div>' : '') + '</div>' +
           '<div class="tp-card"><h3>Habits</h3><p class="tp-sub">Items stay · checks reset every day · streaks keep going</p>' +
-          tpData.habits.map(function(h){ var on=h.log&&h.log[tpToday()]; return '<label class="tp-check '+(on?'done':'')+'"><input type="checkbox" data-tp-habit="'+h.id+'" '+(on?'checked':'')+'><div style="flex:1"><span>'+h.name+'</span><div class="meta">🔥 '+(h.streak||0)+' · best '+(h.best||0)+'</div></div><button type="button" class="tp-btn outline sm" data-tp-edit="habit" data-id="'+h.id+'">Edit</button><button type="button" class="tp-btn danger sm" data-tp-del-habit="'+h.id+'">✕</button></label>'; }).join('') +
-          '<div class="tp-row"><input id="tpNewHabit" placeholder="New habit…"><button type="button" class="tp-btn" id="tpAddHabit">Add habit</button></div></div>';
+          tpData.habits.map(function(h){ var on=h.log&&h.log[tpToday()]; return '<label class="tp-check '+(on?'done':'')+'"><input type="checkbox" data-tp-habit="'+h.id+'" '+(on?'checked':'')+'><div style="flex:1"><span>'+h.name+'</span><div class="meta">🔥 '+(h.streak||0)+' · best '+(h.best||0)+'</div></div>'+(edit?'<button type="button" class="tp-btn outline sm" data-tp-edit="habit" data-id="'+h.id+'">Edit</button><button type="button" class="tp-btn danger sm" data-tp-del-habit="'+h.id+'">✕</button>':'')+'</label>'; }).join('') +
+          (edit ? '<div class="tp-row"><input id="tpNewHabit" placeholder="New habit…"><button type="button" class="tp-btn" id="tpAddHabit">Add habit</button></div>' : '') + '</div>';
       }
 
 
@@ -11642,9 +11652,10 @@
         var log = (tpData.routineLog[day] && tpData.routineLog[day][kind]) || [];
         var title = kind === "morning" ? "Morning routine" : "Night routine";
         var sub = kind === "morning" ? "Start the day with intention · checks reset daily" : "Close the day & prepare tomorrow · checks reset daily";
-        var html = '<div class="tp-card"><h3>'+title+'</h3><p class="tp-sub">'+sub+' · '+day+'</p>' +
-          (list.map(function(item){ var on=log.indexOf(item.id)>=0; return '<label class="tp-check '+(on?'done':'')+'"><input type="checkbox" data-tp-routine="'+kind+'" data-id="'+item.id+'" '+(on?'checked':'')+'><span style="flex:1">'+item.text+'</span><button type="button" class="tp-btn outline sm" data-tp-edit="routineStep" data-id="'+item.id+'" data-kind="'+kind+'">Edit</button><button type="button" class="tp-btn danger sm" data-tp-del-routine="'+kind+'" data-id="'+item.id+'">✕</button></label>'; }).join('') || '<p class="tp-empty">Empty routine.</p>') +
-          '<div class="tp-row"><input id="tpNewRoutine" placeholder="Add step…"><button type="button" class="tp-btn" id="tpAddRoutine" data-kind="'+kind+'">Add</button></div></div>';
+        var edit = tpIsEdit(kind);
+        var html = '<div class="tp-card">' + tpCardHead(title, sub+' · '+day, kind) +
+          (list.map(function(item){ var on=log.indexOf(item.id)>=0; return '<label class="tp-check '+(on?'done':'')+'"><input type="checkbox" data-tp-routine="'+kind+'" data-id="'+item.id+'" '+(on?'checked':'')+'><span style="flex:1">'+item.text+'</span>'+(edit?'<button type="button" class="tp-btn outline sm" data-tp-edit="routineStep" data-id="'+item.id+'" data-kind="'+kind+'">Edit</button><button type="button" class="tp-btn danger sm" data-tp-del-routine="'+kind+'" data-id="'+item.id+'">✕</button>':'')+'</label>'; }).join('') || '<p class="tp-empty">Empty routine.</p>') +
+          (edit ? '<div class="tp-row"><input id="tpNewRoutine" placeholder="Add step…"><button type="button" class="tp-btn" id="tpAddRoutine" data-kind="'+kind+'">Add</button></div>' : '') + '</div>';
         if (kind === "night") {
           html += '<div class="tp-card"><h3>Daily reflection</h3><p class="tp-sub">What went well? What will you improve?</p>' +
             tpFmtBar("#tpReflection") +
@@ -11667,53 +11678,58 @@
           '<div class="tp-card"><div class="tp-item-head"><div><h3>Future self</h3><p class="tp-sub">Who are you becoming?</p></div><button type="button" class="tp-btn outline sm" data-tp-edit="futureSelf" data-id="main">Edit</button></div>' +
           (tpData.affirmations.futureSelf ? '<div class="meta tp-md" style="margin-top:10px;font-size:0.92rem;color:var(--ink)">' + tpMd(tpData.affirmations.futureSelf) + '</div>' : '<p class="tp-empty">Write a vision for your future self.</p>') +
           '</div>' +
-          '<div class="tp-card"><h3>Your affirmations</h3>' +
-          list.map(function(t,i){ return '<div class="tp-item"><div class="tp-item-head"><span>'+t+'</span><span><button type="button" class="tp-btn outline sm" data-tp-edit="affirmation" data-id="'+i+'">Edit</button><button type="button" class="tp-btn danger sm" data-tp-del-affirm="'+i+'">✕</button></span></div></div>'; }).join('') +
-          '<div class="tp-row"><input id="tpNewAffirm" placeholder="Add affirmation…"><button type="button" class="tp-btn" id="tpAddAffirm">Add</button></div></div>';
+          '<div class="tp-card">' + tpCardHead("Your affirmations", "", "affirm") +
+          list.map(function(t,i){ return '<div class="tp-item"><div class="tp-item-head"><span>'+t+'</span>'+(tpIsEdit("affirm")?'<span><button type="button" class="tp-btn outline sm" data-tp-edit="affirmation" data-id="'+i+'">Edit</button><button type="button" class="tp-btn danger sm" data-tp-del-affirm="'+i+'">✕</button></span>':'')+'</div></div>'; }).join('') +
+          (tpIsEdit("affirm") ? '<div class="tp-row"><input id="tpNewAffirm" placeholder="Add affirmation…"><button type="button" class="tp-btn" id="tpAddAffirm">Add</button></div>' : '') + '</div>';
       }
 
 
       function tpViewGoals() {
-        return ["career","romantic","personal"].map(function(cat){
+        var edit = tpIsEdit("goals");
+        return '<div class="tp-card" style="padding-bottom:10px"><div class="tp-item-head"><div><h3>Goals</h3><p class="tp-sub">Career &amp; personal — one toggle edits both</p></div>' + tpEditToggleHtml("goals") + '</div></div>' +
+          ["career","personal"].map(function(cat){
           var items = tpData.goals[cat] || [];
           return '<div class="tp-card"><h3>'+cat.charAt(0).toUpperCase()+cat.slice(1)+' goals</h3>' +
-            (items.map(function(g){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+g.title+'</strong><span>'+(g.done?'<span class="tp-tag done">done</span> ':'')+'<button type="button" class="tp-btn sm outline" data-tp-goal-prog="'+g.id+'" data-cat="'+cat+'">+10%</button> <button type="button" class="tp-btn sm outline" data-tp-edit="goal" data-id="'+g.id+'" data-cat="'+cat+'">Edit</button> <button type="button" class="tp-btn danger sm" data-tp-del-gcat="'+cat+'" data-id="'+g.id+'">✕</button></span></div><div class="tp-progress"><i style="width:'+Math.min(100,g.progress||0)+'%"></i></div><div class="meta" style="font-size:0.72rem;color:var(--ink-soft)">'+(g.progress||0)+'%'+(g.deadline?' · '+g.deadline:'')+(g.milestone?' · '+g.milestone:'')+'</div></div>'; }).join('') || '<p class="tp-empty">No goals yet.</p>') +
-            '<div class="tp-row"><input data-new-goal-title="'+cat+'" placeholder="Goal title…"><input data-new-goal-deadline="'+cat+'" type="date" style="flex:0.6"><input data-new-goal-ms="'+cat+'" placeholder="Next milestone…"><button type="button" class="tp-btn" data-tp-add-gcat="'+cat+'">Add</button></div></div>';
+            (items.map(function(g){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+g.title+'</strong><span>'+(g.done?'<span class="tp-tag done">done</span> ':'')+'<button type="button" class="tp-btn sm outline" data-tp-goal-prog="'+g.id+'" data-cat="'+cat+'">+10%</button>'+(edit?' <button type="button" class="tp-btn sm outline" data-tp-edit="goal" data-id="'+g.id+'" data-cat="'+cat+'">Edit</button> <button type="button" class="tp-btn danger sm" data-tp-del-gcat="'+cat+'" data-id="'+g.id+'">✕</button>':'')+'</span></div><div class="tp-progress"><i style="width:'+Math.min(100,g.progress||0)+'%"></i></div><div class="meta" style="font-size:0.72rem;color:var(--ink-soft)">'+(g.progress||0)+'%'+(g.deadline?' · '+g.deadline:'')+(g.milestone?' · '+g.milestone:'')+'</div></div>'; }).join('') || '<p class="tp-empty">No goals yet.</p>') +
+            (edit ? '<div class="tp-row"><input data-new-goal-title="'+cat+'" placeholder="Goal title…"><input data-new-goal-deadline="'+cat+'" type="date" style="flex:0.6"><input data-new-goal-ms="'+cat+'" placeholder="Next milestone…"><button type="button" class="tp-btn" data-tp-add-gcat="'+cat+'">Add</button></div>' : '') + '</div>';
         }).join('');
       }
 
 
       function tpViewWishlist() {
         var pri = { high: "hi", medium: "mid", low: "lo" };
-        return '<div class="tp-card"><h3>Wishlist</h3><p class="tp-sub">Things to buy or achieve</p>' +
-          ((tpData.wishlist||[]).map(function(w){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+w.title+'</strong><span><span class="tp-tag '+(w.for==="gift"?"wish-gift":"wish-me")+'">'+(w.for==="gift"?"Gift":"For me")+'</span> <span class="tp-tag '+(pri[w.priority]||'mid')+'">'+(w.priority||'medium')+'</span> <span class="tp-tag '+(w.status==="got"?"wish-got":"wish-want")+'">'+(w.status==="got"?"Got":"Want")+'</span> <button type="button" class="tp-btn sm outline" data-tp-edit="wishlist" data-id="'+w.id+'">Edit</button> <button type="button" class="tp-btn danger sm" data-tp-del-wish="'+w.id+'">✕</button></span></div>'+(w.notes?'<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft)">'+tpMd(w.notes)+'</div>':'')+(w.link?'<div class="meta" style="font-size:0.78rem"><a href="'+tpAttr(w.link)+'" target="_blank" rel="noopener" style="color:var(--sage)">'+w.link+'</a></div>':'')+'</div>'; }).join('') || '<p class="tp-empty">Wishlist is empty.</p>') +
-          '<div class="tp-row"><input id="tpWishTitle" placeholder="Item…"><select id="tpWishFor"><option value="me" selected>For me</option><option value="gift">Gift</option></select><select id="tpWishPri"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select><select id="tpWishStatus"><option value="want" selected>Want</option><option value="got">Got</option></select><input id="tpWishLink" placeholder="Link (optional)"></div>' +
+        var edit = tpIsEdit("wishlist");
+        return '<div class="tp-card">' + tpCardHead("Wishlist", "Things to buy or achieve", "wishlist") +
+          ((tpData.wishlist||[]).map(function(w){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+w.title+'</strong><span><span class="tp-tag '+(w.for==="gift"?"wish-gift":"wish-me")+'">'+(w.for==="gift"?"Gift":"For me")+'</span> <span class="tp-tag '+(pri[w.priority]||'mid')+'">'+(w.priority||'medium')+'</span> <span class="tp-tag '+(w.status==="got"?"wish-got":"wish-want")+'">'+(w.status==="got"?"Got":"Want")+'</span>'+(edit?' <button type="button" class="tp-btn sm outline" data-tp-edit="wishlist" data-id="'+w.id+'">Edit</button> <button type="button" class="tp-btn danger sm" data-tp-del-wish="'+w.id+'">✕</button>':'')+'</span></div>'+(w.notes?'<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft)">'+tpMd(w.notes)+'</div>':'')+(w.link?'<div class="meta" style="font-size:0.78rem"><a href="'+tpAttr(w.link)+'" target="_blank" rel="noopener" style="color:var(--sage)">'+w.link+'</a></div>':'')+'</div>'; }).join('') || '<p class="tp-empty">Wishlist is empty.</p>') +
+          (edit ? '<div class="tp-row"><input id="tpWishTitle" placeholder="Item…"><select id="tpWishFor"><option value="me" selected>For me</option><option value="gift">Gift</option></select><select id="tpWishPri"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select><select id="tpWishStatus"><option value="want" selected>Want</option><option value="got">Got</option></select><input id="tpWishLink" placeholder="Link (optional)"></div>' +
           tpFmtBar("#tpWishNotes") + '<textarea id="tpWishNotes" class="tp-notes" placeholder="Notes (optional)… **bold** *italic* - bullets"></textarea>' +
-          '<div class="tp-row"><button type="button" class="tp-btn" id="tpAddWish">Add</button></div></div>';
+          '<div class="tp-row"><button type="button" class="tp-btn" id="tpAddWish">Add</button></div>' : '') + '</div>';
       }
 
 
       function tpViewBucket() {
-        return '<div class="tp-card"><h3>Life bucket list</h3><p class="tp-sub">Experiences you want — separate from the shared couple list</p>' +
-          ((tpData.bucket||[]).map(function(b){ return '<label class="tp-check '+(b.done?'done':'')+'"><input type="checkbox" data-tp-bucket="'+b.id+'" '+(b.done?'checked':'')+'><div style="flex:1"><span>'+b.title+'</span>'+(b.done&&b.dateDone?'<div class="meta">Done '+b.dateDone+'</div>':'')+'</div><button type="button" class="tp-btn outline sm" data-tp-edit="bucket" data-id="'+b.id+'">Edit</button><button type="button" class="tp-btn danger sm" data-tp-del-bucket="'+b.id+'">✕</button></label>'; }).join('') || '<p class="tp-empty">Add experiences you want in this lifetime.</p>') +
-          '<div class="tp-row"><input id="tpBucketTitle" placeholder="Experience…"><button type="button" class="tp-btn" id="tpAddBucket">Add</button></div></div>';
+        var edit = tpIsEdit("bucket");
+        return '<div class="tp-card">' + tpCardHead("Life bucket list", "Experiences you want — separate from the shared couple list", "bucket") +
+          ((tpData.bucket||[]).map(function(b){ return '<label class="tp-check '+(b.done?'done':'')+'"><input type="checkbox" data-tp-bucket="'+b.id+'" '+(b.done?'checked':'')+'><div style="flex:1"><span>'+b.title+'</span>'+(b.done&&b.dateDone?'<div class="meta">Done '+b.dateDone+'</div>':'')+'</div>'+(edit?'<button type="button" class="tp-btn outline sm" data-tp-edit="bucket" data-id="'+b.id+'">Edit</button><button type="button" class="tp-btn danger sm" data-tp-del-bucket="'+b.id+'">✕</button>':'')+'</label>'; }).join('') || '<p class="tp-empty">Add experiences you want in this lifetime.</p>') +
+          (edit ? '<div class="tp-row"><input id="tpBucketTitle" placeholder="Experience…"><button type="button" class="tp-btn" id="tpAddBucket">Add</button></div>' : '') + '</div>';
       }
 
 
       function tpViewRomantic() {
         var termLabels = { short: "Short-term", mid: "Mid-term", long: "Long-term" };
         var filt = tpRomTermFilter || "all";
+        var edit = tpIsEdit("romantic");
         var items = (tpData.romantic || []).filter(function(r){ return filt === "all" || (r.term||"short") === filt; });
-        return '<div class="tp-card"><h3>Romantic life</h3><p class="tp-sub">Date ideas, surprises, plans, memories to create</p>' +
+        return '<div class="tp-card">' + tpCardHead("Romantic life", "Date ideas, surprises, plans, memories to create", "romantic") +
           '<div class="tp-row" style="margin-bottom:8px">' +
           ["all","short","mid","long"].map(function(t){
             return '<button type="button" class="tp-btn sm '+(filt===t?'':'outline')+'" data-tp-rom-term-filter="'+t+'">'+(t==="all"?"All":termLabels[t])+'</button>';
           }).join('') +
           '</div>' +
-          (items.map(function(r){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+r.title+'</strong><span><span class="tp-tag">'+(r.type||"idea")+'</span> <span class="tp-tag">'+termLabels[r.term||"short"]+'</span> <span class="tp-tag '+(r.status==="done"?"rom-done":r.status==="planned"?"rom-planned":"rom-idea")+'">'+(r.status==="done"?"Done":r.status==="planned"?"Planned":"Idea")+'</span> <button type="button" class="tp-btn sm outline" data-tp-edit="romantic" data-id="'+r.id+'">Edit</button> <button type="button" class="tp-btn danger sm" data-tp-del-rom="'+r.id+'">✕</button></span></div>'+(r.notes?'<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft)">'+tpMd(r.notes)+'</div>':'')+'</div>'; }).join('') || '<p class="tp-empty">Start collecting romantic ideas.</p>') +
-          '<div class="tp-row"><input id="tpRomTitle" placeholder="Title…"><select id="tpRomType"><option value="date">Date</option><option value="surprise">Surprise</option><option value="plan">Plan</option><option value="memory">Memory</option><option value="goal">Goal</option></select><select id="tpRomTerm"><option value="short" selected>Short-term</option><option value="mid">Mid-term</option><option value="long">Long-term</option></select><select id="tpRomStatus"><option value="idea" selected>Idea</option><option value="planned">Planned</option><option value="done">Done</option></select></div>' +
+          (items.map(function(r){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+r.title+'</strong><span><span class="tp-tag">'+(r.type||"idea")+'</span> <span class="tp-tag">'+termLabels[r.term||"short"]+'</span> <span class="tp-tag '+(r.status==="done"?"rom-done":r.status==="planned"?"rom-planned":"rom-idea")+'">'+(r.status==="done"?"Done":r.status==="planned"?"Planned":"Idea")+'</span>'+(edit?' <button type="button" class="tp-btn sm outline" data-tp-edit="romantic" data-id="'+r.id+'">Edit</button> <button type="button" class="tp-btn danger sm" data-tp-del-rom="'+r.id+'">✕</button>':'')+'</span></div>'+(r.notes?'<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft)">'+tpMd(r.notes)+'</div>':'')+'</div>'; }).join('') || '<p class="tp-empty">Start collecting romantic ideas.</p>') +
+          (edit ? '<div class="tp-row"><input id="tpRomTitle" placeholder="Title…"><select id="tpRomType"><option value="date">Date</option><option value="surprise">Surprise</option><option value="plan">Plan</option><option value="memory">Memory</option><option value="goal">Goal</option></select><select id="tpRomTerm"><option value="short" selected>Short-term</option><option value="mid">Mid-term</option><option value="long">Long-term</option></select><select id="tpRomStatus"><option value="idea" selected>Idea</option><option value="planned">Planned</option><option value="done">Done</option></select></div>' +
           tpFmtBar("#tpRomNotes") + '<textarea id="tpRomNotes" class="tp-notes" placeholder="Notes… **bold** *italic* - bullets"></textarea>' +
-          '<div class="tp-row"><button type="button" class="tp-btn" id="tpAddRom">Add</button></div></div>';
+          '<div class="tp-row"><button type="button" class="tp-btn" id="tpAddRom">Add</button></div>' : '') + '</div>';
       }
 
 
@@ -11759,9 +11775,10 @@ function tpViewWorkout() {
         }
 
         // Routines
-        html += '<div class="tp-card"><h3>Workout routines</h3><p class="tp-sub">Group exercises into a routine and run it</p>';
+        var wEdit = tpIsEdit("workout");
+        html += '<div class="tp-card">' + tpCardHead("Workout routines", "Group exercises into a routine and run it", "workout");
         if (!(w.routines || []).length) {
-          html += '<p class="tp-empty">No routines yet — create one below.</p>';
+          html += '<p class="tp-empty">No routines yet' + (wEdit ? " — create one below." : ".") + '</p>';
         } else {
           (w.routines || []).forEach(function (r) {
             var doneToday = !!(dayLog.routines && dayLog.routines[r.id]);
@@ -11773,8 +11790,10 @@ function tpViewWorkout() {
             html += '<div class="tp-item-head"><strong>' + r.name + "</strong><span>";
             if (doneToday) html += '<span class="tp-tag done">done today</span> ';
             html += '<button type="button" class="tp-btn sm" data-tp-start-routine="' + r.id + '">Start</button> ';
-            html += '<button type="button" class="tp-btn outline sm" data-tp-edit="workoutRoutine" data-id="' + r.id + '">Edit</button> ';
-            html += '<button type="button" class="tp-btn danger sm" data-tp-del-routine="' + r.id + '">✕</button>';
+            if (wEdit) {
+              html += '<button type="button" class="tp-btn outline sm" data-tp-edit="workoutRoutine" data-id="' + r.id + '">Edit</button> ';
+              html += '<button type="button" class="tp-btn danger sm" data-tp-del-routine="' + r.id + '">✕</button>';
+            }
             html += "</span></div>";
             if (r.description) html += '<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft)">' + tpMd(r.description) + "</div>";
             html += '<div class="meta" style="font-size:0.72rem;color:var(--ink-soft)">' + (names.length ? names.join(" · ") : "No exercises linked") + "</div>";
@@ -11782,20 +11801,23 @@ function tpViewWorkout() {
           });
         }
         // New routine form
-        html += '<div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(43,38,34,0.08)">';
-        html += '<p class="tp-sub">New routine</p>';
-        html += '<div class="tp-row"><input id="tpRoutineName" placeholder="Routine name (e.g. Push day)…"></div>';
-        html += tpFmtBar("#tpRoutineDesc");
-        html += '<textarea id="tpRoutineDesc" class="tp-notes" placeholder="Description (optional)…"></textarea>';
-        var exOpts = (w.exercises || []).map(function (e) {
-          return '<label style="display:flex;align-items:center;gap:8px;margin:4px 0;font-size:0.86rem"><input type="checkbox" data-tp-routine-ex="' + e.id + '"> ' + e.name + "</label>";
-        }).join("");
-        html += exOpts ? ('<div style="margin:8px 0">' + exOpts + "</div>") : '<p class="tp-empty">Add exercises first, then attach them here.</p>';
-        html += '<div class="tp-row"><button type="button" class="tp-btn" id="tpAddRoutineWo">Add routine</button></div>';
-        html += "</div></div>";
+        if (wEdit) {
+          html += '<div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(43,38,34,0.08)">';
+          html += '<p class="tp-sub">New routine</p>';
+          html += '<div class="tp-row"><input id="tpRoutineName" placeholder="Routine name (e.g. Push day)…"></div>';
+          html += tpFmtBar("#tpRoutineDesc");
+          html += '<textarea id="tpRoutineDesc" class="tp-notes" placeholder="Description (optional)…"></textarea>';
+          var exOpts = (w.exercises || []).map(function (e) {
+            return '<label style="display:flex;align-items:center;gap:8px;margin:4px 0;font-size:0.86rem"><input type="checkbox" data-tp-routine-ex="' + e.id + '"> ' + e.name + "</label>";
+          }).join("");
+          html += exOpts ? ('<div style="margin:8px 0">' + exOpts + "</div>") : '<p class="tp-empty">Add exercises first, then attach them here.</p>';
+          html += '<div class="tp-row"><button type="button" class="tp-btn" id="tpAddRoutineWo">Add routine</button></div>';
+          html += "</div>";
+        }
+        html += "</div>";
 
         // Exercises library
-        html += '<div class="tp-card"><h3>Exercises</h3><p class="tp-sub">CRUD library · bump target reps with + / −</p>';
+        html += '<div class="tp-card"><h3>Exercises</h3><p class="tp-sub">Bump target reps with + / −' + (wEdit ? " · CRUD library" : "") + '</p>';
         if (!(w.exercises || []).length) {
           html += '<p class="tp-empty">No exercises yet.</p>';
         } else {
@@ -11807,29 +11829,34 @@ function tpViewWorkout() {
             html += "<span>" + (ex.targetReps || 10) + "</span>";
             html += '<button type="button" data-tp-ex-reps="' + ex.id + '" data-dir="1">+</button>';
             html += "</span> ";
-            html += '<button type="button" class="tp-btn danger sm" data-tp-del-ex="' + ex.id + '">✕</button>';
+            if (wEdit) html += '<button type="button" class="tp-btn danger sm" data-tp-del-ex="' + ex.id + '">✕</button>';
             html += "</span></div>";
             html += '<div class="meta" style="font-size:0.72rem;color:var(--ink-soft)">' + (ex.targetSets || 3) + " sets · " + (ex.targetReps || 10) + " " + (ex.unit || "reps");
             if (ex.muscle) html += " · " + ex.muscle;
             html += "</div>";
             if (ex.description) html += '<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft);margin-top:4px">' + tpMd(ex.description) + "</div>";
-            html += '<div class="tp-row" style="margin-top:8px"><button type="button" class="tp-btn outline sm" data-tp-edit="exercise" data-id="' + ex.id + '">Edit exercise</button>';
-            var linked = (w.routines || []).filter(function(r){ return (r.exerciseIds || []).indexOf(ex.id) >= 0; }).map(function(r){ return r.name; });
-            html += linked.length ? '<span class="meta" style="align-self:center">In: ' + linked.join(" · ") + '</span>' : '<span class="meta" style="align-self:center">Not linked to a routine</span>';
-            html += '</div>';
+            if (wEdit) {
+              html += '<div class="tp-row" style="margin-top:8px"><button type="button" class="tp-btn outline sm" data-tp-edit="exercise" data-id="' + ex.id + '">Edit exercise</button>';
+              var linked = (w.routines || []).filter(function(r){ return (r.exerciseIds || []).indexOf(ex.id) >= 0; }).map(function(r){ return r.name; });
+              html += linked.length ? '<span class="meta" style="align-self:center">In: ' + linked.join(" · ") + '</span>' : '<span class="meta" style="align-self:center">Not linked to a routine</span>';
+              html += '</div>';
+            }
             html += "</div>";
           });
         }
-        html += '<div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(43,38,34,0.08)">';
-        html += '<p class="tp-sub">New exercise</p>';
-        html += '<div class="tp-row"><input id="tpExName" placeholder="Exercise name…">';
-        html += '<input id="tpExSets" type="number" min="1" value="3" style="max-width:70px" title="Sets">';
-        html += '<input id="tpExReps" type="number" min="1" value="10" style="max-width:70px" title="Reps">';
-        html += '<input id="tpExMuscle" placeholder="Muscle (optional)"></div>';
-        html += tpFmtBar("#tpExDesc");
-        html += '<textarea id="tpExDesc" class="tp-notes" placeholder="Form cues, notes… **bold** *italic* - bullets"></textarea>';
-        html += '<div class="tp-row"><button type="button" class="tp-btn" id="tpAddEx">Add exercise</button></div>';
-        html += "</div></div>";
+        if (wEdit) {
+          html += '<div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(43,38,34,0.08)">';
+          html += '<p class="tp-sub">New exercise</p>';
+          html += '<div class="tp-row"><input id="tpExName" placeholder="Exercise name…">';
+          html += '<input id="tpExSets" type="number" min="1" value="3" style="max-width:70px" title="Sets">';
+          html += '<input id="tpExReps" type="number" min="1" value="10" style="max-width:70px" title="Reps">';
+          html += '<input id="tpExMuscle" placeholder="Muscle (optional)"></div>';
+          html += tpFmtBar("#tpExDesc");
+          html += '<textarea id="tpExDesc" class="tp-notes" placeholder="Form cues, notes… **bold** *italic* - bullets"></textarea>';
+          html += '<div class="tp-row"><button type="button" class="tp-btn" id="tpAddEx">Add exercise</button></div>';
+          html += "</div>";
+        }
+        html += "</div>";
 
         return html;
       }
@@ -11837,18 +11864,27 @@ function tpViewWorkout() {
       function tpViewStudy() {
         var study = tpData.study || { courses: [] };
         var courses = Array.isArray(study.courses) ? study.courses : [];
-        var html = '<div class="tp-card"><div class="tp-item-head"><div><h3>Courses</h3><p class="tp-sub">Keep your courses organized here.</p></div></div>' +
+        var edit = tpIsEdit("study");
+        var html = '<div class="tp-card">' + tpCardHead("Courses", "Keep your courses organized here.", "study") +
           (courses.length ? courses.map(function(c){
-            return '<div class="tp-item"><div class="tp-item-head"><div><strong>'+tpAttr(c.name || "Untitled course")+'</strong>'+(c.description?'<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft);margin-top:5px">'+tpMd(c.description)+'</div>':'')+'</div><span><button type="button" class="tp-btn outline sm" data-tp-edit="course" data-id="'+c.id+'">Edit</button> <button type="button" class="tp-btn danger sm" data-tp-del-course="'+c.id+'">✕</button></span></div></div>';
+            return '<div class="tp-item"><div class="tp-item-head"><div><strong>'+tpAttr(c.name || "Untitled course")+'</strong>'+(c.description?'<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft);margin-top:5px">'+tpMd(c.description)+'</div>':'')+'</div>'+(edit?'<span><button type="button" class="tp-btn outline sm" data-tp-edit="course" data-id="'+c.id+'">Edit</button> <button type="button" class="tp-btn danger sm" data-tp-del-course="'+c.id+'">✕</button></span>':'')+'</div></div>';
           }).join('') : '<p class="tp-empty">No courses yet.</p>') +
-          '<div class="tp-row"><input id="tpNewCourseName" placeholder="Course name…"></div>' +
+          (edit ? '<div class="tp-row"><input id="tpNewCourseName" placeholder="Course name…"></div>' +
           tpFmtBar("#tpNewCourseDesc") + '<textarea id="tpNewCourseDesc" class="tp-notes" placeholder="Description (optional)… **bold** *italic* - bullets"></textarea>' +
-          '<div class="tp-row"><button type="button" class="tp-btn" id="tpAddCourse">Add course</button></div></div>';
+          '<div class="tp-row"><button type="button" class="tp-btn" id="tpAddCourse">Add course</button></div>' : '') + '</div>';
         return html;
       }
 
 
       function tpBindView() {
+        document.querySelectorAll("[data-tp-edit-toggle]").forEach(function(b){
+          b.addEventListener("click", function(e){
+            e.preventDefault();
+            var k = b.getAttribute("data-tp-edit-toggle");
+            tpEditMode[k] = !tpEditMode[k];
+            tpRender();
+          });
+        });
         document.querySelectorAll("[data-tp-edit]").forEach(function(b){
           b.addEventListener("click", function(e){
             e.preventDefault();
