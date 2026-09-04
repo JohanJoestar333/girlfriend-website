@@ -11037,6 +11037,7 @@
 
       let tpData = null;
       let tpView = "dash";
+      let tpRomTermFilter = "all";
       let tpPomodoro = { running: false, endsAt: 0, left: 25 * 60, mode: "focus", timer: null };
 
       function tpLoad() {
@@ -11469,6 +11470,8 @@
           if (!obj) return;
           title.textContent = "Edit wishlist item";
           html = tpEditField("Item", "text", obj.title, "title") +
+            tpEditField("For", "select", obj.for || "me", "for",
+              '<option value="me">For me</option><option value="gift">Gift</option>') +
             tpEditField("Priority", "select", obj.priority || "medium", "priority",
               '<option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option>') +
             tpEditField("Status", "select", obj.status === "got" ? "got" : "want", "status",
@@ -11487,6 +11490,8 @@
           html = tpEditField("Title", "text", obj.title, "title") +
             tpEditField("Type", "select", obj.type || "date", "type",
               '<option value="date">Date</option><option value="surprise">Surprise</option><option value="plan">Plan</option><option value="memory">Memory</option><option value="goal">Goal</option>') +
+            tpEditField("Term", "select", obj.term || "short", "term",
+              '<option value="short">Short-term</option><option value="mid">Mid-term</option><option value="long">Long-term</option>') +
             tpEditField("Status", "select", obj.status || "idea", "status",
               '<option value="idea">Idea</option><option value="planned">Planned</option><option value="done">Done</option>') +
             tpEditField("Notes", "textarea", obj.notes || "", "notes");
@@ -11565,12 +11570,12 @@
           if(obj){ if(val("title").trim()) obj.title=val("title").trim(); obj.deadline=val("deadline"); obj.milestone=val("milestone").trim(); }
         } else if (state.type === "wishlist") {
           obj=(tpData.wishlist||[]).find(function(x){return x.id===state.id;});
-          if(obj){ if(val("title").trim()) obj.title=val("title").trim(); obj.priority=val("priority")||"medium"; obj.status=val("status")||"want"; obj.link=val("link").trim(); obj.notes=val("notes"); }
+          if(obj){ if(val("title").trim()) obj.title=val("title").trim(); obj.for=val("for")||"me"; obj.priority=val("priority")||"medium"; obj.status=val("status")||"want"; obj.link=val("link").trim(); obj.notes=val("notes"); }
         } else if (state.type === "bucket") {
           obj=(tpData.bucket||[]).find(function(x){return x.id===state.id;}); if(obj&&val("title").trim()) obj.title=val("title").trim();
         } else if (state.type === "romantic") {
           obj=(tpData.romantic||[]).find(function(x){return x.id===state.id;});
-          if(obj){ if(val("title").trim()) obj.title=val("title").trim(); obj.type=val("type")||"date"; obj.status=val("status")||"idea"; obj.notes=val("notes"); }
+          if(obj){ if(val("title").trim()) obj.title=val("title").trim(); obj.type=val("type")||"date"; obj.term=val("term")||"short"; obj.status=val("status")||"idea"; obj.notes=val("notes"); }
         } else if (state.type === "exercise") {
           w=tpEnsureWorkouts(); obj=w.exercises.find(function(x){return x.id===state.id;});
           if(obj){ if(val("name").trim()) obj.name=val("name").trim(); obj.targetSets=Math.max(1,parseInt(val("sets"),10)||3); obj.targetReps=Math.max(1,parseInt(val("reps"),10)||10); obj.muscle=val("muscle").trim(); obj.description=val("description"); }
@@ -11658,7 +11663,7 @@
         var practiced = !!(tpData.affirmations.practiced && tpData.affirmations.practiced[tpToday()]);
         return '<div class="tp-card"><h3>Today\'s affirmation</h3><p class="tp-sub">'+(practiced?"Practiced today ✓":"Read it slowly. Feel it as true.")+'</p>' +
           '<div class="tp-affirm" id="tpAffirmText">'+text+'</div><div class="tp-row" style="justify-content:center">' +
-          '<button type="button" class="tp-btn outline" id="tpAffirmNext">Another</button><button type="button" class="tp-btn" id="tpAffirmPractice">'+(practiced?"Practiced":"Mark practiced")+'</button><button type="button" class="tp-btn outline" id="tpAffirmApi">Fetch online</button></div></div>' +
+          '<button type="button" class="tp-btn outline" id="tpAffirmNext">Another</button><button type="button" class="tp-btn" id="tpAffirmPractice">'+(practiced?"Practiced":"Mark practiced")+'</button></div></div>' +
           '<div class="tp-card"><div class="tp-item-head"><div><h3>Future self</h3><p class="tp-sub">Who are you becoming?</p></div><button type="button" class="tp-btn outline sm" data-tp-edit="futureSelf" data-id="main">Edit</button></div>' +
           (tpData.affirmations.futureSelf ? '<div class="meta tp-md" style="margin-top:10px;font-size:0.92rem;color:var(--ink)">' + tpMd(tpData.affirmations.futureSelf) + '</div>' : '<p class="tp-empty">Write a vision for your future self.</p>') +
           '</div>' +
@@ -11681,8 +11686,8 @@
       function tpViewWishlist() {
         var pri = { high: "hi", medium: "mid", low: "lo" };
         return '<div class="tp-card"><h3>Wishlist</h3><p class="tp-sub">Things to buy or achieve</p>' +
-          ((tpData.wishlist||[]).map(function(w){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+w.title+'</strong><span><span class="tp-tag '+(pri[w.priority]||'mid')+'">'+(w.priority||'medium')+'</span> <span class="tp-tag '+(w.status==="got"?"wish-got":"wish-want")+'">'+(w.status==="got"?"Got":"Want")+'</span> <button type="button" class="tp-btn sm outline" data-tp-edit="wishlist" data-id="'+w.id+'">Edit</button> <button type="button" class="tp-btn danger sm" data-tp-del-wish="'+w.id+'">✕</button></span></div>'+(w.notes?'<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft)">'+tpMd(w.notes)+'</div>':'')+(w.link?'<div class="meta" style="font-size:0.78rem"><a href="'+tpAttr(w.link)+'" target="_blank" rel="noopener" style="color:var(--sage)">'+w.link+'</a></div>':'')+'</div>'; }).join('') || '<p class="tp-empty">Wishlist is empty.</p>') +
-          '<div class="tp-row"><input id="tpWishTitle" placeholder="Item…"><select id="tpWishPri"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select><select id="tpWishStatus"><option value="want" selected>Want</option><option value="got">Got</option></select><input id="tpWishLink" placeholder="Link (optional)"></div>' +
+          ((tpData.wishlist||[]).map(function(w){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+w.title+'</strong><span><span class="tp-tag '+(w.for==="gift"?"wish-gift":"wish-me")+'">'+(w.for==="gift"?"Gift":"For me")+'</span> <span class="tp-tag '+(pri[w.priority]||'mid')+'">'+(w.priority||'medium')+'</span> <span class="tp-tag '+(w.status==="got"?"wish-got":"wish-want")+'">'+(w.status==="got"?"Got":"Want")+'</span> <button type="button" class="tp-btn sm outline" data-tp-edit="wishlist" data-id="'+w.id+'">Edit</button> <button type="button" class="tp-btn danger sm" data-tp-del-wish="'+w.id+'">✕</button></span></div>'+(w.notes?'<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft)">'+tpMd(w.notes)+'</div>':'')+(w.link?'<div class="meta" style="font-size:0.78rem"><a href="'+tpAttr(w.link)+'" target="_blank" rel="noopener" style="color:var(--sage)">'+w.link+'</a></div>':'')+'</div>'; }).join('') || '<p class="tp-empty">Wishlist is empty.</p>') +
+          '<div class="tp-row"><input id="tpWishTitle" placeholder="Item…"><select id="tpWishFor"><option value="me" selected>For me</option><option value="gift">Gift</option></select><select id="tpWishPri"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select><select id="tpWishStatus"><option value="want" selected>Want</option><option value="got">Got</option></select><input id="tpWishLink" placeholder="Link (optional)"></div>' +
           tpFmtBar("#tpWishNotes") + '<textarea id="tpWishNotes" class="tp-notes" placeholder="Notes (optional)… **bold** *italic* - bullets"></textarea>' +
           '<div class="tp-row"><button type="button" class="tp-btn" id="tpAddWish">Add</button></div></div>';
       }
@@ -11696,9 +11701,17 @@
 
 
       function tpViewRomantic() {
+        var termLabels = { short: "Short-term", mid: "Mid-term", long: "Long-term" };
+        var filt = tpRomTermFilter || "all";
+        var items = (tpData.romantic || []).filter(function(r){ return filt === "all" || (r.term||"short") === filt; });
         return '<div class="tp-card"><h3>Romantic life</h3><p class="tp-sub">Date ideas, surprises, plans, memories to create</p>' +
-          ((tpData.romantic||[]).map(function(r){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+r.title+'</strong><span><span class="tp-tag">'+(r.type||"idea")+'</span> <span class="tp-tag '+(r.status==="done"?"rom-done":r.status==="planned"?"rom-planned":"rom-idea")+'">'+(r.status==="done"?"Done":r.status==="planned"?"Planned":"Idea")+'</span> <button type="button" class="tp-btn sm outline" data-tp-edit="romantic" data-id="'+r.id+'">Edit</button> <button type="button" class="tp-btn danger sm" data-tp-del-rom="'+r.id+'">✕</button></span></div>'+(r.notes?'<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft)">'+tpMd(r.notes)+'</div>':'')+'</div>'; }).join('') || '<p class="tp-empty">Start collecting romantic ideas.</p>') +
-          '<div class="tp-row"><input id="tpRomTitle" placeholder="Title…"><select id="tpRomType"><option value="date">Date</option><option value="surprise">Surprise</option><option value="plan">Plan</option><option value="memory">Memory</option><option value="goal">Goal</option></select><select id="tpRomStatus"><option value="idea" selected>Idea</option><option value="planned">Planned</option><option value="done">Done</option></select></div>' +
+          '<div class="tp-row" style="margin-bottom:8px">' +
+          ["all","short","mid","long"].map(function(t){
+            return '<button type="button" class="tp-btn sm '+(filt===t?'':'outline')+'" data-tp-rom-term-filter="'+t+'">'+(t==="all"?"All":termLabels[t])+'</button>';
+          }).join('') +
+          '</div>' +
+          (items.map(function(r){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+r.title+'</strong><span><span class="tp-tag">'+(r.type||"idea")+'</span> <span class="tp-tag">'+termLabels[r.term||"short"]+'</span> <span class="tp-tag '+(r.status==="done"?"rom-done":r.status==="planned"?"rom-planned":"rom-idea")+'">'+(r.status==="done"?"Done":r.status==="planned"?"Planned":"Idea")+'</span> <button type="button" class="tp-btn sm outline" data-tp-edit="romantic" data-id="'+r.id+'">Edit</button> <button type="button" class="tp-btn danger sm" data-tp-del-rom="'+r.id+'">✕</button></span></div>'+(r.notes?'<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft)">'+tpMd(r.notes)+'</div>':'')+'</div>'; }).join('') || '<p class="tp-empty">Start collecting romantic ideas.</p>') +
+          '<div class="tp-row"><input id="tpRomTitle" placeholder="Title…"><select id="tpRomType"><option value="date">Date</option><option value="surprise">Surprise</option><option value="plan">Plan</option><option value="memory">Memory</option><option value="goal">Goal</option></select><select id="tpRomTerm"><option value="short" selected>Short-term</option><option value="mid">Mid-term</option><option value="long">Long-term</option></select><select id="tpRomStatus"><option value="idea" selected>Idea</option><option value="planned">Planned</option><option value="done">Done</option></select></div>' +
           tpFmtBar("#tpRomNotes") + '<textarea id="tpRomNotes" class="tp-notes" placeholder="Notes… **bold** *italic* - bullets"></textarea>' +
           '<div class="tp-row"><button type="button" class="tp-btn" id="tpAddRom">Add</button></div></div>';
       }
@@ -11876,8 +11889,6 @@ function tpViewWorkout() {
         if(affNext) affNext.addEventListener("click", function(){ var n=(tpData.affirmations.custom||[]).length||1; tpData.affirmations.lastIndex=((tpData.affirmations.lastIndex||0)+1)%n; tpSave(); tpRender(); });
         var affPr=document.getElementById("tpAffirmPractice");
         if(affPr) affPr.addEventListener("click", function(){ tpData.affirmations.practiced=tpData.affirmations.practiced||{}; tpData.affirmations.practiced[tpToday()]=true; tpSave(); tpRender(); });
-        var affApi=document.getElementById("tpAffirmApi");
-        if(affApi) affApi.addEventListener("click", async function(){ var el=document.getElementById("tpAffirmText"); try{ var text=null; try{ var r=await fetch("https://www.affirmations.dev/"); if(r.ok){ var j=await r.json(); text=j.affirmation; } }catch(e){} if(!text){ try{ var r2=await fetch("https://api.quotable.io/random?tags=inspirational"); if(r2.ok){ var j2=await r2.json(); text=j2.content; } }catch(e){} } if(text&&el) el.textContent=text; else if(typeof showToast==="function") showToast("Could not fetch affirmation","updated"); }catch(e){ if(typeof showToast==="function") showToast("Could not fetch affirmation","updated"); } });
         var addAff=document.getElementById("tpAddAffirm");
         if(addAff) addAff.addEventListener("click", function(){ var t=((document.getElementById("tpNewAffirm")||{}).value||"").trim(); if(!t) return; tpData.affirmations.custom.push(t); tpSave(); tpRender(); });
         document.querySelectorAll("[data-tp-del-affirm]").forEach(function(b){ b.addEventListener("click", function(){ tpData.affirmations.custom.splice(parseInt(b.getAttribute("data-tp-del-affirm"),10),1); tpSave(); tpRender(); }); });
@@ -11885,7 +11896,7 @@ function tpViewWorkout() {
         document.querySelectorAll("[data-tp-goal-prog]").forEach(function(b){ b.addEventListener("click", function(){ var cat=b.getAttribute("data-cat"); var id=b.getAttribute("data-tp-goal-prog"); var g=(tpData.goals[cat]||[]).find(function(x){return x.id===id;}); if(!g) return; g.progress=Math.min(100,(g.progress||0)+10); if(g.progress>=100) g.done=true; tpSave(); tpRender(); }); });
         document.querySelectorAll("[data-tp-del-gcat]").forEach(function(b){ b.addEventListener("click", function(){ var cat=b.getAttribute("data-tp-del-gcat"); var id=b.getAttribute("data-id"); tpData.goals[cat]=(tpData.goals[cat]||[]).filter(function(x){return x.id!==id;}); tpSave(); tpRender(); }); });
         var addWish=document.getElementById("tpAddWish");
-        if(addWish) addWish.addEventListener("click", function(){ var title=((document.getElementById("tpWishTitle")||{}).value||"").trim(); if(!title) return; tpData.wishlist.push({id:tpUid(),title:title,priority:((document.getElementById("tpWishPri")||{}).value)||"medium",link:((document.getElementById("tpWishLink")||{}).value||"").trim(),notes:((document.getElementById("tpWishNotes")||{}).value)||"",status:((document.getElementById("tpWishStatus")||{}).value)||"want"}); tpSave(); tpRender(); });
+        if(addWish) addWish.addEventListener("click", function(){ var title=((document.getElementById("tpWishTitle")||{}).value||"").trim(); if(!title) return; tpData.wishlist.push({id:tpUid(),title:title,for:((document.getElementById("tpWishFor")||{}).value)||"me",priority:((document.getElementById("tpWishPri")||{}).value)||"medium",link:((document.getElementById("tpWishLink")||{}).value||"").trim(),notes:((document.getElementById("tpWishNotes")||{}).value)||"",status:((document.getElementById("tpWishStatus")||{}).value)||"want"}); tpSave(); tpRender(); });
         document.querySelectorAll("[data-tp-wish-status]").forEach(function(b){ b.addEventListener("click", function(){ var w=tpData.wishlist.find(function(x){return x.id===b.getAttribute("data-tp-wish-status");}); if(w){ w.status=w.status==="got"?"want":"got"; tpSave(); tpRender(); } }); });
         document.querySelectorAll("[data-tp-del-wish]").forEach(function(b){ b.addEventListener("click", function(){ tpData.wishlist=tpData.wishlist.filter(function(x){return x.id!==b.getAttribute("data-tp-del-wish");}); tpSave(); tpRender(); }); });
         var addBucket=document.getElementById("tpAddBucket");
@@ -11893,7 +11904,8 @@ function tpViewWorkout() {
         document.querySelectorAll("[data-tp-bucket]").forEach(function(el){ el.addEventListener("change", function(){ var b=tpData.bucket.find(function(x){return x.id===el.getAttribute("data-tp-bucket");}); if(b){ b.done=el.checked; b.dateDone=el.checked?tpToday():""; tpSave(); tpRender(); } }); });
         document.querySelectorAll("[data-tp-del-bucket]").forEach(function(b){ b.addEventListener("click", function(e){ e.preventDefault(); tpData.bucket=tpData.bucket.filter(function(x){return x.id!==b.getAttribute("data-tp-del-bucket");}); tpSave(); tpRender(); }); });
         var addRom=document.getElementById("tpAddRom");
-        if(addRom) addRom.addEventListener("click", function(){ var title=((document.getElementById("tpRomTitle")||{}).value||"").trim(); if(!title) return; tpData.romantic.push({id:tpUid(),title:title,type:((document.getElementById("tpRomType")||{}).value)||"date",notes:((document.getElementById("tpRomNotes")||{}).value)||"",status:((document.getElementById("tpRomStatus")||{}).value)||"idea"}); tpSave(); tpRender(); });
+        if(addRom) addRom.addEventListener("click", function(){ var title=((document.getElementById("tpRomTitle")||{}).value||"").trim(); if(!title) return; tpData.romantic.push({id:tpUid(),title:title,type:((document.getElementById("tpRomType")||{}).value)||"date",term:((document.getElementById("tpRomTerm")||{}).value)||"short",notes:((document.getElementById("tpRomNotes")||{}).value)||"",status:((document.getElementById("tpRomStatus")||{}).value)||"idea"}); tpSave(); tpRender(); });
+        document.querySelectorAll("[data-tp-rom-term-filter]").forEach(function(b){ b.addEventListener("click", function(){ tpRomTermFilter=b.getAttribute("data-tp-rom-term-filter"); tpRender(); }); });
         document.querySelectorAll("[data-tp-rom-status]").forEach(function(b){ b.addEventListener("click", function(){ var r=tpData.romantic.find(function(x){return x.id===b.getAttribute("data-tp-rom-status");}); if(!r) return; var cycle=["idea","planned","done"]; r.status=cycle[(cycle.indexOf(r.status||"idea")+1)%cycle.length]; tpSave(); tpRender(); }); });
         document.querySelectorAll("[data-tp-del-rom]").forEach(function(b){ b.addEventListener("click", function(){ tpData.romantic=tpData.romantic.filter(function(x){return x.id!==b.getAttribute("data-tp-del-rom");}); tpSave(); tpRender(); }); });
         var addCourse=document.getElementById("tpAddCourse");
