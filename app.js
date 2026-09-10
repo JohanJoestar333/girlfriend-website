@@ -5890,6 +5890,14 @@
         }
       }
 
+      function itemCreatedMs(item) {
+        const value = item && item.createdAt;
+        if (value && typeof value.toMillis === "function") return value.toMillis();
+        if (value && typeof value.toDate === "function") return value.toDate().getTime();
+        const n = Number(value);
+        return Number.isFinite(n) ? n : 0;
+      }
+
       function getMoviesByStatus(status) {
         return movieItems
           .filter((m) => (m.status || "towatch") === status)
