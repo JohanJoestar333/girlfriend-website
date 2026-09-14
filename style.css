@@ -1155,16 +1155,35 @@
         font-size: 0.78rem;
         color: var(--ink-soft);
       }
+      .today-daycard-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 6px;
+      }
       .today-daycard-body .from {
         font-size: 0.72rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.06em;
         color: var(--green-deep);
-        margin-bottom: 6px;
       }
       .today-daycard-body .from.her {
         color: #b86b7a;
+      }
+      .today-daycard-badge {
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: var(--ink-soft);
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 999px;
+        padding: 2px 9px;
+        white-space: nowrap;
+      }
+      .today-daycard-badge.saved {
+        color: var(--green-deep);
+        background: rgba(46, 125, 50, 0.12);
       }
       .today-daycard-body .txt {
         font-family: var(--serif);
@@ -1172,11 +1191,13 @@
         font-size: 1.05rem;
         line-height: 1.5;
         color: var(--ink);
-        display: -webkit-box;
-        -webkit-line-clamp: 4;
-        line-clamp: 4;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
+        white-space: pre-wrap;
+        overflow-wrap: break-word;
+      }
+      .today-daycard-player {
+        width: 100%;
+        margin-top: 10px;
+        height: 34px;
       }
       .today-empty {
         color: var(--ink-soft);

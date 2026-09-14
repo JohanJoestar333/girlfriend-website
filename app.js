@@ -3368,9 +3368,9 @@
         const list =
           typeof dayCards !== "undefined"
             ? dayCards.filter((c) =>
-                typeof daycardIsExpired === "function"
-                  ? !daycardIsExpired(c)
-                  : true,
+                typeof daycardIsFromToday === "function"
+                  ? daycardIsFromToday(c)
+                  : false,
               )
             : [];
         const sorted = list.slice().sort((a, b) => {
@@ -3386,7 +3386,12 @@
         });
         const card = sorted[0];
         if (!card) {
-          box.innerHTML = `<p class="today-empty">${isPt ? "Ainda sem cartões." : "No day cards yet."}</p>
+          const pool = TODAY_NO_CARD_MSGS[isPt ? "pt" : "en"];
+          const dayKey = tpToday();
+          let seed = 0;
+          for (let i = 0; i < dayKey.length; i++) seed = (seed * 31 + dayKey.charCodeAt(i)) >>> 0;
+          const msg = pool[seed % pool.length];
+          box.innerHTML = `<p class="today-empty">${msg}</p>
             <button type="button" class="today-link" data-go="daycards">${isPt ? "Escrever um" : "Write one"}</button>`;
         } else {
           const who = card.from === "her" ? "her" : "me";
@@ -3394,10 +3399,26 @@
           const text =
             (card.text || "").trim() ||
             (card.audioUrl ? (isPt ? "(áudio)" : "(audio)") : "");
-          box.innerHTML = `<div class="from ${who}"></div><div class="txt"></div>
+          const hasAudio = !!(card.audioUrl && String(card.audioUrl).trim());
+          const badge =
+            typeof daycardRemainingLabel === "function"
+              ? daycardRemainingLabel(card)
+              : "";
+          box.innerHTML = `<div class="today-daycard-meta">
+              <span class="from ${who}"></span>
+              ${badge ? `<span class="today-daycard-badge${card.saved ? " saved" : ""}"></span>` : ""}
+            </div>
+            <div class="txt"></div>
+            ${hasAudio ? `<audio class="today-daycard-player" controls preload="metadata" src=""></audio>` : ""}
             <button type="button" class="today-link" data-go="daycards">${isPt ? "Ver cartões" : "See day cards"}</button>`;
           box.querySelector(".from").textContent = name;
+          const badgeEl = box.querySelector(".today-daycard-badge");
+          if (badgeEl) badgeEl.textContent = badge;
           box.querySelector(".txt").textContent = text;
+          if (hasAudio) {
+            const audioEl = box.querySelector(".today-daycard-player");
+            if (audioEl) audioEl.src = card.audioUrl;
+          }
         }
         box.querySelectorAll("[data-go]").forEach((btn) => {
           btn.addEventListener("click", () =>
@@ -9552,6 +9573,36 @@
         return Number.isNaN(p) ? 0 : p;
       }
 
+      function daycardIsFromToday(card) {
+        if (!card) return false;
+        const ms = typeof daycardTimeMs === "function" ? daycardTimeMs(card.createdAt) : 0;
+        if (!ms) return false;
+        const d = new Date(ms);
+        const now = new Date();
+        return (
+          d.getFullYear() === now.getFullYear() &&
+          d.getMonth() === now.getMonth() &&
+          d.getDate() === now.getDate()
+        );
+      }
+      const TODAY_NO_CARD_MSGS = {
+        en: [
+          "No day card from today yet. Write something to your partner — don't forget about them! 💌",
+          "Silence today? Your partner is somewhere wondering if you still remember their existence. Fix that. 😅",
+          "No card today. This is your sign to say something sweet before you get distracted again.",
+          "Nothing written today... yet. A tiny message now beats a big apology later.",
+          "Today's card is empty. Your person deserves at least one sentence about them today.",
+          "You haven't written today's card. Yes, this message is judging you a little. Go fix it.",
+        ],
+        pt: [
+          "Ainda sem cartão hoje. Escreve algo pro seu par — não esquece dele(a)! 💌",
+          "Silêncio hoje? Seu par tá em algum lugar se perguntando se você ainda lembra que ele(a) existe. Resolve isso. 😅",
+          "Sem cartão hoje. Essa é a deixa pra mandar algo fofo antes de se distrair de novo.",
+          "Nada escrito hoje... ainda. Uma mensagem pequena agora vale mais que um pedido de desculpas grande depois.",
+          "O cartão de hoje tá vazio. Sua pessoa merece pelo menos uma frase sobre ela hoje.",
+          "Você ainda não escreveu o cartão de hoje. Sim, essa mensagem tá te julgando um pouquinho. Vai lá resolver.",
+        ],
+      };
       function daycardIsExpired(card) {
         if (!card) return false;
         if (card.saved) return false;
@@ -11967,6 +12018,9 @@
         s = s.replace(/__([^_\n]+)__/g, "<strong>$1</strong>");
         s = s.replace(/\*([^*\n]+)\*/g, "<em>$1</em>");
         s = s.replace(/(^|[^\w])_([^_\n]+)_(?!\w)/g, "$1<em>$2</em>");
+        s = s.replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+|mailto:[^\s)]+)\)/g, function (m, label, url) {
+          return '<a href="' + tpAttr(url) + '" target="_blank" rel="noopener noreferrer">' + label + "</a>";
+        });
         var lines = s.split(/\n/);
         var out = [];
         var inUl = false;
@@ -12003,7 +12057,8 @@
           '<button type="button" data-tp-fmt="italic" title="Italic (Ctrl+I)"><i>I</i></button>' +
           '<button type="button" data-tp-fmt="bullet" title="Bullet list">• List</button>' +
           '<button type="button" data-tp-fmt="number" title="Numbered list">1. List</button>' +
-          '<span class="tp-md-hint">Ctrl+B · Ctrl+I · or **bold** *italic* - bullets · 1. numbers</span>' +
+          '<button type="button" data-tp-fmt="link" title="Add link (Ctrl+K)">🔗 Href</button>' +
+          '<span class="tp-md-hint">Ctrl+B · Ctrl+I · Ctrl+K · or **bold** *italic* - bullets · 1. numbers · [text](url) link</span>' +
           "</div>"
         );
       }
@@ -12042,12 +12097,30 @@
         ta.focus();
         try { ta.setSelectionRange(lineStart, lineStart + next.length); } catch (e) {}
       }
+      function tpInsertLink(ta) {
+        if (!ta) return;
+        var start = ta.selectionStart || 0;
+        var end = ta.selectionEnd || 0;
+        var val = ta.value || "";
+        var selected = val.slice(start, end) || "link text";
+        var url = window.prompt("Link URL (e.g. https://example.com)", "https://");
+        if (url === null) return;
+        url = url.trim();
+        if (!url) return;
+        if (!/^https?:\/\//i.test(url) && !/^mailto:/i.test(url)) url = "https://" + url;
+        var replacement = "[" + selected + "](" + url + ")";
+        ta.value = val.slice(0, start) + replacement + val.slice(end);
+        var caret = start + replacement.length;
+        ta.focus();
+        try { ta.setSelectionRange(caret, caret); } catch (e) {}
+      }
       function tpApplyFormat(ta, kind) {
         if (!ta) return;
         if (kind === "bold") tpWrapSelection(ta, "**", "**");
         else if (kind === "italic") tpWrapSelection(ta, "*", "*");
         else if (kind === "bullet") tpToggleLinePrefix(ta, "- ");
         else if (kind === "number") tpToggleLinePrefix(ta, "1. ");
+        else if (kind === "link") tpInsertLink(ta);
       }
       function tpBindFormatControls(root) {
         root = root || document;
@@ -12072,6 +12145,7 @@
             var k = (e.key || "").toLowerCase();
             if (k === "b") { e.preventDefault(); tpApplyFormat(ta, "bold"); }
             else if (k === "i") { e.preventDefault(); tpApplyFormat(ta, "italic"); }
+            else if (k === "k") { e.preventDefault(); tpApplyFormat(ta, "link"); }
           });
         });
       }
@@ -12979,7 +13053,10 @@
             '<button type="button" class="tp-btn" id="tpPomStart">'+(tpPomodoro.running?"Pause":"Start")+'</button>' +
             '<button type="button" class="tp-btn outline" id="tpPomReset">Reset</button>' +
             (tpAlarmActive ? '<button type="button" class="tp-btn outline" id="tpPomStopAlarm">Stop ringing</button>' : '') +
-            '</div>';
+            '</div>' +
+            '<p class="tp-sub" style="margin-top:14px;font-size:0.78rem;line-height:1.5">' +
+            '<strong>Timer sound not working on MacBook?</strong> Go to Safari &gt; Settings for This Website in the menu bar and ensure auto-play and sound permissions are allowed.' +
+            '</p>';
         }
         return '<div class="tp-card tp-pomodoro">'+tabsHtml+bodyHtml+'</div>' +
           '<div class="tp-card"><h3>Total focus logged</h3><div class="tp-stat"><div class="n">'+Object.values(tpData.focusByDay).reduce(function(a,b){return a+(b||0);},0)+'m</div><div class="l">All time</div></div></div>';
@@ -13337,13 +13414,13 @@ function tpViewWorkout() {
         document.querySelectorAll("[data-tp-del-routine]").forEach(function(b){ b.addEventListener("click", function(e){ e.preventDefault(); var kind=b.getAttribute("data-tp-del-routine"); var id=b.getAttribute("data-id"); tpData[kind]=tpData[kind].filter(function(x){return x.id!==id;}); tpSave(); tpRender(); }); });
         var saveRef=document.getElementById("tpSaveReflection");
         if(saveRef) saveRef.addEventListener("click", function(){ tpData.reflections[tpToday()]=((document.getElementById("tpReflection")||{}).value)||""; tpSave(); if(typeof showToast==="function") showToast("Reflection saved","updated"); });
-        document.querySelectorAll("[data-tp-focus-tab]").forEach(function(b){ b.addEventListener("click", function(){ tpPomodoro.activeTab=b.getAttribute("data-tp-focus-tab"); tpRender(); }); });
+        document.querySelectorAll("[data-tp-focus-tab]").forEach(function(b){ b.addEventListener("click", function(){ tpGetAudioCtx(); tpPomodoro.activeTab=b.getAttribute("data-tp-focus-tab"); tpRender(); }); });
         var timerMins=document.getElementById("tpTimerMins");
         if(timerMins) timerMins.addEventListener("change", function(){ var v=Math.max(1,Math.min(180,parseInt(this.value,10)||25)); tpData.pomodoro.minutes=v; tpSave(); if(!tpPomodoro.running) tpPomodoro.left=v*60; tpRender(); });
         var pomStart=document.getElementById("tpPomStart");
-        if(pomStart) pomStart.addEventListener("click", function(){ if(tpPomodoro.running) tpPomPause(); else tpPomStart(); tpRender(); });
+        if(pomStart) pomStart.addEventListener("click", function(){ tpGetAudioCtx(); if(tpPomodoro.running) tpPomPause(); else tpPomStart(); tpRender(); });
         var pomReset=document.getElementById("tpPomReset");
-        if(pomReset) pomReset.addEventListener("click", function(){ tpPomStop(); tpPomodoro.left=tpTimerSeconds(); tpRender(); });
+        if(pomReset) pomReset.addEventListener("click", function(){ tpGetAudioCtx(); tpPomStop(); tpPomodoro.left=tpTimerSeconds(); tpRender(); });
         var stopAlarm = document.getElementById("tpPomStopAlarm"); if(stopAlarm) stopAlarm.addEventListener("click", function(){ tpStopAlarm(); tpRender(); });
         var swStart=document.getElementById("tpSwStart");
         if(swStart) swStart.addEventListener("click", function(){ if(tpStopwatch.running) tpSwPause(); else tpSwStart(); tpRender(); });
