@@ -3087,6 +3087,22 @@
           .forEach((p) => p.classList.remove("active"));
         const panel = document.getElementById("tab-" + name);
         if (panel) panel.classList.add("active");
+        // Belt-and-suspenders for scroll-reveal: some browsers don't
+        // reliably re-check IntersectionObserver targets the instant a
+        // hidden tab-panel (display:none) becomes visible. Force-reveal
+        // anything already on screen right away so a freshly opened tab
+        // never looks blank; IntersectionObserver still handles anything
+        // further down as you scroll within the tab.
+        if (panel) {
+          window.requestAnimationFrame(function () {
+            panel.querySelectorAll(".reveal-on-scroll").forEach((el) => {
+              const r = el.getBoundingClientRect();
+              if (r.top < window.innerHeight && r.bottom > 0) {
+                el.classList.add("is-visible");
+              }
+            });
+          });
+        }
         document
           .querySelectorAll(".tab-btn")
           .forEach((b) => b.classList.toggle("active", b.dataset.tab === name));
