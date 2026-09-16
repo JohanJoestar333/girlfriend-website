@@ -2661,6 +2661,8 @@
         const dark = theme === "dark";
         if (dark) document.documentElement.setAttribute("data-theme", "dark");
         else document.documentElement.removeAttribute("data-theme");
+        const metaTheme = document.querySelector('meta[name="theme-color"]');
+        if (metaTheme) metaTheme.setAttribute("content", dark ? "#12161c" : "#4f6f52");
         const label = dark
           ? currentLanguage() === "pt"
             ? "Modo claro"
@@ -2710,6 +2712,102 @@
           wrap.appendChild(p);
         }
       })();
+
+      // ---------- reduced-motion check (shared by the visual-flourish helpers below) ----------
+      function prefersReducedMotion() {
+        try {
+          return (
+            window.matchMedia &&
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          );
+        } catch (e) {
+          return false;
+        }
+      }
+
+      // ---------- scroll-reveal: sections fade/slide in as they enter view ----------
+      (function initScrollReveal() {
+        if (!("IntersectionObserver" in window)) return;
+        const targets = document.querySelectorAll(
+          ".tab-panel .section, .tab-panel .section-narrow",
+        );
+        if (!targets.length) return;
+        targets.forEach((el) => el.classList.add("reveal-on-scroll"));
+        if (prefersReducedMotion()) {
+          targets.forEach((el) => el.classList.add("is-visible"));
+          return;
+        }
+        const io = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("is-visible");
+                io.unobserve(entry.target);
+              }
+            });
+          },
+          { threshold: 0.12, rootMargin: "0px 0px -60px 0px" },
+        );
+        targets.forEach((el) => io.observe(el));
+      })();
+
+      // ---------- hero parallax: the hero photo drifts gently as you scroll past it ----------
+      (function initHeroParallax() {
+        const wrap = document.querySelector(".hero-photo-wrap");
+        const hero = document.querySelector(".hero");
+        if (!wrap || !hero || prefersReducedMotion()) return;
+        let ticking = false;
+        function update() {
+          ticking = false;
+          const rect = hero.getBoundingClientRect();
+          if (rect.bottom < 0 || rect.top > window.innerHeight) return;
+          const y = window.scrollY || window.pageYOffset || 0;
+          wrap.style.transform = "translateY(" + Math.min(y * 0.22, 90) + "px)";
+        }
+        window.addEventListener(
+          "scroll",
+          function () {
+            if (!ticking) {
+              window.requestAnimationFrame(update);
+              ticking = true;
+            }
+          },
+          { passive: true },
+        );
+        update();
+      })();
+
+      // ---------- tap heart-burst: a couple of little hearts pop from an element ----------
+      function spawnHeartBurst(originEl, count) {
+        if (!originEl || prefersReducedMotion()) return;
+        const rect =
+          typeof originEl.getBoundingClientRect === "function"
+            ? originEl.getBoundingClientRect()
+            : null;
+        if (!rect) return;
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const n = count || 4;
+        for (let i = 0; i < n; i++) {
+          const heart = document.createElement("div");
+          heart.className = "heart-burst-particle";
+          heart.textContent = "♥";
+          const spreadX = (Math.random() - 0.5) * 60;
+          const rot = (Math.random() - 0.5) * 40;
+          heart.style.left = cx + "px";
+          heart.style.top = cy + "px";
+          heart.style.setProperty("--hb-x", spreadX + "px");
+          heart.style.setProperty("--hb-rot", rot + "deg");
+          heart.style.animationDelay = i * 60 + "ms";
+          document.body.appendChild(heart);
+          setTimeout(
+            () => {
+              if (heart.parentNode) heart.parentNode.removeChild(heart);
+            },
+            1300 + i * 60,
+          );
+        }
+      }
 
       // ---------- nav / tabs + cross-device change toasts ----------
       // Instead of sticky per-tab dots, we show a one-time toast whenever
@@ -5494,7 +5592,10 @@
               item.done ? tr("Mark as not done") : tr("Mark as done"),
             );
             check.textContent = item.done ? "✓" : "";
-            check.addEventListener("click", () => toggleBucketItem(item));
+            check.addEventListener("click", (e) => {
+              if (!item.done) spawnHeartBurst(e.currentTarget);
+              toggleBucketItem(item);
+            });
 
             const text = document.createElement("span");
             text.className = "bucket-text";
@@ -9794,6 +9895,7 @@
           clearDaycardPendingAudio();
           if (btn) btn.disabled = false;
           showToast(isPt ? "Cartão enviado." : "Card sent.", "created");
+          if (btn) spawnHeartBurst(btn, 5);
           markSelfWrite("daycards");
         }
 
