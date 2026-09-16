@@ -369,6 +369,59 @@ You can also trigger a deploy manually from the **Actions** tab → “Deploy to
 - Hard-refresh the live site (`Ctrl + Shift + R` / `Cmd + Shift + R`)
 - Or open it in a private window
 - Check the browser console (F12) if anything looks wrong
+- **Bump the PWA cache version** (see below) whenever you change `index.html`, `style.css`, `app.js`, or `gate.js`
+
+### 📲 Updating the PWA cache version (important!)
+
+The site is installable as an app (PWA), which means `service-worker.js`
+caches your core **code** files so it loads instantly and works offline. The
+downside: if you don't tell it a new version exists, visitors can keep
+seeing the **old cached version** of the site even after you deploy changes.
+
+Open `service-worker.js` and bump this line at the top:
+
+```js
+const CACHE_VERSION = "v1";
+```
+
+It's just a label — it isn't parsed as a real version number, so any change
+works: `"v2"`, `"v1.1"`, `"v1.2"`, even `"sept-fix"`. Use `v2`, `v3`... for
+big changes and `v1.1`, `v1.2`... for small tweaks if you want, or don't
+bother distinguishing at all — the only rule is that the new value has to be
+**different from the last one**, so the browser knows to drop the old cache
+and grab the fresh files.
+
+#### ✅ When you DO need to bump it — editing code files
+
+Bump `CACHE_VERSION` any time you push a change to one of these files:
+
+- `index.html`
+- `style.css`
+- `app.js` (including editing `CONFIG` — names, dates, colors, static photo
+  lists, wording, etc.)
+- `gate.js`
+
+Rule of thumb: **if you opened a file in your code editor and pushed it to
+GitHub, bump the version.**
+
+#### 🚫 When you DON'T need to bump it — adding content through the site
+
+You never need to touch `CACHE_VERSION` for anything you add or write
+**through the website itself**, because that content lives in
+Firebase/Firestore, not in the cached code files. It's fetched live every
+time, for both of you, instantly — the service worker never touches it.
+This includes:
+
+- Writing a day card
+- Adding/checking off a bucket list item
+- Adding a song to a playlist
+- Adding a calendar event
+- Uploading a photo through the site's upload flow (Our Memories, etc.)
+- Anything else typed or uploaded from inside the app, on any device
+
+**Simple test:** did you edit a file in your code editor and push to GitHub?
+→ bump it. Did you just type or upload something on the live website itself?
+→ ignore it, nothing to do.
 
 ---
 
@@ -569,6 +622,13 @@ After saving `style.css`, refresh the website to see your changes.
 **Site looks broken after a change**
 - Make sure there are no leftover git conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`)
 - Hard-refresh or clear cache
+
+**My changes deployed but the site still shows the old version**
+- You (or she) likely have the site installed as an app, or the service
+  worker cached the old files
+- Did you bump `CACHE_VERSION` in `service-worker.js`? See section 9 above
+- As a one-time fix on a stuck device: close the app fully, then reopen —
+  or hard-refresh once in a normal browser tab
 
 **Password gate keeps appearing**
 - Clear localStorage for the site, or change the storage key in `gate.js`

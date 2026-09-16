@@ -26,6 +26,7 @@ This project is meant to be **personalized**. Almost everything you will ever ch
 
 ### Extra touches
 - Password gate on first visit (`gate.js`) — password supplied securely at deploy time via GitHub Actions
+- **Installable as an app (PWA)** — add it to your phone's home screen or your computer's dock, opens full-screen with no browser bar, and the core site works offline
 - “While you were away” change notifications for recent shared updates (24-hour window)
 - Full English ↔ Portuguese toggle (choice is remembered)
 - Attention dots on tabs when new shared content arrives
@@ -33,6 +34,27 @@ This project is meant to be **personalized**. Almost everything you will ever ch
 - Weather for both locations + each location’s local time + moon phase
 - Countdown to the next reunion
 - Optional Cloudflare Worker for cleaner world-news headlines
+
+---
+
+## 📲 Installable app (PWA)
+
+The site can be installed like a real app — on a phone it adds a home-screen
+icon and opens full-screen with no browser bar; on a computer it adds a
+dock/desktop icon and opens in its own window. This works via:
+
+- `manifest.json` — app name, icon, and colors used when installed
+- `service-worker.js` — caches the core code files so the site loads
+  instantly and its main pages still work offline
+- `icons/` — the generated icon set (regular + maskable + Apple touch icon)
+
+**⚠️ One important habit:** whenever you edit `index.html`, `style.css`,
+`app.js`, or `gate.js` and deploy, you need to bump `CACHE_VERSION` at the
+top of `service-worker.js` (e.g. `"v1"` → `"v1.1"` or `"v2"`) — otherwise
+installed copies of the app can keep showing the old version. You do **not**
+need to do this for content added through the site itself (day cards, bucket
+list, photo uploads, etc.) — that always loads live. Full details and
+examples are in **`website_tutorial.md`**, section 9.
 
 ---
 
@@ -44,6 +66,9 @@ girlfriend-website/
 ├── style.css               # All design (colors, layout, animations)
 ├── app.js                  # CONFIG + all interactive logic  ← edit this most
 ├── gate.js                 # Password lock screen
+├── manifest.json           # PWA app name/icon/colors (installable app)
+├── service-worker.js       # PWA offline caching — bump CACHE_VERSION on code changes!
+├── icons/                  # Generated app icons (PWA + Apple touch icon)
 ├── photos/                 # Static images used by the site
 ├── news-backend/           # Optional Cloudflare Worker for news
 ├── .github/workflows/      # GitHub Actions deploy + secret injection

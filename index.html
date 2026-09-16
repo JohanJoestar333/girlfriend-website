@@ -21,6 +21,12 @@
       })();
     </script>
     <link rel="icon" type="image/jpeg" href="photos/icon.jpeg" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <meta name="theme-color" content="#4f6f52" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="For You" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
       href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Dancing+Script:wght@500;700&family=Karla:wght@400;500;600;700&display=swap"
@@ -1889,5 +1895,19 @@
     </div>
 
     <script src="app.js"></script>
+    <script>
+      // Registers the service worker so the site can be installed as an app
+      // and its core files work offline. Safe no-op in browsers/contexts
+      // that don't support it (e.g. file:// or older browsers).
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+          navigator.serviceWorker
+            .register("service-worker.js")
+            .catch(function (err) {
+              console.warn("Service worker registration failed:", err);
+            });
+        });
+      }
+    </script>
   </body>
 </html>
