@@ -64,6 +64,7 @@
     <script src="gate.js"></script>
 
     <div id="particles"></div>
+    <div class="grain-overlay" aria-hidden="true"></div>
 
     <header class="site-header">
       <div class="nav-inner">
@@ -71,6 +72,7 @@
           us
         </button>
         <nav class="tabs" id="tabsNav">
+          <span class="tab-indicator" id="tabIndicator" aria-hidden="true"></span>
           <button class="tab-btn active" data-tab="story">Our Story</button>
           <button class="tab-btn" data-tab="album">
             Our Album<span class="tab-dot" data-dot-for="album" hidden></span>
@@ -236,8 +238,8 @@
     <div class="tab-panel active" id="tab-story">
       <section class="hero">
         <div class="container">
-          <div class="hero-photo-wrap">
-            <div class="hero-glow"></div>
+          <div class="hero-photo-wrap" id="heroPhotoWrap">
+            <div class="hero-glow cursor-glow" id="heroGlow"></div>
             <div class="photo-placeholder" id="heroPhoto">
               replace with<br />your favorite<br />photo of you two<br /><small
                 >(edit CONFIG.photos.hero)</small

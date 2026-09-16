@@ -2725,6 +2725,98 @@
         }
       }
 
+      // ---------- sliding active-tab indicator (desktop nav pill) ----------
+      (function initTabIndicator() {
+        const nav = document.getElementById("tabsNav");
+        const indicator = document.getElementById("tabIndicator");
+        if (!nav || !indicator) return;
+
+        function moveIndicator() {
+          // Only direct children are the always-visible top-level tabs; the
+          // "···" (More) menu holds its own nested .tab-btn elements that
+          // can also carry .active while hidden, so they're deliberately
+          // excluded here and handled via the active-section fallback below.
+          let active = null;
+          nav.querySelectorAll(":scope > .tab-btn").forEach((b) => {
+            if (b.classList.contains("active")) active = b;
+          });
+          if (!active) {
+            const moreBtn = document.getElementById("navMoreBtn");
+            if (moreBtn && moreBtn.classList.contains("active-section")) {
+              active = moreBtn;
+            }
+          }
+          // Hide on mobile (nav.tabs is display:none there) or if nothing active yet
+          if (!active || nav.offsetParent === null) {
+            indicator.classList.remove("ready");
+            return;
+          }
+          const navRect = nav.getBoundingClientRect();
+          const btnRect = active.getBoundingClientRect();
+          indicator.style.width = btnRect.width + "px";
+          indicator.style.transform =
+            "translateX(" + (btnRect.left - navRect.left) + "px)";
+          indicator.classList.add("ready");
+        }
+
+        // Re-run whenever a tab becomes active (covers clicks, hash routing,
+        // and language toggles that can change button widths)
+        const obs = new MutationObserver(() => moveIndicator());
+        nav.querySelectorAll(".tab-btn").forEach((btn) => {
+          obs.observe(btn, { attributes: true, attributeFilter: ["class"] });
+        });
+        const moreBtn = document.getElementById("navMoreBtn");
+        if (moreBtn) {
+          obs.observe(moreBtn, { attributes: true, attributeFilter: ["class"] });
+        }
+
+        window.addEventListener("resize", moveIndicator);
+        // Fonts/icons loading in can shift widths slightly after first paint
+        window.addEventListener("load", moveIndicator);
+        setTimeout(moveIndicator, 50);
+        setTimeout(moveIndicator, 400);
+      })();
+
+      // ---------- cursor-following glow behind the hero photo ----------
+      (function initHeroCursorGlow() {
+        const wrap = document.getElementById("heroPhotoWrap");
+        const glow = document.getElementById("heroGlow");
+        if (!wrap || !glow || prefersReducedMotion()) return;
+        if (window.matchMedia && window.matchMedia("(hover: none)").matches)
+          return; // skip on touch devices, no cursor to follow
+        wrap.addEventListener("mousemove", (e) => {
+          const r = wrap.getBoundingClientRect();
+          const x = ((e.clientX - r.left) / r.width) * 100;
+          const y = ((e.clientY - r.top) / r.height) * 100;
+          wrap.style.setProperty("--mx", x + "%");
+          wrap.style.setProperty("--my", y + "%");
+        });
+        wrap.addEventListener("mouseleave", () => {
+          wrap.style.setProperty("--mx", "50%");
+          wrap.style.setProperty("--my", "50%");
+        });
+      })();
+
+      // ---------- skeleton loaders: show shimmer placeholders in synced lists
+      // until the first Firestore snapshot (or local fallback) fills them in.
+      // Each render*() function does wrap.innerHTML = "" before rebuilding,
+      // so these placeholders are simply overwritten by the real content —
+      // no extra loading-state bookkeeping needed. ----------
+      (function initSkeletonPlaceholders() {
+        function seed(id, rowClass, count) {
+          const el = document.getElementById(id);
+          if (!el || !isFirebaseConfigured()) return;
+          let html = "";
+          for (let i = 0; i < count; i++) {
+            html += '<div class="' + rowClass + ' skeleton-row"></div>';
+          }
+          el.innerHTML = html;
+        }
+        seed("bucketList", "bucket-item", 4);
+        seed("musicTrackList", "music-track", 4);
+        seed("daycardList", "daycard", 2);
+      })();
+
       // ---------- scroll-reveal: sections fade/slide in as they enter view ----------
       (function initScrollReveal() {
         if (!("IntersectionObserver" in window)) return;

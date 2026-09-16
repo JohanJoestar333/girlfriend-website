@@ -5327,3 +5327,266 @@
 .tp-notes-view { min-height: 65vh; font-size: 1rem; line-height: 1.7; padding: 14px 2px; }
 .tp-notes-empty { color: var(--ink-soft); font-style: italic; }
 @media (max-width: 700px) { .tp-big-notes { min-height: 55vh !important; } }
+
+/* ============================================================
+   PREMIUM POLISH PASS — added on top of the design above.
+   Everything here is additive: sliding tab indicator, tactile
+   press states, cursor-glow on the hero, custom scrollbar, a
+   faint grain texture, skeleton loaders for synced lists, and
+   nicer modal transitions. Nothing here removes an existing rule.
+   ============================================================ */
+
+/* ---- 1. sliding active-tab indicator (desktop nav) ---- */
+nav.tabs {
+  position: relative;
+}
+.tab-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--green);
+  z-index: 0;
+  pointer-events: none;
+  transition:
+    transform 0.4s cubic-bezier(0.65, 0, 0.35, 1),
+    width 0.4s cubic-bezier(0.65, 0, 0.35, 1),
+    opacity 0.2s ease;
+  opacity: 0;
+}
+.tab-indicator.ready {
+  opacity: 1;
+}
+nav.tabs .tab-btn,
+nav.tabs .nav-more {
+  z-index: 1;
+}
+/* the indicator itself supplies the green pill now, so the active
+   button's own background just needs to fade out of the way */
+nav.tabs .tab-btn.active {
+  background: transparent;
+  transition: color 0.25s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tab-indicator {
+    transition: opacity 0.2s ease;
+  }
+}
+
+/* ---- 2. tactile press feedback, everywhere ---- */
+.btn,
+.tab-btn,
+.nav-more-btn,
+.theme-btn,
+.lang-btn,
+.bucket-icon-btn,
+.bucket-move,
+.movie-icon-btn,
+.music-pl-btn,
+.music-track .track-move,
+.music-track .track-del,
+.music-track .track-edit,
+.cal-nav button,
+.daycard-actions button,
+.games-tile,
+.quiz-select-card,
+.quiz-opt,
+.gate-form button,
+.confirm-actions button {
+  transition:
+    transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.btn:active,
+.tab-btn:active,
+.nav-more-btn:active,
+.theme-btn:active,
+.lang-btn:active,
+.bucket-icon-btn:active,
+.bucket-move:active:not(:disabled),
+.movie-icon-btn:active,
+.music-pl-btn:active,
+.music-track .track-move:active:not(:disabled),
+.music-track .track-del:active,
+.music-track .track-edit:active,
+.cal-nav button:active,
+.daycard-actions button:active,
+.games-tile:active,
+.quiz-select-card:active,
+.quiz-opt:active:not(:disabled),
+.confirm-actions button:active {
+  transform: scale(0.94);
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn:active,
+  .tab-btn:active,
+  .nav-more-btn:active,
+  .theme-btn:active,
+  .lang-btn:active,
+  .bucket-icon-btn:active,
+  .movie-icon-btn:active,
+  .music-pl-btn:active,
+  .games-tile:active,
+  .quiz-select-card:active,
+  .confirm-actions button:active {
+    transform: none;
+  }
+}
+
+/* ---- 3. cursor-following glow behind the hero photo ---- */
+.hero-photo-wrap {
+  --mx: 50%;
+  --my: 50%;
+}
+.hero-glow.cursor-glow {
+  background: radial-gradient(
+      120px circle at var(--mx) var(--my),
+      rgba(201, 166, 107, 0.55),
+      transparent 65%
+    ),
+    radial-gradient(circle, rgba(140, 168, 138, 0.35), transparent 70%);
+  transition: background 0.08s linear;
+}
+
+/* ---- 4. custom scrollbar ---- */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--sage) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--sage);
+  border-radius: 999px;
+  border: 2px solid var(--cream);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--green);
+}
+.nav-more-menu::-webkit-scrollbar-thumb,
+.mobile-menu::-webkit-scrollbar-thumb {
+  border-color: var(--cream-dim);
+}
+
+/* ---- 5. faint grain texture over the whole page ---- */
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  background-size: 180px 180px;
+}
+html[data-theme="dark"] .grain-overlay {
+  opacity: 0.05;
+  mix-blend-mode: soft-light;
+}
+@media (prefers-reduced-motion: reduce) {
+  .grain-overlay {
+    display: none;
+  }
+}
+
+/* ---- 6. skeleton loaders for Firebase-backed lists ---- */
+.skeleton-row {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--cream-dim);
+  margin-bottom: 10px;
+}
+.skeleton-row::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.45),
+    transparent
+  );
+  animation: skeletonShimmer 1.6s ease-in-out infinite;
+}
+html[data-theme="dark"] .skeleton-row::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.08),
+    transparent
+  );
+}
+@keyframes skeletonShimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+.bucket-item.skeleton-row {
+  height: 52px;
+}
+.music-track.skeleton-row {
+  height: 60px;
+}
+.daycard.skeleton-row {
+  height: 90px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-row::after {
+    animation: none;
+  }
+}
+
+/* ---- 7. nicer modal / confirm transitions ---- */
+.modal-overlay {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.modal-overlay.open {
+  opacity: 1;
+}
+.modal-box,
+.confirm-box {
+  transform: scale(0.92) translateY(10px);
+  opacity: 0;
+  transition:
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.3s ease;
+}
+.modal-overlay.open .modal-box,
+.modal-overlay.open .confirm-box {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .modal-overlay,
+  .modal-box,
+  .confirm-box {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* ---- 8. soft section-boundary fade (story tab hero -> content) ---- */
+.hero::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 64px;
+  background: linear-gradient(to bottom, transparent, var(--cream));
+  pointer-events: none;
+}
