@@ -889,6 +889,7 @@
         "Our Favorites": "Nossos Favoritos",
         "Fun Facts About Us": "Curiosidades Sobre Nós",
         "Our Firsts": "Nossos Primeiros",
+        "More memories being made...": "Mais memórias sendo criadas...",
         "For when I can't be there":
           "Para quando eu não puder estar aí com você",
         "Open When You Need Me": "Abra Quando Precisar de Mim",
@@ -2674,15 +2675,42 @@
         ["themeToggle", "themeToggleMobile"].forEach((id) => {
           const btn = document.getElementById(id);
           if (!btn) return;
-          btn.textContent = icon;
           btn.title = label;
           btn.setAttribute("aria-label", label);
+          // Icon lives in its own span so it can flip independently of the
+          // button (see .theme-icon-inner) instead of just snapping to the
+          // new emoji.
+          let inner = btn.querySelector(".theme-icon-inner");
+          if (!inner) {
+            btn.textContent = "";
+            inner = document.createElement("span");
+            inner.className = "theme-icon-inner";
+            btn.appendChild(inner);
+          }
+          inner.textContent = icon;
         });
       }
       function toggleTheme() {
         const next = currentTheme() === "dark" ? "light" : "dark";
         localStorage.setItem("gfTheme", next);
-        applyTheme(next);
+        if (typeof prefersReducedMotion === "function" && prefersReducedMotion()) {
+          applyTheme(next);
+          return;
+        }
+        // Kick off the flip animation, then swap the emoji roughly at the
+        // midpoint of the rotation so it doesn't look like it's dragging
+        // the old icon around with it.
+        ["themeToggle", "themeToggleMobile"].forEach((id) => {
+          const btn = document.getElementById(id);
+          if (btn) btn.classList.add("flipping");
+        });
+        setTimeout(() => {
+          applyTheme(next);
+          ["themeToggle", "themeToggleMobile"].forEach((id) => {
+            const btn = document.getElementById(id);
+            if (btn) btn.classList.remove("flipping");
+          });
+        }, 180);
       }
       applyTheme(currentTheme());
       document
@@ -2815,6 +2843,39 @@
         seed("bucketList", "bucket-item", 4);
         seed("musicTrackList", "music-track", 4);
         seed("daycardList", "daycard", 2);
+      })();
+
+      // ---------- header shrink + back-to-top, on scroll ----------
+      (function initScrollChrome() {
+        const header = document.querySelector("header.site-header");
+        const backToTop = document.getElementById("backToTop");
+        let ticking = false;
+        function update() {
+          const y = window.scrollY || window.pageYOffset || 0;
+          if (header) header.classList.toggle("is-scrolled", y > 20);
+          if (backToTop) backToTop.classList.toggle("visible", y > 480);
+          ticking = false;
+        }
+        window.addEventListener(
+          "scroll",
+          () => {
+            if (!ticking) {
+              window.requestAnimationFrame(update);
+              ticking = true;
+            }
+          },
+          { passive: true },
+        );
+        update();
+        if (backToTop) {
+          backToTop.addEventListener("click", () => {
+            try {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            } catch (e) {
+              window.scrollTo(0, 0);
+            }
+          });
+        }
       })();
 
       // ---------- scroll-reveal: sections fade/slide in as they enter view ----------
@@ -3193,6 +3254,16 @@
                 el.classList.add("is-visible");
               }
             });
+            // Same belt-and-suspenders for staggered lists (timeline,
+            // favorites, fun facts), which use their own observer (see
+            // initStaggerReveal) since each item needs an individual
+            // stagger rather than one shared section-wide reveal.
+            panel.querySelectorAll(".stagger-reveal-item").forEach((el) => {
+              const r = el.getBoundingClientRect();
+              if (r.top < window.innerHeight && r.bottom > 0) {
+                el.classList.add("sr-in");
+              }
+            });
           });
         }
         document
@@ -3386,6 +3457,28 @@
           fm.textContent = pad(m);
           fs.textContent = pad(s);
         }
+        tickIfChanged([rd, fd], d);
+        tickIfChanged([rh, fh], pad(h));
+        tickIfChanged([rm, fm], pad(m));
+        tickIfChanged([rs, fs], pad(s));
+      }
+      // Pops a countdown digit with a little scale/color animation whenever
+      // its displayed value actually changes (not every second for every
+      // unit — just the ones that ticked over). Purely cosmetic, so any
+      // failure here is swallowed rather than breaking the countdown.
+      const _lastCountVals = new WeakMap();
+      function tickIfChanged(els, value) {
+        try {
+          els.forEach((el) => {
+            if (!el) return;
+            if (_lastCountVals.get(el) === value) return;
+            _lastCountVals.set(el, value);
+            el.classList.remove("tick");
+            // eslint-disable-next-line no-unused-expressions
+            void el.offsetWidth; // force reflow so the animation restarts
+            el.classList.add("tick");
+          });
+        } catch (e) {}
       }
       setInterval(updateReunion, 1000);
       updateReunion();
@@ -5172,30 +5265,75 @@
 
       // ---------- favorites ----------
       const favGrid = document.getElementById("favGrid");
-      Object.entries(CONFIG.favorites).forEach(([k, v]) => {
+      Object.entries(CONFIG.favorites).forEach(([k, v], i) => {
         const el = document.createElement("div");
-        el.className = "fav-item";
+        el.className = "fav-item stagger-reveal-item";
+        el.style.setProperty("--sr-i", i);
         el.innerHTML = `<span class="k">${tr(k)}</span><span class="v">${tr(v)}</span>`;
         favGrid.appendChild(el);
       });
 
       // ---------- fun facts ----------
       const factGrid = document.getElementById("factGrid");
-      CONFIG.funFacts.forEach((f) => {
+      CONFIG.funFacts.forEach((f, i) => {
         const el = document.createElement("div");
-        el.className = "fact-card";
+        el.className = "fact-card stagger-reveal-item";
+        el.style.setProperty("--sr-i", i);
         el.textContent = tr(f);
         factGrid.appendChild(el);
       });
 
       // ---------- firsts timeline ----------
       const timelineWrap = document.getElementById("timelineWrap");
-      CONFIG.firsts.forEach((f) => {
+      CONFIG.firsts.forEach((f, i) => {
         const el = document.createElement("div");
-        el.className = "tl-item";
+        el.className = "tl-item stagger-reveal-item";
+        el.style.setProperty("--sr-i", i);
         el.innerHTML = `<div class="tl-title">${tr(f.title)}</div><div class="tl-date">${f.date || "&nbsp;"}</div><div class="tl-desc">${currentLanguage() === "pt" ? PT_FIRST_DESC[f.title] || f.desc : f.desc}</div>`;
         timelineWrap.appendChild(el);
       });
+      // A trailing "more to come" marker so the line doesn't just cut off
+      // after the last first — it fades out and pulses instead, hinting
+      // that more entries will be added over time.
+      if (CONFIG.firsts.length) {
+        const more = document.createElement("div");
+        more.className = "tl-item tl-more stagger-reveal-item";
+        more.style.setProperty("--sr-i", CONFIG.firsts.length);
+        more.innerHTML = `<div class="tl-more-text">${tr("More memories being made...")}</div>`;
+        timelineWrap.appendChild(more);
+      }
+      initStaggerReveal();
+
+      // Reveals .stagger-reveal-item elements (timeline entries, favorites,
+      // fun facts) one by one as they scroll into view, instead of all at
+      // once with the rest of their section — each item's --sr-i custom
+      // property drives its transition-delay (see CSS), so this one
+      // observer covers every staggered list on the page.
+      function initStaggerReveal() {
+        const items = document.querySelectorAll(
+          ".stagger-reveal-item:not(.sr-in)",
+        );
+        if (!items.length) return;
+        if (
+          !("IntersectionObserver" in window) ||
+          (typeof prefersReducedMotion === "function" && prefersReducedMotion())
+        ) {
+          items.forEach((el) => el.classList.add("sr-in"));
+          return;
+        }
+        const io = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("sr-in");
+                io.unobserve(entry.target);
+              }
+            });
+          },
+          { threshold: 0.3, rootMargin: "0px 0px -40px 0px" },
+        );
+        items.forEach((el) => io.observe(el));
+      }
 
       // ---------- open when ----------
       const owGrid = document.getElementById("owGrid");

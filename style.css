@@ -5590,3 +5590,275 @@ html[data-theme="dark"] .skeleton-row::after {
   background: linear-gradient(to bottom, transparent, var(--cream));
   pointer-events: none;
 }
+
+/* ============================================================
+   PREMIUM POLISH PASS 2 — header shrink, animated countdown
+   digits, theme-toggle flip, staggered photo grid, back-to-top,
+   and a livelier toast icon. Additive only, same as pass 1.
+   ============================================================ */
+
+/* ---- 1. header shrinks slightly once you scroll ---- */
+header.site-header {
+  transition: box-shadow 0.3s ease;
+}
+header.site-header.is-scrolled {
+  box-shadow: 0 4px 24px -8px rgba(43, 38, 34, 0.12);
+}
+header.site-header .nav-inner {
+  transition: padding 0.25s ease;
+}
+header.site-header.is-scrolled .nav-inner {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+header.site-header .brand {
+  transition:
+    font-size 0.25s ease,
+    transform 0.25s ease;
+}
+header.site-header.is-scrolled .brand {
+  transform: scale(0.92);
+}
+@media (prefers-reduced-motion: reduce) {
+  header.site-header,
+  header.site-header .nav-inner,
+  header.site-header .brand {
+    transition: none;
+  }
+}
+
+/* ---- 2. countdown digits pop when their value changes ---- */
+.count-unit .num.tick {
+  animation: countTick 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes countTick {
+  0% {
+    transform: scale(1);
+    color: var(--green-deep);
+  }
+  35% {
+    transform: scale(1.22);
+    color: var(--gold);
+  }
+  100% {
+    transform: scale(1);
+    color: var(--green-deep);
+  }
+}
+.count-unit .num {
+  display: inline-block;
+}
+@media (prefers-reduced-motion: reduce) {
+  .count-unit .num.tick {
+    animation: none;
+  }
+}
+
+/* ---- 3. dark/light toggle flips instead of snapping ---- */
+.theme-btn {
+  display: inline-block;
+}
+.theme-btn .theme-icon-inner {
+  display: inline-block;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.theme-btn.flipping .theme-icon-inner {
+  transform: rotate(180deg) scale(0.7);
+}
+@media (prefers-reduced-motion: reduce) {
+  .theme-btn .theme-icon-inner {
+    transition: none;
+  }
+}
+
+/* ---- 4. photo grid cascades in, tile by tile ---- */
+.masonry .photo-tile {
+  animation: tileIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+.masonry .photo-tile:nth-child(1) { animation-delay: 0.02s; }
+.masonry .photo-tile:nth-child(2) { animation-delay: 0.07s; }
+.masonry .photo-tile:nth-child(3) { animation-delay: 0.12s; }
+.masonry .photo-tile:nth-child(4) { animation-delay: 0.17s; }
+.masonry .photo-tile:nth-child(5) { animation-delay: 0.22s; }
+.masonry .photo-tile:nth-child(6) { animation-delay: 0.27s; }
+.masonry .photo-tile:nth-child(n + 7) { animation-delay: 0.3s; }
+@keyframes tileIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .masonry .photo-tile {
+    animation: none;
+  }
+}
+
+/* ---- 5. back-to-top button ---- */
+.back-to-top {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--green);
+  color: var(--cream);
+  box-shadow: var(--shadow-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  z-index: 60;
+  opacity: 0;
+  transform: translateY(14px) scale(0.9);
+  pointer-events: none;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background 0.2s ease;
+}
+.back-to-top.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+.back-to-top:hover {
+  background: var(--green-deep);
+}
+.back-to-top:active {
+  transform: scale(0.9);
+}
+@media (max-width: 640px) {
+  .back-to-top {
+    right: 14px;
+    bottom: 14px;
+    width: 42px;
+    height: 42px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .back-to-top {
+    transition: opacity 0.2s ease;
+  }
+}
+
+/* ---- 6. toast icon gets a small bounce-in of its own ---- */
+.toast-icon {
+  display: inline-block;
+  animation: toastIconPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s backwards;
+}
+@keyframes toastIconPop {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast-icon {
+    animation: none;
+  }
+}
+
+/* ============================================================
+   PREMIUM POLISH PASS 3 — staggered scroll-reveal for the Us tab
+   (favorites, fun facts, firsts timeline), plus a proper "more to
+   come" ending on the timeline instead of the line just stopping.
+   ============================================================ */
+
+/* ---- generic stagger-reveal: any list item can opt in via this
+   class + a --sr-i index; each item's own IntersectionObserver
+   (see initStaggerReveal in app.js) adds .sr-in as it scrolls in.
+   Uses `animation` rather than `transition` on purpose — several of
+   these items (.fact-card, etc.) already own a `transition` for their
+   own hover effect, and animation won't collide with that. ---- */
+.stagger-reveal-item {
+  opacity: 0;
+}
+.stagger-reveal-item.sr-in {
+  animation: staggerRevealIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--sr-i, 0) * 70ms);
+}
+@keyframes staggerRevealIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stagger-reveal-item {
+    opacity: 1;
+  }
+  .stagger-reveal-item.sr-in {
+    animation: none;
+  }
+}
+
+/* ---- timeline line fades out near the end instead of cutting off hard ---- */
+.timeline::before {
+  background: linear-gradient(
+    to bottom,
+    var(--sage) 0%,
+    var(--sage) 85%,
+    transparent 100%
+  );
+}
+html[data-theme="dark"] .timeline::before {
+  background: linear-gradient(
+    to bottom,
+    var(--sage) 0%,
+    var(--sage) 80%,
+    transparent 100%
+  );
+}
+
+/* ---- "more to come" marker at the end of the firsts timeline ---- */
+.tl-more {
+  padding-bottom: 4px;
+}
+.tl-more::before {
+  background: transparent;
+  border: 2px dashed var(--sage);
+  box-shadow: none;
+  animation: tlMorePulse 2s ease-in-out infinite;
+}
+.tl-more-text {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  opacity: 0.8;
+  padding-top: 2px;
+}
+@keyframes tlMorePulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.25);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tl-more::before {
+    animation: none;
+    opacity: 0.7;
+  }
+}
