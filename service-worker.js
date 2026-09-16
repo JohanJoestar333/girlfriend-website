@@ -4,7 +4,7 @@
   Bump CACHE_VERSION whenever you deploy a change to make sure everyone's
   browser drops the old cached files instead of getting stuck on them.
 */
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v1.1";
 const CORE_CACHE = "for-you-core-" + CACHE_VERSION;
 const RUNTIME_CACHE = "for-you-runtime-" + CACHE_VERSION;
 
@@ -59,8 +59,7 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
 
   const isCoreAsset =
-    req.mode === "navigate" ||
-    /\.(?:html|js|css|json)$/.test(url.pathname);
+    req.mode === "navigate" || /\.(?:html|js|css|json)$/.test(url.pathname);
 
   if (isCoreAsset) {
     // Network-first: always try to get the latest version first (so a new
