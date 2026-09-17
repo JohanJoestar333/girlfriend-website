@@ -1109,6 +1109,7 @@
         "(repeats)": "(repete)",
         Icon: "Ícone",
         "● Normal": "● Normal",
+        "■ Hangout": "■ Encontro",
         "★ Important": "★ Importante",
         "♥ Special": "♥ Especial",
 
@@ -3485,7 +3486,6 @@
 
       // ---------- Today widget (mood / calendar / day card) ----------
       // Defined early; Firebase mood sync starts after getSharedFirestore exists.
-      const MOOD_TTL_MS = 24 * 60 * 60 * 1000;
       const MOOD_OPTIONS = [
         { emoji: "😊", en: "Happy", pt: "Feliz" },
         { emoji: "🥰", en: "In love", pt: "Apaixonado(a)" },
@@ -3512,11 +3512,19 @@
         const p = Date.parse(val);
         return Number.isNaN(p) ? 0 : p;
       }
+      // Start of today, local time — a mood set any time yesterday (or
+      // earlier) is stale once we've crossed into a new day, regardless
+      // of how many hours that actually was.
+      function startOfTodayMs() {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        return d.getTime();
+      }
       function applyMoodExpiry(writeBack) {
-        const now = Date.now();
+        const cutoff = startOfTodayMs();
         ["me", "her"].forEach((who) => {
           const at = moodState[who + "At"] || 0;
-          if (moodState[who] && at && now - at > MOOD_TTL_MS) {
+          if (moodState[who] && at && at < cutoff) {
             moodState[who] = "";
             moodState[who + "At"] = 0;
             if (writeBack && moodDb) {
@@ -3532,6 +3540,22 @@
           }
         });
       }
+      // Keep moods fresh even if the tab is left open across midnight —
+      // otherwise applyMoodExpiry only re-checks on the next render.
+      let moodMidnightTimer = null;
+      function scheduleMoodMidnightRefresh() {
+        clearTimeout(moodMidnightTimer);
+        const now = new Date();
+        const nextMidnight = new Date(now);
+        nextMidnight.setHours(24, 0, 0, 50);
+        const delay = Math.max(1000, nextMidnight.getTime() - now.getTime());
+        moodMidnightTimer = setTimeout(function () {
+          applyMoodExpiry(true);
+          renderTodayMoods();
+          scheduleMoodMidnightRefresh();
+        }, delay);
+      }
+      scheduleMoodMidnightRefresh();
       function renderTodayMoods() {
         applyMoodExpiry(true);
         const meName = document.getElementById("todayMoodMeName");
@@ -7699,13 +7723,11 @@
           if (q.correctSpecial) msg = qText(q.correctSpecial);
           fb.textContent = msg;
           fb.className = "quiz-feedback show ok";
-          showQuizToast(msg, true);
 
           const streakMsgs = msgs.streak[lang];
           if (streakMsgs[quizState.streak]) {
             document.getElementById("quizStreak").textContent =
               streakMsgs[quizState.streak];
-            showQuizToast(streakMsgs[quizState.streak], true);
           }
         } else {
           quizState.streak = 0;
@@ -7721,7 +7743,6 @@
           }
           fb.textContent = msg;
           fb.className = "quiz-feedback show bad";
-          showQuizToast(msg, false);
         }
 
         document.getElementById("quizScoreLive").textContent =
@@ -7788,22 +7809,8 @@
           msgs.reviews[lang][reviewKey];
 
         if (pct === 100) {
-          // Extra celebration for a perfect score
-          const perfectToasts = {
-            eduarda: {
-              en: "100% on Eduarda! She is so proud of you 🌸✨",
-              pt: "100% na Eduarda! Ela está tão orgulhosa de você 🌸✨",
-            },
-            thommy: {
-              en: "100% on Thommy! He is so proud of you 🦉✨",
-              pt: "100% no Thommy! Ele está tão orgulhoso de você 🦉✨",
-            },
-            us: {
-              en: "100% on Us! We are so proud of you 💚✨",
-              pt: "100% em Nós! Estamos tão orgulhosos de você 💚✨",
-            },
-          };
-          showQuizToast(perfectToasts[quizState.id][lang], true);
+          // Perfect score already gets its own title + review line in
+          // the result screen above — no extra toast popup needed.
           // Burst of hearts
           for (let i = 0; i < 28; i++) {
             const h = document.createElement("div");
@@ -9144,7 +9151,7 @@
           if (calState.filter === "her" && person !== "her") return;
           if (calState.filter === "both" && person !== "both") return;
           const marker =
-            ev.marker === "star" || ev.marker === "heart"
+            ev.marker === "star" || ev.marker === "heart" || ev.marker === "square"
               ? ev.marker
               : "circle";
           const k = person + ":" + marker + ":" + (ev.id || "");
@@ -9255,7 +9262,13 @@
           el.textContent = calMarkerChar(marker);
           el.title =
             calPersonLabel(person) +
-            (marker === "star" ? " ★" : marker === "heart" ? " ♥" : "");
+            (marker === "star"
+              ? " ★"
+              : marker === "heart"
+                ? " ♥"
+                : marker === "square"
+                  ? " ■"
+                  : "");
           dots.appendChild(el);
         });
         cell.appendChild(dots);
@@ -9288,7 +9301,7 @@
           row.className = "cal-event";
           const who = calNormalizePerson(ev.person);
           const marker =
-            ev.marker === "star" || ev.marker === "heart"
+            ev.marker === "star" || ev.marker === "heart" || ev.marker === "square"
               ? ev.marker
               : "circle";
           let timeStr = "";
@@ -9297,7 +9310,13 @@
           else if (ev.startTime) timeStr = ev.startTime;
           else if (ev.endTime) timeStr = "– " + ev.endTime;
           const markChar =
-            marker === "star" ? "★ " : marker === "heart" ? "♥ " : "";
+            marker === "star"
+              ? "★ "
+              : marker === "heart"
+                ? "♥ "
+                : marker === "square"
+                  ? "■ "
+                  : "";
           const bucketBadge = ev.bucketId
             ? `<span class="cal-bucket-badge" title="${currentLanguage() === "pt" ? "Da bucket list" : "From bucket list"}">☑ Bucket</span>`
             : "";
@@ -9430,7 +9449,7 @@
         const marker = document.getElementById("calMarker");
         if (marker)
           marker.value =
-            ev.marker === "star" || ev.marker === "heart"
+            ev.marker === "star" || ev.marker === "heart" || ev.marker === "square"
               ? ev.marker
               : "circle";
         const link = document.getElementById("calBucketLink");
@@ -9458,7 +9477,9 @@
         const rawMarker =
           document.getElementById("calMarker")?.value || "circle";
         const marker =
-          rawMarker === "star" || rawMarker === "heart" ? rawMarker : "circle";
+          rawMarker === "star" || rawMarker === "heart" || rawMarker === "square"
+            ? rawMarker
+            : "circle";
         const bucketId = (
           document.getElementById("calBucketLink")?.value || ""
         ).trim();

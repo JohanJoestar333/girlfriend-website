@@ -33,6 +33,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="enhancements.css" />
     <!-- Firebase — only used for the Bucket List's cross-device sync.
      Nothing loads or runs unless CONFIG.firebase below is filled in. -->
     <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
@@ -785,26 +786,8 @@
               <h2>Movie Nights</h2>
             </div>
 
-            <!-- ====== QUICK LINKS: replace the placeholder URLs below ====== -->
+            <!-- ====== QUICK LINKS: replace the placeholder URL below ====== -->
             <div class="movie-night-links">
-              <div class="movie-link-group">
-                <h3>🎬 Movie Websites</h3>
-                <div class="movie-link-buttons">
-                  <!-- Replace the href values with your movie website links -->
-                  <a class="btn outline movie-link-btn" href="https://www.1shows.org/" target="_blank" rel="noopener noreferrer">1 Shows</a>
-                  <a class="btn outline movie-link-btn" href="https://67movies.net" target="_blank" rel="noopener noreferrer">67 Movies</a>
-                </div>
-              </div>
-
-              <div class="movie-link-group">
-                <h3>🏟️ Live Sports Websites</h3>
-                <div class="movie-link-buttons">
-                  <!-- Replace the href values with your live stream links -->
-                  <a class="btn outline movie-link-btn" href="https://streamed.pk/" target="_blank" rel="noopener noreferrer">Streamed</a>
-                  <a class="btn outline movie-link-btn" href="https://timstreams.st/" target="_blank" rel="noopener noreferrer">Time Streams</a>
-                </div>
-              </div>
-
               <div class="movie-link-group movie-link-wiki">
                 <h3>📖 Streaming Website Wiki</h3>
                 <p>Use this wiki to find more websites for streaming movies and live sports.</p>
@@ -1413,6 +1396,7 @@
                 <label for="calMarker">Icon</label>
                 <select id="calMarker">
                   <option value="circle">● Normal</option>
+                  <option value="square">■ Hangout</option>
                   <option value="star">★ Important</option>
                   <option value="heart">♥ Special</option>
                 </select>
@@ -1907,6 +1891,7 @@
     </div>
 
     <script src="app.js"></script>
+    <script src="enhancements.js"></script>
     <script>
       // Registers the service worker so the site can be installed as an app
       // and its core files work offline. Safe no-op in browsers/contexts

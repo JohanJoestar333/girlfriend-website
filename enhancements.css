@@ -1,0 +1,791 @@
+/* ============================================================
+   ENHANCEMENTS — enhancements.css
+   ------------------------------------------------------------
+   Everything added on top of the original style.css:
+   scroll panes for the Bucket List / Movie lists, plus the
+   depth, texture, and section-specific visual upgrades
+   ("premium" pass). Loaded after style.css so it overrides by
+   cascade order, not !important. Paired with enhancements.js.
+
+   SECTION 1 — scroll panes (was scroll-pane.css)
+   SECTION 2 — premium polish (was premium.css)
+   ============================================================ */
+
+
+/* Animatable custom properties, so the top/bottom fades ease in
+   and out instead of snapping. Ignored by browsers that don't
+   support @property — the fades still work, just without the
+   easing. */
+@property --fade-top {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+@property --fade-bottom {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+.scroll-pane {
+  --pane-h: min(58vh, 520px);
+  --fade-size: 36px;
+  --fade-top: 0px;
+  --fade-bottom: 0px;
+  --pane-progress: 0;
+  position: relative;
+  transition:
+    --fade-top 0.25s ease,
+    --fade-bottom 0.25s ease;
+}
+
+.scroll-pane-scroller {
+  max-height: var(--pane-h);
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: y proximity;
+  scroll-padding-top: 6px;
+  /* Breathing room so card shadows aren't clipped by the
+     overflow box, pulled back with a negative margin. */
+  padding: 6px 4px;
+  margin: -6px -4px;
+  transition: max-height 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  /* Thin sage scrollbar instead of the OS default. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--sage) transparent;
+}
+.scroll-pane-scroller::-webkit-scrollbar {
+  width: 6px;
+}
+.scroll-pane-scroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scroll-pane-scroller::-webkit-scrollbar-thumb {
+  background: var(--sage);
+  border-radius: 999px;
+}
+.scroll-pane-scroller::-webkit-scrollbar-thumb:hover {
+  background: var(--green);
+}
+
+/* Soft fade at whichever edge has more content behind it.
+   Only applied once the list actually overflows, so short
+   lists render exactly as they do today. */
+.scroll-pane.is-scrollable .scroll-pane-scroller {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--fade-top),
+    #000 calc(100% - var(--fade-bottom)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--fade-top),
+    #000 calc(100% - var(--fade-bottom)),
+    transparent 100%
+  );
+}
+
+/* Snap targets — the individual rows. */
+.scroll-pane-scroller .bucket-item,
+.scroll-pane-scroller .movie-card {
+  scroll-snap-align: start;
+}
+
+/* Visible focus ring when the pane is reached by keyboard. */
+.scroll-pane-scroller:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 4px;
+  border-radius: var(--radius-md);
+}
+
+/* ---- footer: position rail + expand toggle ---- */
+.scroll-pane-foot {
+  display: none;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+}
+.scroll-pane.is-scrollable .scroll-pane-foot {
+  display: flex;
+}
+
+.scroll-pane-rail {
+  position: relative;
+  flex: 1;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--sage-dim);
+  overflow: hidden;
+}
+.scroll-pane-rail::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 34%;
+  left: calc(var(--pane-progress) * 66%);
+  border-radius: 999px;
+  background: var(--gold);
+}
+
+.scroll-pane-toggle {
+  flex-shrink: 0;
+  font-family: var(--body);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--green-deep);
+  background: transparent;
+  border: 1px solid var(--sage);
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+.scroll-pane-toggle:hover {
+  background: var(--sage-dim);
+}
+.scroll-pane-toggle:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+/* Expanded: the pane grows to fit everything and behaves like
+   the page did before. */
+.scroll-pane.expanded {
+  --pane-h: 9999px;
+}
+.scroll-pane.expanded .scroll-pane-scroller {
+  scroll-snap-type: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-pane,
+  .scroll-pane-scroller {
+    transition: none;
+  }
+  .scroll-pane-scroller {
+    scroll-snap-type: none;
+  }
+}
+
+
+/* ============================================================
+   SECTION 2 — PREMIUM POLISH
+   ============================================================ */
+
+/* A single soft shadow reads flat. Three stacked at different
+   blurs is what makes a card look like it's actually sitting on
+   the page. */
+:root {
+  --shadow-tiny:
+    0 1px 2px rgba(43, 38, 34, 0.05), 0 3px 8px -4px rgba(43, 38, 34, 0.09),
+    0 8px 20px -10px rgba(43, 38, 34, 0.1);
+  --shadow-soft:
+    0 1px 3px rgba(43, 38, 34, 0.05), 0 6px 18px -8px rgba(43, 38, 34, 0.12),
+    0 24px 48px -20px rgba(43, 38, 34, 0.18);
+  --shadow-lift:
+    0 2px 4px rgba(43, 38, 34, 0.06), 0 10px 24px -8px rgba(43, 38, 34, 0.16),
+    0 30px 60px -24px rgba(43, 38, 34, 0.22);
+}
+html[data-theme="dark"] {
+  --shadow-tiny:
+    0 1px 2px rgba(0, 0, 0, 0.4), 0 3px 10px -4px rgba(0, 0, 0, 0.5),
+    0 10px 24px -12px rgba(0, 0, 0, 0.55);
+  --shadow-soft:
+    0 1px 3px rgba(0, 0, 0, 0.45), 0 8px 22px -8px rgba(0, 0, 0, 0.55),
+    0 28px 56px -22px rgba(0, 0, 0, 0.65);
+  --shadow-lift:
+    0 2px 6px rgba(0, 0, 0, 0.5), 0 12px 28px -8px rgba(0, 0, 0, 0.6),
+    0 34px 68px -26px rgba(0, 0, 0, 0.7);
+}
+
+.bucket-item,
+.movie-card,
+.ow-card,
+.fact-card {
+  transition:
+    box-shadow 0.28s ease,
+    transform 0.28s ease,
+    background 0.25s ease;
+}
+.bucket-item:hover,
+.movie-card:hover {
+  box-shadow: var(--shadow-lift);
+  transform: translateY(-2px);
+}
+
+/* ---------- 2. paper grain --------------------------------- */
+/* Flat #fff and flat cream are what make a page read as a
+   template. A few percent of noise over everything gives the
+   surfaces something to be. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+html[data-theme="dark"] body::after {
+  opacity: 0.055;
+}
+
+/* ---------- 3. selection + scrollbars ---------------------- */
+::selection {
+  background: var(--blush-soft);
+  color: var(--ink);
+}
+html[data-theme="dark"] ::selection {
+  background: var(--blush-soft);
+  color: var(--ink);
+}
+
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--sage) transparent;
+}
+body::-webkit-scrollbar {
+  width: 10px;
+}
+body::-webkit-scrollbar-track {
+  background: transparent;
+}
+body::-webkit-scrollbar-thumb {
+  background: var(--sage);
+  border: 3px solid var(--cream);
+  border-radius: 999px;
+}
+
+/* ---------- 4. reading progress ---------------------------- */
+#readingProgress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 9997;
+  pointer-events: none;
+  background: transparent;
+}
+#readingProgress i {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--sage), var(--gold));
+  transition: width 0.12s linear;
+}
+@media (prefers-reduced-motion: reduce) {
+  #readingProgress i {
+    transition: none;
+  }
+}
+
+/* ---------- 5. subsection titles --------------------------- */
+/* Favorites / Fun Facts / Our Firsts were three inline-styled
+   h3s. One class, one rule, consistent rhythm. */
+.subsection-title {
+  font-family: var(--serif);
+  font-size: clamp(1.5rem, 1.1rem + 1.4vw, 2rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  color: var(--green-deep);
+  text-align: center;
+  margin: 0 0 22px;
+}
+.subsection-title::after {
+  content: "";
+  display: block;
+  width: 44px;
+  height: 1px;
+  margin: 12px auto 0;
+  background: var(--sage);
+}
+
+/* ---------- 6. bucket list --------------------------------- */
+
+/* --- constellation --- */
+/* Replaces the flat percentage bar. Every item is a star; the
+   ones you've done are lit and joined by a thread. */
+.bucket-sky {
+  position: relative;
+  max-width: 640px;
+  margin: 0 auto 10px;
+  padding: 22px 20px 18px;
+  border-radius: var(--radius-md);
+  background:
+    radial-gradient(
+      120% 140% at 50% 0%,
+      rgba(111, 91, 138, 0.22),
+      transparent 60%
+    ),
+    linear-gradient(170deg, var(--night), var(--night-deep));
+  box-shadow: var(--shadow-tiny);
+  overflow: hidden;
+}
+.bucket-sky-svg {
+  display: block;
+  width: 100%;
+  height: 74px;
+  overflow: visible;
+}
+.bucket-sky-thread {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 1;
+  stroke-linecap: round;
+  opacity: 0.45;
+  stroke-dasharray: var(--thread-len, 1000);
+  stroke-dashoffset: var(--thread-off, 1000);
+  transition: stroke-dashoffset 0.9s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.bucket-star {
+  fill: var(--stars);
+  opacity: 0.2;
+  transition:
+    opacity 0.5s ease,
+    r 0.5s ease;
+}
+.bucket-star.lit {
+  opacity: 1;
+  filter: drop-shadow(0 0 5px var(--gold));
+}
+.bucket-sky-label {
+  margin: 12px 0 0;
+  text-align: center;
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  color: var(--stars);
+}
+.bucket-sky-label b {
+  color: var(--gold);
+  font-weight: 600;
+}
+
+/* The original bar is kept in the DOM (app.js writes to it) but
+   folded away — the sky is the progress display now. */
+.bucket-progress .bucket-progress-bar,
+.bucket-progress .bucket-progress-label {
+  display: none;
+}
+
+/* --- filters --- */
+.bucket-filters {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  max-width: 640px;
+  margin: 0 auto 18px;
+}
+.bucket-filter {
+  font-family: var(--body);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--sage-dim);
+  border-radius: 999px;
+  padding: 7px 16px;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+.bucket-filter:hover {
+  border-color: var(--sage);
+  color: var(--ink);
+}
+.bucket-filter.active {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+.bucket-filter .n {
+  opacity: 0.65;
+  font-weight: 400;
+  margin-left: 5px;
+}
+
+.bucket-list.filter-todo .bucket-item.done,
+.bucket-list.filter-done .bucket-item:not(.done) {
+  display: none;
+}
+
+/* Done items recede rather than shouting. */
+.bucket-item.done {
+  box-shadow: none;
+  border-color: transparent;
+}
+.bucket-item.done:hover {
+  box-shadow: var(--shadow-tiny);
+}
+
+/* --- empty state --- */
+.bucket-empty,
+.movie-empty {
+  margin: 0;
+  padding: 34px 24px;
+  text-align: center;
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  color: var(--ink-soft);
+  border: 1px dashed var(--sage-dim);
+  border-radius: var(--radius-md);
+  background: transparent;
+}
+
+/* ---------- 7. movies -------------------------------------- */
+
+/* The watchlist becomes a wall of posters on wider screens;
+   watched stays one per row so the stubs read properly. */
+#movieToWatchList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+#movieToWatchList .movie-empty {
+  grid-column: 1 / -1;
+}
+
+.movie-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+/* Ambient light: the poster, blown up and blurred behind the
+   card, so each film brings its own colour. */
+.movie-card.has-ambient::before {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  z-index: -1;
+  background-image: var(--ambient);
+  background-size: cover;
+  background-position: center;
+  filter: blur(34px) saturate(1.7);
+  opacity: 0.22;
+  transition: opacity 0.3s ease;
+}
+.movie-card.has-ambient:hover::before {
+  opacity: 0.32;
+}
+html[data-theme="dark"] .movie-card.has-ambient::before {
+  opacity: 0.3;
+}
+
+.movie-poster {
+  width: 74px;
+  height: 111px;
+  border-radius: 8px;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.2),
+    0 8px 18px -8px rgba(0, 0, 0, 0.35);
+}
+
+/* Watched films are ticket stubs: notched sides and a
+   perforation between the poster and the details. */
+#movieWatchedList .movie-card {
+  --notch: 9px;
+  border-radius: 6px;
+  -webkit-mask-image:
+    radial-gradient(
+      circle var(--notch) at 0 50%,
+      transparent 97%,
+      #000 100%
+    ),
+    radial-gradient(circle var(--notch) at 100% 50%, transparent 97%, #000 100%);
+  mask-image:
+    radial-gradient(
+      circle var(--notch) at 0 50%,
+      transparent 97%,
+      #000 100%
+    ),
+    radial-gradient(circle var(--notch) at 100% 50%, transparent 97%, #000 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+#movieWatchedList .movie-poster {
+  position: relative;
+  margin-right: 8px;
+}
+#movieWatchedList .movie-poster::after {
+  content: "";
+  position: absolute;
+  top: -16px;
+  bottom: -16px;
+  right: -12px;
+  border-right: 2px dashed var(--sage-dim);
+}
+
+/* --- spin the reel --- */
+#movieSubtabs {
+  align-items: center;
+}
+.movie-reel-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-family: var(--body);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--green-deep);
+  background: transparent;
+  border: 1px solid var(--sage);
+  border-radius: 999px;
+  padding: 7px 15px;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+.movie-reel-btn:hover {
+  background: var(--sage-dim);
+}
+.movie-reel-btn:active {
+  transform: scale(0.96);
+}
+.movie-reel-btn .reel {
+  display: inline-block;
+  margin-right: 6px;
+}
+.movie-reel-btn.spinning .reel {
+  animation: reelSpin 0.6s linear 2;
+}
+@keyframes reelSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.movie-card.is-picked {
+  animation: pickedGlow 2.4s ease;
+}
+@keyframes pickedGlow {
+  0%,
+  100% {
+    box-shadow: var(--shadow-tiny);
+  }
+  15%,
+  70% {
+    box-shadow:
+      0 0 0 2px var(--gold),
+      0 12px 32px -10px rgba(201, 166, 107, 0.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bucket-item:hover,
+  .movie-card:hover {
+    transform: none;
+  }
+  .bucket-sky-thread,
+  .bucket-star {
+    transition: none;
+  }
+  .movie-reel-btn.spinning .reel,
+  .movie-card.is-picked {
+    animation: none;
+  }
+}
+
+/* ============================================================
+   SECTION 3 — SIGNATURE MOTION
+   ------------------------------------------------------------
+   A richer entrance for the hero (one-time, on load), the Today
+   widget (each time it's opened), and the static/"hardcoded"
+   pages — Our Story, Us, Open When — where content is fixed and
+   scrolling through it should feel like it's coming into focus
+   rather than just sliding up.
+   ============================================================ */
+
+/* ---- hero: staggered, one-time entrance on page load ---- */
+.hero .container > *:not(.hero-photo-wrap) {
+  opacity: 0;
+  animation: heroTextIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.hero .container > *:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.hero .container > *:nth-child(3) {
+  animation-delay: 0.32s;
+}
+.hero .container > *:nth-child(4) {
+  animation-delay: 0.48s;
+}
+.hero .container > *:nth-child(5) {
+  animation-delay: 0.64s;
+}
+.hero .container > *:nth-child(6) {
+  animation-delay: 0.8s;
+}
+@keyframes heroTextIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+/* The photo gets its own quieter fade — no transform, since the
+   existing cursor-glow parallax already sets its own transform
+   on scroll and the two shouldn't fight over the same property. */
+.hero-photo-wrap {
+  opacity: 0;
+  animation: heroPhotoIn 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes heroPhotoIn {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+/* ---- static pages: content comes into focus as you scroll ----
+   Scoped to Our Story / Us / Open When only — the rest of the
+   site (bucket list, movies, quizzes…) keeps the original flat
+   fade from style.css so the new scroll panes and grids there
+   aren't fighting a second motion system. */
+#tab-story .reveal-on-scroll,
+#tab-us .reveal-on-scroll,
+#tab-openwhen .reveal-on-scroll {
+  opacity: 1;
+  transform: none;
+}
+#tab-story .reveal-on-scroll .container > *,
+#tab-us .reveal-on-scroll .container > *,
+#tab-openwhen .reveal-on-scroll .container > * {
+  opacity: 0;
+  transform: translateY(26px) scale(0.985);
+  filter: blur(5px);
+  transition:
+    opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.85s ease;
+}
+#tab-story .reveal-on-scroll.is-visible .container > *,
+#tab-us .reveal-on-scroll.is-visible .container > *,
+#tab-openwhen .reveal-on-scroll.is-visible .container > * {
+  opacity: 1;
+  transform: none;
+  filter: blur(0);
+}
+#tab-story .reveal-on-scroll .container > *:nth-child(2),
+#tab-us .reveal-on-scroll .container > *:nth-child(2),
+#tab-openwhen .reveal-on-scroll .container > *:nth-child(2) {
+  transition-delay: 0.11s;
+}
+#tab-story .reveal-on-scroll .container > *:nth-child(3),
+#tab-us .reveal-on-scroll .container > *:nth-child(3),
+#tab-openwhen .reveal-on-scroll .container > *:nth-child(3) {
+  transition-delay: 0.21s;
+}
+#tab-story .reveal-on-scroll .container > *:nth-child(n + 4),
+#tab-us .reveal-on-scroll .container > *:nth-child(n + 4),
+#tab-openwhen .reveal-on-scroll .container > *:nth-child(n + 4) {
+  transition-delay: 0.3s;
+}
+
+/* ---- Today widget: an actual opening moment, not just a
+   height/hidden toggle. Triggered by adding .tp-opening the
+   instant the panel is un-hidden (see enhancements.js) so it
+   replays cleanly every time it's opened. ---- */
+.today-panel.tp-opening {
+  position: relative;
+  overflow: hidden;
+  animation: todayPanelIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes todayPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+    filter: blur(5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+/* A single light sheen sweeps across the panel once as it opens. */
+.today-panel.tp-opening::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 70%
+  );
+  transform: translateX(-120%);
+  animation: todaySheen 0.9s ease 0.15s both;
+}
+html[data-theme="dark"] .today-panel.tp-opening::before {
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.14) 50%,
+    transparent 70%
+  );
+}
+@keyframes todaySheen {
+  to {
+    transform: translateX(120%);
+  }
+}
+.today-panel.tp-opening .today-grid > * {
+  opacity: 0;
+  animation: staggerRevealIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.today-panel.tp-opening .today-grid > *:nth-child(1) {
+  animation-delay: 0.1s;
+}
+.today-panel.tp-opening .today-grid > *:nth-child(2) {
+  animation-delay: 0.17s;
+}
+.today-panel.tp-opening .today-grid > *:nth-child(3) {
+  animation-delay: 0.24s;
+}
+.today-panel.tp-opening .today-grid > *:nth-child(4) {
+  animation-delay: 0.31s;
+}
+.today-panel.tp-opening .today-grid > *:nth-child(5) {
+  animation-delay: 0.38s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero .container > *:not(.hero-photo-wrap),
+  .hero-photo-wrap,
+  #tab-story .reveal-on-scroll .container > *,
+  #tab-us .reveal-on-scroll .container > *,
+  #tab-openwhen .reveal-on-scroll .container > *,
+  .today-panel.tp-opening,
+  .today-panel.tp-opening::before,
+  .today-panel.tp-opening .today-grid > * {
+    animation: none;
+    transition: none;
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}

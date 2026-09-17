@@ -3539,6 +3539,13 @@
         background: currentColor;
         font-size: 0;
       }
+      .cal-mark.square {
+        width: 6px;
+        height: 6px;
+        border-radius: 1.5px;
+        background: currentColor;
+        font-size: 0;
+      }
       .cal-mark.star,
       .cal-mark.heart {
         font-size: 0.78rem;
@@ -4904,8 +4911,32 @@
       .tp-item {
         padding: 12px; border-radius: var(--radius-sm); background: var(--cream-dim); margin-bottom: 8px;
       }
-      .tp-item-head { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+      .tp-item-head { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; flex-wrap: wrap; }
       .tp-item-head strong { font-size: 0.92rem; }
+      /* The title/description side must be allowed to shrink and wrap —
+         without min-width: 0 a flex child won't wrap long unbroken text
+         and instead stretches the row, squeezing or hiding the
+         Edit/delete buttons on the other side. */
+      .tp-item-head > div:first-child,
+      .tp-item-head > strong:first-child {
+        min-width: 0;
+        flex: 1 1 200px;
+        overflow-wrap: anywhere;
+      }
+      /* The Edit/delete buttons must keep their own size and never
+         wrap their label text, and drop to their own line under long
+         content instead of getting crushed. */
+      .tp-item-head > span,
+      .tp-item-head > button {
+        flex-shrink: 0;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 6px;
+      }
+      .tp-item-head .tp-btn {
+        white-space: nowrap;
+      }
       .tp-bars { display: flex; align-items: flex-end; gap: 4px; height: 100px; margin-top: 8px; }
       .tp-bars span {
         flex: 1; background: var(--green); border-radius: 4px 4px 0 0; min-height: 3px; opacity: 0.85;
