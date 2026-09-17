@@ -550,6 +550,147 @@
     });
   }
 
+  /* ---------- Thommy Personal polish ------------------------
+     Sliding highlight behind the active sub-nav button (mirrors
+     the header's .tab-indicator), a soft fade+slide each time
+     #tpMain's content is swapped, and a one-time shimmer veil
+     the first time the dashboard is unlocked in a session. All
+     purely additive — reads the DOM app.js produces, never
+     touches tpRender() or the view HTML itself. */
+  function tpPolish() {
+    var nav = document.getElementById("tpNav");
+    var main = document.getElementById("tpMain");
+    var app = document.getElementById("tpApp");
+    var panel = document.getElementById("tab-personal");
+    if (!nav || !main || !app || nav.dataset.polished) return;
+    nav.dataset.polished = "1";
+
+    var indicator = document.createElement("div");
+    indicator.className = "tp-nav-indicator";
+    indicator.setAttribute("aria-hidden", "true");
+    nav.insertBefore(indicator, nav.firstChild);
+
+    var lastActive = null;
+    function moveIndicator(instant) {
+      var active = nav.querySelector("button.active");
+      if (lastActive && lastActive !== active) {
+        // plain inline style, not a class — doesn't feed back into the
+        // classList-watching MutationObserver below
+        lastActive.style.background = "";
+      }
+      if (!active || active.offsetParent === null) {
+        indicator.style.opacity = "0";
+        lastActive = null;
+        return;
+      }
+      if (instant) indicator.style.transition = "none";
+      var navBox = nav.getBoundingClientRect();
+      var box = active.getBoundingClientRect();
+      indicator.style.width = box.width + "px";
+      indicator.style.height = box.height + "px";
+      indicator.style.transform =
+        "translate(" +
+        (box.left - navBox.left) +
+        "px," +
+        (box.top - navBox.top) +
+        "px)";
+      indicator.style.opacity = "1";
+      active.style.background = "transparent";
+      lastActive = active;
+      if (instant) {
+        void indicator.offsetWidth; // reflow, then restore transition
+        indicator.style.transition = "";
+      }
+    }
+
+    nav.addEventListener("click", function (e) {
+      if (e.target.closest("button")) {
+        requestAnimationFrame(function () {
+          moveIndicator(false);
+        });
+      }
+    });
+
+    var resizeTimer = null;
+    window.addEventListener(
+      "resize",
+      function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function () {
+          moveIndicator(true);
+        }, 120);
+      },
+      { passive: true },
+    );
+
+    // Re-measure whenever the nav's own active button changes (covers
+    // keyboard/programmatic switches too, not just clicks) and whenever
+    // the Personal tab itself becomes the visible tab — its layout is
+    // display:none until then, so any earlier measurement was zero.
+    if ("MutationObserver" in window) {
+      new MutationObserver(function () {
+        moveIndicator(true);
+      }).observe(nav, {
+        attributes: true,
+        subtree: true,
+        attributeFilter: ["class"],
+      });
+      if (panel) {
+        new MutationObserver(function () {
+          if (panel.classList.contains("active")) {
+            requestAnimationFrame(function () {
+              moveIndicator(true);
+            });
+          }
+        }).observe(panel, { attributes: true, attributeFilter: ["class"] });
+      }
+    }
+
+    // Fade+slide the content each time a new section renders into
+    // #tpMain (Dashboard -> Habits -> Analytics -> …).
+    if ("MutationObserver" in window) {
+      new MutationObserver(function () {
+        if (reduced) return;
+        main.classList.remove("tp-swap-in");
+        void main.offsetWidth;
+        main.classList.add("tp-swap-in");
+      }).observe(main, { childList: true });
+    }
+
+    // One-time shimmer veil right after unlocking, purely cosmetic
+    // (the data is local and renders instantly — this just gives the
+    // dashboard the same "just loaded" feel the synced lists get from
+    // their skeleton rows elsewhere on the site).
+    var veilShown = false;
+    function maybeShowBootVeil() {
+      if (veilShown || app.hidden || reduced) return;
+      veilShown = true;
+      main.style.position = main.style.position || "relative";
+      var veil = document.createElement("div");
+      veil.className = "tp-boot-veil";
+      veil.innerHTML =
+        '<div class="tp-stat skeleton-row"></div>' +
+        '<div class="tp-card skeleton-row" style="height:120px"></div>' +
+        '<div class="tp-card skeleton-row" style="height:160px"></div>';
+      main.appendChild(veil);
+      setTimeout(function () {
+        veil.classList.add("fade-out");
+        setTimeout(function () {
+          veil.remove();
+        }, 260);
+      }, 320);
+    }
+    if ("MutationObserver" in window) {
+      new MutationObserver(function () {
+        maybeShowBootVeil();
+      }).observe(app, { attributes: true, attributeFilter: ["hidden"] });
+    }
+
+    requestAnimationFrame(function () {
+      moveIndicator(true);
+    });
+  }
+
   /* ---------- boot ----------------------------------------- */
   function init() {
     readingProgress();
@@ -560,6 +701,7 @@
     reel();
     todayOpenAnimation();
     extraGridStagger();
+    tpPolish();
   }
 
   if (document.readyState === "loading") {

@@ -9,6 +9,8 @@
 
    SECTION 1 — scroll panes (was scroll-pane.css)
    SECTION 2 — premium polish (was premium.css)
+   SECTION 3 — Thommy Personal polish (sliding nav indicator,
+               view-swap transition, first-open shimmer)
    ============================================================ */
 
 
@@ -110,8 +112,14 @@
   gap: 14px;
   margin-top: 14px;
 }
-.scroll-pane.is-scrollable .scroll-pane-foot {
+.scroll-pane.is-scrollable .scroll-pane-foot,
+.scroll-pane.expanded .scroll-pane-foot {
   display: flex;
+}
+/* Once fully expanded there's no "progress" left to show, so
+   drop the rail and let the Collapse button sit by itself. */
+.scroll-pane.expanded:not(.is-scrollable) .scroll-pane-rail {
+  display: none;
 }
 
 .scroll-pane-rail {
@@ -787,5 +795,98 @@ html[data-theme="dark"] .today-panel.tp-opening::before {
     opacity: 1;
     transform: none;
     filter: none;
+  }
+}
+
+/* ============================================================
+   SECTION 3 — Thommy Personal polish
+   ------------------------------------------------------------
+   The sub-nav (Dashboard / Habits / Analytics / …) swaps its
+   "active" button instantly today. This adds the same kind of
+   sliding highlight the main header tabs get, plus a soft
+   fade+slide each time #tpMain's content is swapped, so moving
+   between sections feels like the rest of the site instead of
+   an abrupt content-replace. Positioning is done in JS
+   (enhancements.js) since the nav reflows between a sidebar
+   (desktop) and a wrapped grid (mobile).
+   ============================================================ */
+
+.tp-nav {
+  position: relative;
+}
+.tp-nav-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: var(--radius-sm);
+  background: var(--green);
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    transform 0.35s cubic-bezier(0.65, 0, 0.35, 1),
+    width 0.35s cubic-bezier(0.65, 0, 0.35, 1),
+    height 0.35s cubic-bezier(0.65, 0, 0.35, 1),
+    opacity 0.2s ease;
+}
+.tp-nav button {
+  position: relative;
+  z-index: 1;
+}
+/* JS swaps the active button's own background to transparent (via
+   inline style, once it confirms the indicator is positioned) so the
+   sliding pill shows through instead of two overlapping fills. If JS
+   doesn't run, style.css's plain .tp-nav button.active green fill is
+   still there underneath — nothing goes blank either way. */
+
+/* Content swap: replays every time #tpMain's children change
+   (new section selected). Kept short and subtle — this fires
+   on every click, not just first paint. */
+#tpMain.tp-swap-in {
+  animation: tpSwapIn 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes tpSwapIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Brief shimmer the first time the dashboard is unlocked in a
+   session — mirrors the site's skeleton-row pattern used for
+   Firebase-backed lists, here just for a cleaner "boot" feel
+   since the real content is local and renders instantly. */
+.tp-boot-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  gap: 12px;
+  background: var(--cream);
+  border-radius: var(--radius-md);
+  padding: 2px;
+  opacity: 1;
+  transition: opacity 0.25s ease;
+}
+.tp-boot-veil.fade-out {
+  opacity: 0;
+}
+.tp-boot-veil .skeleton-row {
+  height: 74px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tp-nav-indicator {
+    transition: opacity 0.2s ease;
+  }
+  #tpMain.tp-swap-in {
+    animation: none;
+  }
+  .tp-boot-veil {
+    transition: none;
   }
 }

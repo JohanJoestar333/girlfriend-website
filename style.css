@@ -4141,6 +4141,22 @@
         background-repeat: no-repeat;
         padding-right: 28px;
       }
+      /* Date/time inputs are "replaced" elements in mobile Safari/Chrome —
+         they quietly ignore width:100% and size themselves to their native
+         control instead, so on phones they end up narrower than every
+         other field in the same form. Forcing the appearance off (and
+         re-adding our own box styling above) makes them stretch like a
+         normal text input. */
+      .music-add-field input[type="date"],
+      .music-add-field input[type="time"] {
+        -webkit-appearance: none;
+        appearance: none;
+        min-width: 100%;
+      }
+      .music-add-field input[type="date"]::-webkit-date-and-time-value,
+      .music-add-field input[type="time"]::-webkit-date-and-time-value {
+        text-align: left;
+      }
       @media (max-width: 560px) {
         .music-add-field input,
         .music-add-field textarea,
@@ -4777,7 +4793,9 @@
       .tp-card {
         background: var(--surface); border-radius: var(--radius-md); padding: 18px;
         border: 1px solid rgba(43,38,34,0.07); box-shadow: var(--shadow-tiny); margin-bottom: 14px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
       }
+      .tp-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-soft); }
       .tp-card h3 { font-family: var(--serif); font-size: 1.25rem; margin-bottom: 6px; }
       .tp-card .tp-sub { font-size: 0.78rem; color: var(--ink-soft); margin-bottom: 12px; }
       .tp-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -4787,8 +4805,19 @@
       }
       .tp-stat {
         background: var(--cream-dim); border-radius: var(--radius-sm); padding: 14px;
-        text-align: center;
+        text-align: center; position: relative; overflow: hidden;
+        border-top: 3px solid var(--sage);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
       }
+      .tp-stat:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-tiny);
+        background: var(--surface);
+      }
+      /* A little accent variety instead of six identical cream tiles in a row */
+      .tp-grid-3 .tp-stat:nth-child(1) { border-top-color: var(--sage); }
+      .tp-grid-3 .tp-stat:nth-child(2) { border-top-color: var(--gold); }
+      .tp-grid-3 .tp-stat:nth-child(3) { border-top-color: var(--blush); }
       .tp-stat .n { font-family: var(--serif); font-size: 1.7rem; font-weight: 600; color: var(--green-deep); }
       .tp-stat .l { font-size: 0.72rem; color: var(--ink-soft); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
       .tp-check {
@@ -5424,6 +5453,9 @@ nav.tabs .tab-btn.active {
 .quiz-select-card,
 .quiz-opt,
 .gate-form button,
+.tp-nav button,
+.tp-btn,
+.tp-check,
 .confirm-actions button {
   transition:
     transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1),
@@ -5440,6 +5472,8 @@ nav.tabs .tab-btn.active {
 .bucket-move:active:not(:disabled),
 .movie-icon-btn:active,
 .music-pl-btn:active,
+.tp-nav button:active,
+.tp-btn:active,
 .music-track .track-move:active:not(:disabled),
 .music-track .track-del:active,
 .music-track .track-edit:active,
