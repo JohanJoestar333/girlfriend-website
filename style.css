@@ -5194,7 +5194,13 @@
          and Edit/delete controls stay full-strength so they're still
          easy to read and use. */
       .tp-item.tp-item-got {
-        opacity: 0.6;
+        opacity: 0.4;
+        filter: saturate(0.6);
+      }
+      .tp-item.tp-item-got:hover {
+        opacity: 0.75;
+        filter: none;
+        transition: opacity 0.15s ease, filter 0.15s ease;
       }
       .tp-item.tp-item-got .tp-item-head strong {
         text-decoration: line-through;
@@ -6401,3 +6407,203 @@ html[data-theme="dark"] .timeline::before {
     opacity: 0.7;
   }
 }
+
+/* ============================================================
+   THOMMY PERSONAL — round of polish: unified select styling,
+   nicer empty states, redesigned "add new" forms, clickable
+   status tags with a small celebration burst, and filter bars
+   for the wishlist / recurring buys lists.
+   ============================================================ */
+
+/* ---- unified dropdown arrow + focus ring for every <select> on the
+   site (poses, filters, wishlist For/Priority/Status, goals, romantic
+   life, calendar, movies…) so they all share one look instead of each
+   browser's own default arrow. Only background-image/position/size are
+   set here — never the "background" shorthand — so existing rules that
+   set a background-color for a given select (e.g. .pb-field select)
+   keep working underneath the arrow without needing to change them. ---- */
+select:not([multiple]) {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5.5 7.5l4.5 4.5 4.5-4.5' fill='none' stroke='%237d8a76' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 13px 13px;
+  padding-right: 30px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+select:not([multiple]):focus-visible {
+  outline: none;
+  border-color: var(--sage);
+  box-shadow: 0 0 0 3px rgba(125, 160, 130, 0.16);
+}
+html[data-theme="dark"] select:not([multiple]) {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5.5 7.5l4.5 4.5 4.5-4.5' fill='none' stroke='%23b9c9b6' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+/* ---- nicer empty states: a soft dashed card with an icon instead of
+   a single line of italic text. Icon + copy stay whatever each view
+   already passes in — this only changes the frame around them. ---- */
+.tp-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 0.86rem;
+  padding: 22px 14px;
+  border: 1.5px dashed rgba(43, 38, 34, 0.14);
+  border-radius: var(--radius-sm);
+  background: rgba(43, 38, 34, 0.015);
+}
+.tp-empty::before {
+  content: "✧";
+  font-size: 1.3rem;
+  color: var(--sage);
+}
+html[data-theme="dark"] .tp-empty {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* ---- "add new" forms (wishlist, recurring buys, and any other tp-add
+   form built the same way): a labeled, gently-bordered panel instead
+   of a bare row of unlabeled inputs, so it's clear what each field
+   is for at a glance. ---- */
+.tp-add-form {
+  margin-top: 14px;
+  padding: 14px 14px 12px;
+  border: 1.5px dashed rgba(43, 38, 34, 0.14);
+  border-radius: var(--radius-sm);
+  background: rgba(43, 38, 34, 0.015);
+}
+html[data-theme="dark"] .tp-add-form {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.02);
+}
+.tp-add-form-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tp-add-form .tp-row { margin-top: 0; margin-bottom: 10px; }
+.tp-add-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 140px;
+}
+.tp-add-field > span {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.tp-add-field input,
+.tp-add-field select {
+  width: 100%;
+  box-sizing: border-box;
+}
+.tp-add-form .tp-row:last-child { margin-bottom: 0; }
+
+/* ---- filter bar (wishlist / recurring buys): a compact row of small
+   labeled dropdowns above the list, plus a "showing X of Y" count and
+   a clear-filters link that only appears once a filter is active. ---- */
+.tp-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(43, 38, 34, 0.07);
+}
+html[data-theme="dark"] .tp-filter-bar {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+.tp-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tp-filter-field > span {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.tp-filter-field select {
+  padding: 7px 30px 7px 10px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(43, 38, 34, 0.12);
+  background-color: var(--cream);
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+html[data-theme="dark"] .tp-filter-field select {
+  background-color: var(--night);
+  color: var(--stars);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+.tp-filter-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  font-size: 0.76rem;
+  color: var(--ink-soft);
+}
+.tp-filter-clear {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--sage);
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: inherit;
+}
+.tp-filter-clear:hover { color: var(--green-deep); }
+
+/* ---- clickable status tag: a quick "Want ⇄ Got" (or idea → planned →
+   done) toggle right from the list, without opening the edit modal. ---- */
+.tp-tag-btn {
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.15s ease;
+}
+.tp-tag-btn:hover { filter: brightness(0.94); transform: translateY(-1px); }
+.tp-tag-btn:active { transform: scale(0.94); }
+html[data-theme="dark"] .tp-tag-btn:hover { filter: brightness(1.2); }
+
+/* Small celebration burst spawned next to a status tag the moment an
+   item gets marked "Got" (or a romantic idea marked "Done") — a few
+   little glyphs that pop out and fade, then remove themselves. Purely
+   decorative: JS creates/removes the .tp-celebrate-pop element itself. */
+.tp-celebrate-pop {
+  position: fixed;
+  z-index: 500;
+  pointer-events: none;
+  font-size: 1.1rem;
+  animation: tpCelebratePop 0.75s ease-out forwards;
+}
+@keyframes tpCelebratePop {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4) rotate(0deg); }
+  25% { opacity: 1; transform: translate(-50%, -50%) scale(1.15) rotate(-8deg); }
+  100% { opacity: 0; transform: translate(-50%, -170%) scale(0.9) rotate(10deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tp-celebrate-pop { display: none; }
+}
+

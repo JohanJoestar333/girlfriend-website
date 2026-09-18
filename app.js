@@ -12842,6 +12842,10 @@
       let tpData = null;
       let tpView = "dash";
       let tpRomTermFilter = "all";
+      // Wishlist / recurring-buys filter state — persists across renders
+      // within the session (not saved), same pattern as tpRomTermFilter.
+      let tpWishFilters = { status: "all", for: "all", priority: "all" };
+      let tpRecFilters = { status: "all", for: "all", priority: "all" };
       let tpEditMode = {};
       let tpPomodoro = { running: false, endsAt: 0, left: 25 * 60, timer: null, activeTab: "timer" };
       let tpStopwatch = { running: false, startedAt: 0, elapsed: 0, timer: null };
@@ -13756,7 +13760,7 @@
           ["career","personal"].map(function(cat){
           var items = tpData.goals[cat] || [];
           return '<div class="tp-card"><h3>'+cat.charAt(0).toUpperCase()+cat.slice(1)+' goals</h3>' +
-            (items.map(function(g){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+g.title+'</strong><span>'+(g.done?'<span class="tp-tag done">done</span> ':'')+'<button type="button" class="tp-btn sm outline" data-tp-goal-prog="'+g.id+'" data-cat="'+cat+'">+10%</button>'+(edit?' <button type="button" class="tp-btn sm outline" data-tp-edit="goal" data-id="'+g.id+'" data-cat="'+cat+'">Edit</button> <button type="button" class="tp-btn danger sm" data-tp-del-gcat="'+cat+'" data-id="'+g.id+'">✕</button>':'')+'</span></div><div class="tp-progress"><i style="width:'+Math.min(100,g.progress||0)+'%"></i></div><div class="meta" style="font-size:0.72rem;color:var(--ink-soft)">'+(g.progress||0)+'%'+(g.deadline?' · '+g.deadline:'')+(g.milestone?' · '+g.milestone:'')+'</div></div>'; }).join('') || '<p class="tp-empty">No goals yet.</p>') +
+            (items.map(function(g){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+g.title+'</strong><span>'+(g.done?'<span class="tp-tag done">✅ Done</span> ':'')+'<button type="button" class="tp-btn sm outline" data-tp-goal-prog="'+g.id+'" data-cat="'+cat+'">+10%</button>'+(edit?' <button type="button" class="tp-btn sm outline" data-tp-edit="goal" data-id="'+g.id+'" data-cat="'+cat+'">Edit</button> <button type="button" class="tp-btn danger sm" data-tp-del-gcat="'+cat+'" data-id="'+g.id+'">✕</button>':'')+'</span></div><div class="tp-progress"><i style="width:'+Math.min(100,g.progress||0)+'%"></i></div><div class="meta" style="font-size:0.72rem;color:var(--ink-soft)">'+(g.progress||0)+'%'+(g.deadline?' · '+g.deadline:'')+(g.milestone?' · '+g.milestone:'')+'</div></div>'; }).join('') || '<p class="tp-empty">No goals yet.</p>') +
             (edit ? '<div class="tp-row"><input data-new-goal-title="'+cat+'" placeholder="Goal title…"><input data-new-goal-deadline="'+cat+'" type="date" style="flex:0.6"><input data-new-goal-ms="'+cat+'" placeholder="Next milestone…"><button type="button" class="tp-btn" data-tp-add-gcat="'+cat+'">Add</button></div>' : '') + '</div>';
         }).join('');
       }
@@ -13782,24 +13786,123 @@
         return '<div class="meta tp-wish-link" style="font-size:0.78rem"><a href="'+tpAttr(link)+'" target="_blank" rel="noopener" style="color:var(--sage)">'+link+'</a></div>';
       }
 
+      // Applies the Status / For / Priority filters, then sorts so
+      // "Got" items sink to the bottom — the list opens showing what's
+      // still outstanding first, with completed items still visible
+      // (just faded, per .tp-item-got) rather than hidden away.
+      function tpFilterAndSortWishItems(list, filters) {
+        var f = filters || {};
+        return (list || [])
+          .filter(function (w) {
+            var status = w.status === "got" ? "got" : "want";
+            var forVal = w.for === "gift" ? "gift" : "me";
+            var pri = w.priority || "medium";
+            if (f.status && f.status !== "all" && f.status !== status) return false;
+            if (f.for && f.for !== "all" && f.for !== forVal) return false;
+            if (f.priority && f.priority !== "all" && f.priority !== pri) return false;
+            return true;
+          })
+          .map(function (w, i) { return { item: w, i: i }; })
+          .sort(function (a, b) {
+            var ag = a.item.status === "got" ? 1 : 0;
+            var bg = b.item.status === "got" ? 1 : 0;
+            return ag - bg || a.i - b.i; // stable: keep original order within each group
+          })
+          .map(function (x) { return x.item; });
+      }
+
+      // Renders the compact filter bar shown above the wishlist / recurring
+      // buys list — three small dropdowns plus a "showing X of Y" count
+      // and a clear-filters link that only appears once something's set.
+      function tpWishFilterBarHtml(idPrefix, filters, totalCount, shownCount) {
+        var f = filters || {};
+        var active = (f.status && f.status !== "all") || (f.for && f.for !== "all") || (f.priority && f.priority !== "all");
+        return '<div class="tp-filter-bar">' +
+          '<label class="tp-filter-field"><span>Status</span><select id="'+idPrefix+'FilterStatus"><option value="all"'+(f.status==="all"||!f.status?" selected":"")+'>All</option><option value="want"'+(f.status==="want"?" selected":"")+'>Want</option><option value="got"'+(f.status==="got"?" selected":"")+'>Got</option></select></label>' +
+          '<label class="tp-filter-field"><span>For</span><select id="'+idPrefix+'FilterFor"><option value="all"'+(f.for==="all"||!f.for?" selected":"")+'>All</option><option value="me"'+(f.for==="me"?" selected":"")+'>For me</option><option value="gift"'+(f.for==="gift"?" selected":"")+'>Gift</option></select></label>' +
+          '<label class="tp-filter-field"><span>Priority</span><select id="'+idPrefix+'FilterPri"><option value="all"'+(f.priority==="all"||!f.priority?" selected":"")+'>All</option><option value="high"'+(f.priority==="high"?" selected":"")+'>High</option><option value="medium"'+(f.priority==="medium"?" selected":"")+'>Medium</option><option value="low"'+(f.priority==="low"?" selected":"")+'>Low</option></select></label>' +
+          '<div class="tp-filter-meta"><span>Showing '+shownCount+' of '+totalCount+'</span>'+(active?' <button type="button" class="tp-filter-clear" data-tp-filter-clear="'+idPrefix+'">Clear filters</button>':'')+'</div>' +
+          '</div>';
+      }
+
+      // A quick little celebration burst — a few glyphs popping out and
+      // fading near the button that was just clicked. Purely decorative
+      // and self-cleaning; skipped entirely if the person prefers
+      // reduced motion (the CSS animation is disabled in that case, so
+      // this just creates and removes an invisible node).
+      function tpCelebrate(el) {
+        if (!el) return;
+        var rect = el.getBoundingClientRect();
+        var cx = rect.left + rect.width / 2;
+        var cy = rect.top + rect.height / 2;
+        var glyphs = ["✨", "🎉", "💚"];
+        glyphs.forEach(function (g, i) {
+          var span = document.createElement("span");
+          span.className = "tp-celebrate-pop";
+          span.textContent = g;
+          var spread = (i - 1) * 16;
+          span.style.left = (cx + spread) + "px";
+          span.style.top = cy + "px";
+          span.style.animationDelay = (i * 0.05) + "s";
+          document.body.appendChild(span);
+          setTimeout(function () { span.remove(); }, 900);
+        });
+      }
+
+      // Romantic-life type/status labels — same "icon + word" treatment
+      // as the wishlist tags, for visual consistency across the app.
+      function tpRomTypeLabel(t) {
+        var map = { date: "💕 Date", surprise: "🎉 Surprise", plan: "📝 Plan", memory: "📸 Memory", goal: "🎯 Goal" };
+        return map[t] || map.date;
+      }
+      function tpRomStatusLabel(status) {
+        return status === "done" ? "✅ Done" : status === "planned" ? "📅 Planned" : "💡 Idea";
+      }
+
       function tpViewWishlist() {
         var pri = { high: "hi", medium: "mid", low: "lo" };
         var edit = tpIsEdit("wishlist");
         var recEdit = tpIsEdit("recurringBuys");
         var freq = { weekly: "Weekly", monthly: "Monthly", every3months: "Every 3 months", every6months: "Every 6 months", yearly: "Yearly", asneeded: "As needed" };
-        var wishHtml = ((tpData.wishlist||[]).map(function(w){ var got=w.status==="got"; return '<div class="tp-item'+(got?" tp-item-got":"")+'"><div class="tp-item-head"><strong>'+w.title+'</strong><span><span class="tp-tag '+(w.for==="gift"?"wish-gift":"wish-me")+'">'+tpWishForLabel(w.for==="gift")+'</span> <span class="tp-tag '+(pri[w.priority]||'mid')+'">'+tpWishPriLabel(w.priority)+'</span> <span class="tp-tag '+(got?"wish-got":"wish-want")+'">'+tpWishStatusLabel(got)+'</span>'+(edit?' <button type="button" class="tp-btn sm outline" data-tp-edit="wishlist" data-id="'+w.id+'">Edit</button> <button type="button" class="tp-btn danger sm" data-tp-del-wish="'+w.id+'">✕</button>':'')+'</span></div>'+(w.notes?'<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft)">'+tpMd(w.notes)+'</div>':'')+tpWishLinkHtml(w.link)+'</div>'; }).join('') || '<p class="tp-empty">Wishlist is empty.</p>');
-        var recHtml = ((tpData.recurringBuys||[]).map(function(w){ var got=w.status==="got"; return '<div class="tp-item'+(got?" tp-item-got":"")+'"><div class="tp-item-head"><strong>'+w.title+'</strong><span><span class="tp-tag '+(w.for==="gift"?"wish-gift":"wish-me")+'">'+tpWishForLabel(w.for==="gift")+'</span> <span class="tp-tag">'+(freq[w.frequency]||"Monthly")+'</span> <span class="tp-tag '+(pri[w.priority]||'mid')+'">'+tpWishPriLabel(w.priority)+'</span> <span class="tp-tag '+(got?"wish-got":"wish-want")+'">'+tpWishStatusLabel(got)+'</span>'+(recEdit?' <button type="button" class="tp-btn sm outline" data-tp-edit="recurringBuy" data-id="'+w.id+'">Edit</button> <button type="button" class="tp-btn danger sm" data-tp-del-recurring="'+w.id+'">✕</button>':'')+'</span></div>'+(w.notes?'<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft)">'+tpMd(w.notes)+'</div>':'')+tpWishLinkHtml(w.link)+'</div>'; }).join('') || '<p class="tp-empty">No recurring buys yet.</p>');
+
+        var wishAll = tpData.wishlist || [];
+        var wishShown = tpFilterAndSortWishItems(wishAll, tpWishFilters);
+        var wishHtml = (wishShown.map(function(w){ var got=w.status==="got"; return '<div class="tp-item'+(got?" tp-item-got":"")+'"><div class="tp-item-head"><strong>'+w.title+'</strong><span><span class="tp-tag '+(w.for==="gift"?"wish-gift":"wish-me")+'">'+tpWishForLabel(w.for==="gift")+'</span> <span class="tp-tag '+(pri[w.priority]||'mid')+'">'+tpWishPriLabel(w.priority)+'</span> <button type="button" class="tp-tag tp-tag-btn '+(got?"wish-got":"wish-want")+'" data-tp-wish-status="'+w.id+'" title="Click to mark as '+(got?"Want":"Got")+'">'+tpWishStatusLabel(got)+'</button>'+(edit?' <button type="button" class="tp-btn sm outline" data-tp-edit="wishlist" data-id="'+w.id+'">Edit</button> <button type="button" class="tp-btn danger sm" data-tp-del-wish="'+w.id+'">✕</button>':'')+'</span></div>'+(w.notes?'<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft)">'+tpMd(w.notes)+'</div>':'')+tpWishLinkHtml(w.link)+'</div>'; }).join('') ||
+          (wishAll.length ? '<p class="tp-empty">Nothing matches these filters.</p>' : '<p class="tp-empty">Wishlist is empty.</p>'));
+
+        var recAll = tpData.recurringBuys || [];
+        var recShown = tpFilterAndSortWishItems(recAll, tpRecFilters);
+        var recHtml = (recShown.map(function(w){ var got=w.status==="got"; return '<div class="tp-item'+(got?" tp-item-got":"")+'"><div class="tp-item-head"><strong>'+w.title+'</strong><span><span class="tp-tag '+(w.for==="gift"?"wish-gift":"wish-me")+'">'+tpWishForLabel(w.for==="gift")+'</span> <span class="tp-tag">'+(freq[w.frequency]||"Monthly")+'</span> <span class="tp-tag '+(pri[w.priority]||'mid')+'">'+tpWishPriLabel(w.priority)+'</span> <button type="button" class="tp-tag tp-tag-btn '+(got?"wish-got":"wish-want")+'" data-tp-rec-status="'+w.id+'" title="Click to mark as '+(got?"Want":"Got")+'">'+tpWishStatusLabel(got)+'</button>'+(recEdit?' <button type="button" class="tp-btn sm outline" data-tp-edit="recurringBuy" data-id="'+w.id+'">Edit</button> <button type="button" class="tp-btn danger sm" data-tp-del-recurring="'+w.id+'">✕</button>':'')+'</span></div>'+(w.notes?'<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft)">'+tpMd(w.notes)+'</div>':'')+tpWishLinkHtml(w.link)+'</div>'; }).join('') ||
+          (recAll.length ? '<p class="tp-empty">Nothing matches these filters.</p>' : '<p class="tp-empty">No recurring buys yet.</p>'));
+
         return '<div class="tp-card">' + tpCardHead("Wishlist", "Things to buy or achieve", "wishlist") +
+          (wishAll.length ? tpWishFilterBarHtml("tpWish", tpWishFilters, wishAll.length, wishShown.length) : '') +
           wishHtml +
-          (edit ? '<div class="tp-row"><input id="tpWishTitle" placeholder="Item…"><select id="tpWishFor"><option value="me" selected>For me</option><option value="gift">Gift</option></select><select id="tpWishPri"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select><select id="tpWishStatus"><option value="want" selected>Want</option><option value="got">Got</option></select><input id="tpWishLink" placeholder="Link (optional)"></div>' +
+          (edit ? '<div class="tp-add-form"><p class="tp-add-form-title"><span aria-hidden="true">✚</span> Add a wishlist item</p>' +
+          '<div class="tp-row">' +
+          '<label class="tp-add-field"><span>Item</span><input id="tpWishTitle" placeholder="Item…"></label>' +
+          '<label class="tp-add-field"><span>For</span><select id="tpWishFor"><option value="me" selected>For me</option><option value="gift">Gift</option></select></label>' +
+          '<label class="tp-add-field"><span>Priority</span><select id="tpWishPri"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select></label>' +
+          '<label class="tp-add-field"><span>Status</span><select id="tpWishStatus"><option value="want" selected>Want</option><option value="got">Got</option></select></label>' +
+          '</div>' +
+          '<div class="tp-row"><label class="tp-add-field" style="flex:1 1 220px"><span>Link (optional)</span><input id="tpWishLink" placeholder="https://…"></label></div>' +
           tpFmtBar("#tpWishNotes") + '<textarea id="tpWishNotes" class="tp-notes" placeholder="Notes (optional)… **bold** *italic* - bullets"></textarea>' +
-          '<div class="tp-row"><button type="button" class="tp-btn" id="tpAddWish">Add</button></div>' : '') +
+          '<div class="tp-row"><button type="button" class="tp-btn" id="tpAddWish">Add</button></div></div>' : '') +
           '</div>' +
           '<div class="tp-card" style="margin-top:16px">' + tpCardHead("Recurring Buys", "Things you buy regularly", "recurringBuys") +
+          (recAll.length ? tpWishFilterBarHtml("tpRec", tpRecFilters, recAll.length, recShown.length) : '') +
           recHtml +
-          (recEdit ? '<div class="tp-row"><input id="tpRecTitle" placeholder="Item…"><select id="tpRecFor"><option value="me" selected>For me</option><option value="gift">Gift</option></select><select id="tpRecFreq"><option value="weekly">Weekly</option><option value="monthly" selected>Monthly</option><option value="every3months">Every 3 months</option><option value="every6months">Every 6 months</option><option value="yearly">Yearly</option><option value="asneeded">As needed</option></select><select id="tpRecPri"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select><select id="tpRecStatus"><option value="want" selected>Want</option><option value="got">Got</option></select><input id="tpRecLink" placeholder="Link (optional)"></div>' +
+          (recEdit ? '<div class="tp-add-form"><p class="tp-add-form-title"><span aria-hidden="true">✚</span> Add a recurring buy</p>' +
+          '<div class="tp-row">' +
+          '<label class="tp-add-field"><span>Item</span><input id="tpRecTitle" placeholder="Item…"></label>' +
+          '<label class="tp-add-field"><span>For</span><select id="tpRecFor"><option value="me" selected>For me</option><option value="gift">Gift</option></select></label>' +
+          '<label class="tp-add-field"><span>Frequency</span><select id="tpRecFreq"><option value="weekly">Weekly</option><option value="monthly" selected>Monthly</option><option value="every3months">Every 3 months</option><option value="every6months">Every 6 months</option><option value="yearly">Yearly</option><option value="asneeded">As needed</option></select></label>' +
+          '<label class="tp-add-field"><span>Priority</span><select id="tpRecPri"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select></label>' +
+          '<label class="tp-add-field"><span>Status</span><select id="tpRecStatus"><option value="want" selected>Want</option><option value="got">Got</option></select></label>' +
+          '</div>' +
+          '<div class="tp-row"><label class="tp-add-field" style="flex:1 1 220px"><span>Link (optional)</span><input id="tpRecLink" placeholder="https://…"></label></div>' +
           tpFmtBar("#tpRecNotes") + '<textarea id="tpRecNotes" class="tp-notes" placeholder="Notes (optional)… **bold** *italic* - bullets"></textarea>' +
-          '<div class="tp-row"><button type="button" class="tp-btn" id="tpAddRecurring">Add</button></div>' : '') +
+          '<div class="tp-row"><button type="button" class="tp-btn" id="tpAddRecurring">Add</button></div></div>' : '') +
           '</div>';
       }
 
@@ -13824,7 +13927,7 @@
             return '<button type="button" class="tp-btn sm '+(filt===t?'':'outline')+'" data-tp-rom-term-filter="'+t+'">'+(t==="all"?"All":termLabels[t])+'</button>';
           }).join('') +
           '</div>' +
-          (items.map(function(r){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+r.title+'</strong><span><span class="tp-tag">'+(r.type||"idea")+'</span> <span class="tp-tag">'+termLabels[r.term||"short"]+'</span> <span class="tp-tag '+(r.status==="done"?"rom-done":r.status==="planned"?"rom-planned":"rom-idea")+'">'+(r.status==="done"?"Done":r.status==="planned"?"Planned":"Idea")+'</span>'+(edit?' <button type="button" class="tp-btn sm outline" data-tp-edit="romantic" data-id="'+r.id+'">Edit</button> <button type="button" class="tp-btn danger sm" data-tp-del-rom="'+r.id+'">✕</button>':'')+'</span></div>'+(r.notes?'<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft)">'+tpMd(r.notes)+'</div>':'')+'</div>'; }).join('') || '<p class="tp-empty">Start collecting romantic ideas.</p>') +
+          (items.map(function(r){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+r.title+'</strong><span><span class="tp-tag">'+tpRomTypeLabel(r.type)+'</span> <span class="tp-tag">'+termLabels[r.term||"short"]+'</span> <button type="button" class="tp-tag tp-tag-btn '+(r.status==="done"?"rom-done":r.status==="planned"?"rom-planned":"rom-idea")+'" data-tp-rom-status="'+r.id+'" title="Click to advance status">'+tpRomStatusLabel(r.status)+'</button>'+(edit?' <button type="button" class="tp-btn sm outline" data-tp-edit="romantic" data-id="'+r.id+'">Edit</button> <button type="button" class="tp-btn danger sm" data-tp-del-rom="'+r.id+'">✕</button>':'')+'</span></div>'+(r.notes?'<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft)">'+tpMd(r.notes)+'</div>':'')+'</div>'; }).join('') || '<p class="tp-empty">Start collecting romantic ideas.</p>') +
           (edit ? '<div class="tp-row"><input id="tpRomTitle" placeholder="Title…"><select id="tpRomType"><option value="date">Date</option><option value="surprise">Surprise</option><option value="plan">Plan</option><option value="memory">Memory</option><option value="goal">Goal</option></select><select id="tpRomTerm"><option value="short" selected>Short-term</option><option value="mid">Mid-term</option><option value="long">Long-term</option></select><select id="tpRomStatus"><option value="idea" selected>Idea</option><option value="planned">Planned</option><option value="done">Done</option></select></div>' +
           tpFmtBar("#tpRomNotes") + '<textarea id="tpRomNotes" class="tp-notes" placeholder="Notes… **bold** *italic* - bullets"></textarea>' +
           '<div class="tp-row"><button type="button" class="tp-btn" id="tpAddRom">Add</button></div>' : '') + '</div>';
@@ -13886,7 +13989,7 @@ function tpViewWorkout() {
             }).filter(Boolean);
             html += '<div class="tp-item">';
             html += '<div class="tp-item-head"><strong>' + r.name + "</strong><span>";
-            if (doneToday) html += '<span class="tp-tag done">done today</span> ';
+            if (doneToday) html += '<span class="tp-tag done">✅ Done today</span> ';
             html += '<button type="button" class="tp-btn sm" data-tp-start-routine="' + r.id + '">Start</button> ';
             if (wEdit) {
               html += '<button type="button" class="tp-btn outline sm" data-tp-edit="workoutRoutine" data-id="' + r.id + '">Edit</button> ';
@@ -14130,8 +14233,27 @@ function tpViewWorkout() {
             tpSave(); tpRender();
           });
         });
-        document.querySelectorAll("[data-tp-wish-status]").forEach(function(b){ b.addEventListener("click", function(){ var w=tpData.wishlist.find(function(x){return x.id===b.getAttribute("data-tp-wish-status");}); if(w){ w.status=w.status==="got"?"want":"got"; tpSave(); tpRender(); } }); });
+        document.querySelectorAll("[data-tp-wish-status]").forEach(function(b){ b.addEventListener("click", function(){ var w=tpData.wishlist.find(function(x){return x.id===b.getAttribute("data-tp-wish-status");}); if(w){ w.status=w.status==="got"?"want":"got"; if(w.status==="got") tpCelebrate(b); tpSave(); tpRender(); } }); });
+        document.querySelectorAll("[data-tp-rec-status]").forEach(function(b){ b.addEventListener("click", function(){ var w=tpData.recurringBuys.find(function(x){return x.id===b.getAttribute("data-tp-rec-status");}); if(w){ w.status=w.status==="got"?"want":"got"; if(w.status==="got") tpCelebrate(b); tpSave(); tpRender(); } }); });
         document.querySelectorAll("[data-tp-del-wish]").forEach(function(b){ b.addEventListener("click", function(){ tpData.wishlist=tpData.wishlist.filter(function(x){return x.id!==b.getAttribute("data-tp-del-wish");}); tpSave(); tpRender(); }); });
+        // Wishlist / recurring-buys filter bars — each dropdown just
+        // updates the matching filter-state field and re-renders; the
+        // clear-filters link resets all three fields for that list back
+        // to "all" at once.
+        ["Status","For","Pri"].forEach(function(suffix){
+          var key = suffix === "Pri" ? "priority" : suffix.toLowerCase();
+          var wishSel = document.getElementById("tpWishFilter"+suffix);
+          if (wishSel) wishSel.addEventListener("change", function(){ tpWishFilters[key]=wishSel.value; tpRender(); });
+          var recSel = document.getElementById("tpRecFilter"+suffix);
+          if (recSel) recSel.addEventListener("change", function(){ tpRecFilters[key]=recSel.value; tpRender(); });
+        });
+        document.querySelectorAll("[data-tp-filter-clear]").forEach(function(b){
+          b.addEventListener("click", function(){
+            var target = b.getAttribute("data-tp-filter-clear") === "tpRec" ? tpRecFilters : tpWishFilters;
+            target.status = "all"; target.for = "all"; target.priority = "all";
+            tpRender();
+          });
+        });
         var addBucket=document.getElementById("tpAddBucket");
         if(addBucket) addBucket.addEventListener("click", function(){ var title=((document.getElementById("tpBucketTitle")||{}).value||"").trim(); if(!title) return; tpData.bucket.push({id:tpUid(),title:title,done:false,dateDone:""}); tpSave(); tpRender(); });
         document.querySelectorAll("[data-tp-bucket]").forEach(function(el){ el.addEventListener("change", function(){ var b=tpData.bucket.find(function(x){return x.id===el.getAttribute("data-tp-bucket");}); if(b){ b.done=el.checked; b.dateDone=el.checked?tpToday():""; tpSave(); tpRender(); } }); });
@@ -14139,7 +14261,7 @@ function tpViewWorkout() {
         var addRom=document.getElementById("tpAddRom");
         if(addRom) addRom.addEventListener("click", function(){ var title=((document.getElementById("tpRomTitle")||{}).value||"").trim(); if(!title) return; tpData.romantic.push({id:tpUid(),title:title,type:((document.getElementById("tpRomType")||{}).value)||"date",term:((document.getElementById("tpRomTerm")||{}).value)||"short",notes:((document.getElementById("tpRomNotes")||{}).value)||"",status:((document.getElementById("tpRomStatus")||{}).value)||"idea"}); tpSave(); tpRender(); });
         document.querySelectorAll("[data-tp-rom-term-filter]").forEach(function(b){ b.addEventListener("click", function(){ tpRomTermFilter=b.getAttribute("data-tp-rom-term-filter"); tpRender(); }); });
-        document.querySelectorAll("[data-tp-rom-status]").forEach(function(b){ b.addEventListener("click", function(){ var r=tpData.romantic.find(function(x){return x.id===b.getAttribute("data-tp-rom-status");}); if(!r) return; var cycle=["idea","planned","done"]; r.status=cycle[(cycle.indexOf(r.status||"idea")+1)%cycle.length]; tpSave(); tpRender(); }); });
+        document.querySelectorAll("[data-tp-rom-status]").forEach(function(b){ b.addEventListener("click", function(){ var r=tpData.romantic.find(function(x){return x.id===b.getAttribute("data-tp-rom-status");}); if(!r) return; var cycle=["idea","planned","done"]; r.status=cycle[(cycle.indexOf(r.status||"idea")+1)%cycle.length]; if(r.status==="done") tpCelebrate(b); tpSave(); tpRender(); }); });
         document.querySelectorAll("[data-tp-del-rom]").forEach(function(b){ b.addEventListener("click", function(){ tpData.romantic=tpData.romantic.filter(function(x){return x.id!==b.getAttribute("data-tp-del-rom");}); tpSave(); tpRender(); }); });
         var addCourse=document.getElementById("tpAddCourse");
         if(addCourse) addCourse.addEventListener("click", function(){
