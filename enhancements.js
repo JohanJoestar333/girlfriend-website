@@ -804,3 +804,156 @@
     if (el) tap(12);
   });
 })();
+
+
+/* ============================================================
+   SECTION 5 — COLLAPSIBLE ADD FORMS
+   ------------------------------------------------------------
+   The "Add a song / Add to the calendar / Add a photo / New
+   album" forms default to closed (see enhancements.css) behind
+   a small toggle button, instead of always sitting open on the
+   page. Tapping the toggle opens or closes the form.
+
+   app.js reveals these same forms itself when there's a good
+   reason to (editing an existing song/event/photo, or scheduling
+   a bucket-list item onto the calendar) by scrolling to them —
+   every one of those call sites ends in
+   `document.getElementById(<formId>)?.scrollIntoView(...)`.
+   Rather than editing each of those spots in app.js, this wraps
+   scrollIntoView once so that scrolling to one of our forms
+   opens it first. Purely additive; every other scrollIntoView
+   call on the page passes straight through unchanged.
+   ============================================================ */
+
+(function () {
+  "use strict";
+
+  var FORMS = [
+    { id: "musicAddForm", label: "+ Add a song ♥", labelPt: "+ Adicionar uma música ♥" },
+    { id: "calAddForm", label: "+ Add to the calendar ♥", labelPt: "+ Adicionar ao calendário ♥" },
+    { id: "memoryUploadForm", label: "+ Add a photo ♥", labelPt: "+ Adicionar uma foto ♥" },
+    { id: "albumCreateForm", label: "+ New album", labelPt: "+ Novo álbum" },
+  ];
+
+  var closeLabel = "Close";
+  var closeLabelPt = "Fechar";
+
+  function isPt() {
+    try {
+      return localStorage.getItem("gfLanguage") === "pt";
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function setLabel(btn, entry, open) {
+    if (open) {
+      btn.textContent = isPt() ? closeLabelPt : closeLabel;
+    } else {
+      btn.textContent = isPt() ? entry.labelPt : entry.label;
+    }
+  }
+
+  function expand(entry) {
+    var form = entry.form;
+    if (form.classList.contains("add-form-open")) return;
+    form.classList.add("add-form-open");
+    form.style.maxHeight = form.scrollHeight + "px";
+    setLabel(entry.toggle, entry, true);
+    entry.toggle.classList.add("is-open");
+    entry.toggle.setAttribute("aria-expanded", "true");
+    var onEnd = function (e) {
+      if (e.target !== form || e.propertyName !== "max-height") return;
+      form.removeEventListener("transitionend", onEnd);
+      if (form.classList.contains("add-form-open")) form.style.maxHeight = "none";
+    };
+    form.addEventListener("transitionend", onEnd);
+  }
+
+  function collapse(entry) {
+    var form = entry.form;
+    if (!form.classList.contains("add-form-open")) return;
+    // Snapshot the current rendered height as a px value (it may
+    // currently be "none") so there's something to transition
+    // down from, then drop it to 0 on the next frame.
+    form.style.maxHeight = form.scrollHeight + "px";
+    void form.offsetHeight; // force reflow so the browser registers that value first
+    requestAnimationFrame(function () {
+      form.classList.remove("add-form-open");
+      form.style.maxHeight = "0px";
+    });
+    setLabel(entry.toggle, entry, false);
+    entry.toggle.classList.remove("is-open");
+    entry.toggle.setAttribute("aria-expanded", "false");
+  }
+
+  function toggle(entry) {
+    if (entry.form.classList.contains("add-form-open")) collapse(entry);
+    else expand(entry);
+  }
+
+  function setup(entry) {
+    var form = document.getElementById(entry.id);
+    if (!form || form.hasAttribute("data-collapsible-ready")) return;
+    form.setAttribute("data-collapsible-ready", "1");
+    entry.form = form;
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "add-form-toggle";
+    btn.setAttribute("aria-expanded", "false");
+    setLabel(btn, entry, false);
+    btn.addEventListener("click", function () {
+      toggle(entry);
+    });
+    form.parentNode.insertBefore(btn, form);
+    entry.toggle = btn;
+  }
+
+  function findEntry(el) {
+    for (var i = 0; i < FORMS.length; i++) {
+      var f = FORMS[i].form;
+      if (f && (f === el || f.contains(el))) return FORMS[i];
+    }
+    return null;
+  }
+
+  // Auto-open whenever app.js scrolls one of these forms into
+  // view (editing an item, or scheduling a bucket item onto the
+  // calendar) — see header note above.
+  var nativeScrollIntoView = Element.prototype.scrollIntoView;
+  if (!Element.prototype._addFormScrollPatched) {
+    Element.prototype.scrollIntoView = function () {
+      var entry = findEntry(this);
+      if (entry && entry.form) expand(entry);
+      return nativeScrollIntoView.apply(this, arguments);
+    };
+    Element.prototype._addFormScrollPatched = true;
+  }
+
+  // The Cancel buttons that appear mid-edit close the panel back
+  // up too, on top of whatever app.js already resets.
+  document.addEventListener("click", function (e) {
+    var el = e.target.closest(
+      "#musicCancelEditBtn, #calCancelEditBtn, #memoryCancelEditBtn",
+    );
+    if (!el) return;
+    var mapping = {
+      musicCancelEditBtn: "musicAddForm",
+      calCancelEditBtn: "calAddForm",
+      memoryCancelEditBtn: "memoryUploadForm",
+    };
+    var entry = findEntry(document.getElementById(mapping[el.id]));
+    if (entry) collapse(entry);
+  });
+
+  function init() {
+    FORMS.forEach(setup);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
