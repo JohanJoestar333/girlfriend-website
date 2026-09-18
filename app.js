@@ -3360,6 +3360,28 @@
       }
 
       // ---------- together counter ----------
+      // Counts each tile up from 0 to its real value the first time the
+      // page loads (a stat that "arrives" reads as designed, not just
+      // printed) — then every second after that it just updates in
+      // place like before, since re-tweening a seconds digit every
+      // single tick would be noise, not polish.
+      let togetherCounterAnimated = false;
+      const reducedMotionQuery =
+        window.matchMedia &&
+        window.matchMedia("(prefers-reduced-motion: reduce)");
+      function tweenCount(el, from, to, duration) {
+        if (!el) return;
+        const start = performance.now();
+        const change = to - from;
+        function step(now) {
+          const t = Math.min(1, (now - start) / duration);
+          const eased = 1 - Math.pow(1 - t, 3);
+          el.textContent = Math.round(from + change * eased);
+          if (t < 1) requestAnimationFrame(step);
+          else el.textContent = to;
+        }
+        requestAnimationFrame(step);
+      }
       function updateTogether() {
         const start = new Date(CONFIG.relationshipStart);
         const now = new Date();
@@ -3399,12 +3421,24 @@
           years--;
         }
 
-        document.getElementById("c-years").textContent = Math.max(0, years);
-        document.getElementById("c-months").textContent = Math.max(0, months);
-        document.getElementById("c-days").textContent = Math.max(0, days);
-        document.getElementById("c-hours").textContent = Math.max(0, hours);
-        document.getElementById("c-mins").textContent = Math.max(0, mins);
-        document.getElementById("c-secs").textContent = Math.max(0, secs);
+        const vals = {
+          years: Math.max(0, years),
+          months: Math.max(0, months),
+          days: Math.max(0, days),
+          hours: Math.max(0, hours),
+          mins: Math.max(0, mins),
+          secs: Math.max(0, secs),
+        };
+        const shouldTween =
+          !togetherCounterAnimated &&
+          !(reducedMotionQuery && reducedMotionQuery.matches);
+        togetherCounterAnimated = true;
+        Object.keys(vals).forEach((k) => {
+          const el = document.getElementById("c-" + k);
+          if (!el) return;
+          if (shouldTween) tweenCount(el, 0, vals[k], 900);
+          else el.textContent = vals[k];
+        });
       }
       setInterval(updateTogether, 1000);
       updateTogether();
@@ -4982,7 +5016,7 @@
           ? `<img src="${item.img}" alt="${item.caption || ""}" loading="lazy" style="width:100%; height:100%; object-fit:cover; aspect-ratio:3/4;">`
           : `<div class="ph-inner">${tr(item.caption)}<br><small style="opacity:0.6;">(${tr("add photo in CONFIG.album")})</small></div>`;
         fig.innerHTML = `${inner}<figcaption>${tr(item.caption)}${item.date ? " · " + item.date : ""}</figcaption>`;
-        fig.addEventListener("click", () => openLightbox(idx));
+        fig.addEventListener("click", (e) => openLightbox(idx, e.currentTarget));
         return fig;
       }
 
@@ -4995,7 +5029,7 @@
     <button type="button" class="memory-del" aria-label="Delete" title="Delete">✕</button>
     <figcaption>${m.caption || ""}${m.date ? " · " + formatMemoryDateDisplay(m.date) : ""}</figcaption>
   `;
-        fig.addEventListener("click", () => openLightbox(idx));
+        fig.addEventListener("click", (e) => openLightbox(idx, e.currentTarget));
         fig.querySelector(".memory-edit").addEventListener("click", (e) => {
           e.stopPropagation();
           startEditMemory(m);
@@ -5253,10 +5287,92 @@
       renderAlbum();
 
       let lbIndex = 0;
-      function openLightbox(idx) {
+      let lbOpenIndex = 0;
+      let lbOriginEl = null;
+
+      function prefersReducedMotion() {
+        return (
+          window.matchMedia &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        );
+      }
+
+      // Shared-element (FLIP) open: the thumbnail visually grows into
+      // the lightbox instead of the lightbox just popping into place.
+      function flipLightboxOpen(originEl) {
+        const lb = document.getElementById("lightbox");
+        const img = document.getElementById("lbImg");
+        if (!originEl || prefersReducedMotion()) {
+          lb.classList.add("open");
+          return;
+        }
+        const firstRect = originEl.getBoundingClientRect();
+        lb.classList.add("open");
+        requestAnimationFrame(() => {
+          const lastRect = img.getBoundingClientRect();
+          const dx = firstRect.left - lastRect.left;
+          const dy = firstRect.top - lastRect.top;
+          const sx = firstRect.width / lastRect.width;
+          const sy = firstRect.height / lastRect.height;
+          img.style.transformOrigin = "top left";
+          img.style.transition = "none";
+          img.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+          img.style.opacity = "0.5";
+          void img.offsetHeight; // force reflow before animating
+          requestAnimationFrame(() => {
+            img.style.transition = "";
+            img.style.transform = "translate(0, 0) scale(1, 1)";
+            img.style.opacity = "1";
+          });
+        });
+      }
+
+      // Reverse of the above: shrink back down into the thumbnail it
+      // came from, but only when we're still looking at that same
+      // photo — if the person paged with prev/next, there's no single
+      // thumbnail to shrink into, so it just fades out normally.
+      function flipLightboxClose() {
+        const lb = document.getElementById("lightbox");
+        const img = document.getElementById("lbImg");
+        const originEl = lbIndex === lbOpenIndex ? lbOriginEl : null;
+        if (!originEl || prefersReducedMotion()) {
+          lb.classList.remove("open");
+          img.style.transform = "";
+          img.style.opacity = "";
+          return;
+        }
+        const firstRect = originEl.getBoundingClientRect();
+        const lastRect = img.getBoundingClientRect();
+        const dx = firstRect.left - lastRect.left;
+        const dy = firstRect.top - lastRect.top;
+        const sx = firstRect.width / lastRect.width;
+        const sy = firstRect.height / lastRect.height;
+        img.style.transformOrigin = "top left";
+        img.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+        img.style.opacity = "0.4";
+        lb.classList.remove("open");
+        // Wait past both the backdrop fade (300ms) and the image's
+        // own shrink transition (420ms) before clearing the inline
+        // styles, so nothing snaps visibly before it's fully hidden.
+        setTimeout(() => {
+          img.style.transition = "none";
+          img.style.transform = "";
+          img.style.opacity = "";
+          void img.offsetHeight;
+          img.style.transition = "";
+        }, 450);
+      }
+
+      function closeLightbox() {
+        flipLightboxClose();
+      }
+
+      function openLightbox(idx, originEl) {
         lbIndex = idx;
+        lbOpenIndex = idx;
+        lbOriginEl = originEl || null;
         renderLightbox();
-        document.getElementById("lightbox").classList.add("open");
+        flipLightboxOpen(lbOriginEl);
       }
       function renderLightbox() {
         const p = allPhotos[lbIndex];
@@ -5271,12 +5387,17 @@
       }
       document
         .getElementById("lbClose")
-        .addEventListener("click", () =>
-          document.getElementById("lightbox").classList.remove("open"),
-        );
+        .addEventListener("click", () => closeLightbox());
       document.getElementById("lightbox").addEventListener("click", (e) => {
-        if (e.target.id === "lightbox")
-          document.getElementById("lightbox").classList.remove("open");
+        if (e.target.id === "lightbox") closeLightbox();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (
+          e.key === "Escape" &&
+          document.getElementById("lightbox").classList.contains("open")
+        ) {
+          closeLightbox();
+        }
       });
       document.getElementById("lbPrev").addEventListener("click", () => {
         lbIndex = (lbIndex - 1 + allPhotos.length) % allPhotos.length;
@@ -8055,8 +8176,9 @@
           btn.className = "music-pl-btn" + (i === 0 ? " active" : "");
           btn.type = "button";
           btn.dataset.id = pl.id;
-          btn.textContent =
+          const label =
             currentLanguage() === "pt" ? pl.labelPt || pl.label : pl.label;
+          btn.innerHTML = `<span class="pl-icon" aria-hidden="true">📼</span>${label}`;
           btn.addEventListener("click", () => selectMusicPlaylist(pl.id));
           nav.appendChild(btn);
         });
@@ -8130,13 +8252,17 @@
           const row = document.createElement("div");
           row.className = "music-track" + (isActive ? " active" : "");
           const srcLabel = song.source === "soundcloud" ? "SC" : "YT";
+          const trackNum = String(i + 1).padStart(2, "0");
+          const playIndicator = isActive
+            ? '<span class="eq-bars" aria-hidden="true"><span></span><span></span><span></span></span>'
+            : "▶";
           row.innerHTML = `
-      <span class="track-num">${i + 1}</span>
+      <span class="track-num">${trackNum}</span>
       <span class="track-info" style="cursor:pointer;">
         <div class="track-title">${song.title}</div>
         <div class="track-artist">${song.artist || ""} · ${srcLabel}</div>
       </span>
-      <span class="track-play" style="cursor:pointer;">${isActive ? "♪" : "▶"}</span>
+      <span class="track-play" style="cursor:pointer;">${playIndicator}</span>
       <div class="track-move-group">
         <button type="button" class="track-move track-move-up" aria-label="${tr("Move up")}" title="${tr("Move up")}">↑</button>
         <button type="button" class="track-move track-move-down" aria-label="${tr("Move down")}" title="${tr("Move down")}">↓</button>
@@ -8225,9 +8351,34 @@
             currentLanguage() === "pt" ? "Abrir no YouTube" : "Open on YouTube";
         }
 
-        document.getElementById("musicNowLabel").textContent =
+        // Cover art: real YouTube thumbnail when we have a video id,
+        // otherwise a decorative spinning-disc placeholder (mainly
+        // for SoundCloud, which has no simple public thumbnail URL).
+        const cover = document.getElementById("musicCoverArt");
+        const thumbUrl =
+          source !== "soundcloud"
+            ? `https://img.youtube.com/vi/${extractYoutubeId(song.youtubeId)}/hqdefault.jpg`
+            : "";
+        if (cover) {
+          cover.innerHTML = thumbUrl
+            ? `<img src="${thumbUrl}" alt="" loading="lazy">`
+            : '<div class="music-cover-disc"></div>';
+          cover.classList.toggle("has-art", !!thumbUrl);
+        }
+        // Same ambient-glow trick as the movie posters — the chassis
+        // picks up a soft wash of the cover art's own colour instead
+        // of staying a flat block.
+        if (thumbUrl) {
+          wrap.style.setProperty("--ambient", `url("${thumbUrl}")`);
+          wrap.classList.add("has-ambient");
+        } else {
+          wrap.classList.remove("has-ambient");
+        }
+
+        document.getElementById("musicNowLabelText").textContent =
           tr("Now playing");
-        document.getElementById("musicNowTitle").textContent = song.title;
+        const titleEl = document.getElementById("musicNowTitle");
+        titleEl.textContent = song.title;
         document.getElementById("musicNowArtist").textContent =
           song.artist || "";
         const desc =
@@ -8237,6 +8388,25 @@
         const descEl = document.getElementById("musicNowDesc");
         descEl.textContent = desc;
         descEl.style.display = desc ? "" : "none";
+        // LCD-style ticker: only scrolls if the title actually
+        // overflows its row, and only when motion is allowed.
+        titleEl.classList.remove("marquee");
+        titleEl.style.removeProperty("--marquee-distance");
+        const wantsMotion =
+          !window.matchMedia ||
+          !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (wantsMotion) {
+          requestAnimationFrame(() => {
+            const overflow = titleEl.scrollWidth - titleEl.clientWidth;
+            if (overflow > 4) {
+              titleEl.style.setProperty(
+                "--marquee-distance",
+                `-${overflow + 18}px`,
+              );
+              titleEl.classList.add("marquee");
+            }
+          });
+        }
         document
           .getElementById("musicOpenLink")
           .setAttribute(

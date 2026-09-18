@@ -94,8 +94,19 @@
 
 /* Snap targets — the individual rows. */
 .scroll-pane-scroller .bucket-item,
-.scroll-pane-scroller .movie-card {
+.scroll-pane-scroller .movie-card,
+.scroll-pane-scroller .photo-tile {
   scroll-snap-align: start;
+}
+
+/* Albums: shorter than the list default (58vh) so a "compact"
+   album actually reads as compact — about two rows of photos
+   before the fade + "Show all" kick in. */
+.scroll-pane.album-pane {
+  --pane-h: min(46vh, 440px);
+}
+.scroll-pane.album-pane .scroll-pane-scroller {
+  scroll-snap-type: none; /* grid rows, not a single-column list */
 }
 
 /* Visible focus ring when the pane is reached by keyboard. */
@@ -223,10 +234,16 @@ html[data-theme="dark"] {
     transform 0.28s ease,
     background 0.25s ease;
 }
-.bucket-item:hover,
-.movie-card:hover {
-  box-shadow: var(--shadow-lift);
-  transform: translateY(-2px);
+/* Guarded to real hover (mouse/trackpad) — both lists re-render
+   from scratch on every toggle/add/delete, so on touch, a "sticky"
+   hover on the just-tapped (now-recreated) row would cause an
+   unwanted little jump. Same fix as the tp-cards / calendar. */
+@media (hover: hover) and (pointer: fine) {
+  .bucket-item:hover,
+  .movie-card:hover {
+    box-shadow: var(--shadow-lift);
+    transform: translateY(-2px);
+  }
 }
 
 /* ---------- 2. paper grain --------------------------------- */
@@ -438,18 +455,64 @@ body::-webkit-scrollbar-thumb {
   box-shadow: var(--shadow-tiny);
 }
 
-/* --- empty state --- */
+/* --- empty state: dashed "nothing here yet" card, extended to
+   every empty-state spot on the site (was bucket/movies only),
+   plus a small floating icon instead of bare italic text --- */
 .bucket-empty,
-.movie-empty {
+.movie-empty,
+.cal-empty,
+.today-empty,
+.music-empty {
   margin: 0;
-  padding: 34px 24px;
+  padding: 40px 24px 24px;
   text-align: center;
   font-family: var(--serif);
-  font-size: 1.1rem;
-  color: var(--ink-soft);
   border: 1px dashed var(--sage-dim);
   border-radius: var(--radius-md);
   background: transparent;
+  position: relative;
+}
+.bucket-empty,
+.movie-empty {
+  font-size: 1.1rem;
+}
+.bucket-empty::before,
+.movie-empty::before,
+.cal-empty::before,
+.today-empty::before,
+.music-empty::before {
+  content: "";
+  display: block;
+  width: 26px;
+  height: 26px;
+  margin: 0 auto 10px;
+  background: var(--sage);
+  opacity: 0.55;
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M12 21s-7.5-4.6-10-9.3C.4 8.3 2 4.5 5.7 4c2-.3 3.7.6 4.9 2.3l1.4 1.9 1.4-1.9C14.6 4.6 16.3 3.7 18.3 4c3.7.5 5.3 4.3 3.7 7.7C21.5 16.4 12 21 12 21z'/></svg>")
+    center / contain no-repeat;
+  mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M12 21s-7.5-4.6-10-9.3C.4 8.3 2 4.5 5.7 4c2-.3 3.7.6 4.9 2.3l1.4 1.9 1.4-1.9C14.6 4.6 16.3 3.7 18.3 4c3.7.5 5.3 4.3 3.7 7.7C21.5 16.4 12 21 12 21z'/></svg>")
+    center / contain no-repeat;
+  animation: emptyIconFloat 3.2s ease-in-out infinite;
+}
+@keyframes emptyIconFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translateY(-4px);
+    opacity: 0.7;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bucket-empty::before,
+  .movie-empty::before,
+  .cal-empty::before,
+  .today-empty::before,
+  .music-empty::before {
+    animation: none;
+  }
 }
 
 /* ---------- 7. movies -------------------------------------- */

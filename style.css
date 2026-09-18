@@ -278,7 +278,6 @@
       html[data-theme="dark"] .daycard,
       html[data-theme="dark"] .daycard-compose,
       html[data-theme="dark"] .music-add-form,
-      html[data-theme="dark"] .music-player-wrap,
       html[data-theme="dark"] .music-track,
       html[data-theme="dark"] .bucket-item,
       html[data-theme="dark"] .movie-card,
@@ -303,12 +302,6 @@
         background: var(--surface) !important;
         color: var(--ink);
         border-color: rgba(255, 255, 255, 0.08);
-      }
-      html[data-theme="dark"] .music-player-wrap {
-        border-color: rgba(255, 255, 255, 0.08);
-      }
-      html[data-theme="dark"] .music-now {
-        border-top-color: rgba(255, 255, 255, 0.08);
       }
       html[data-theme="dark"] .music-track.active {
         background: var(--sage-dim) !important;
@@ -389,6 +382,15 @@
       }
       html[data-theme="dark"] .cal-day.today {
         box-shadow: inset 0 0 0 2px var(--green);
+      }
+      /* The combined selector above sets background/color !important on
+         every .cal-day for dark mode, which was quietly overriding the
+         selected fill — reassert it here so "selected" stays visible. */
+      html[data-theme="dark"] .cal-day.selected {
+        background: var(--green) !important;
+      }
+      html[data-theme="dark"] .cal-day.selected .cal-day-num {
+        color: #0f1410 !important;
       }
       html[data-theme="dark"] .cal-event-who.both {
         background: #1e3a5f !important;
@@ -542,7 +544,7 @@
         box-shadow: 0 0 0 2px var(--green);
       }
       .nav-more-menu {
-        display: none;
+        display: flex;
         position: absolute;
         top: calc(100% + 8px);
         right: 0;
@@ -555,9 +557,31 @@
         z-index: 80;
         flex-direction: column;
         gap: 2px;
+        /* Grows in from the button it hangs off of, instead of
+           popping into existence, and shrinks back on close. */
+        transform-origin: top right;
+        transform: scale(0.85) translateY(-6px);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition:
+          transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+          opacity 0.18s ease,
+          visibility 0s linear 0.22s;
       }
       .nav-more-menu.open {
-        display: flex;
+        transform: scale(1) translateY(0);
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transition:
+          transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+          opacity 0.18s ease;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .nav-more-menu {
+          transition: none;
+        }
       }
       .nav-more-menu .tab-btn {
         width: 100%;
@@ -1891,14 +1915,21 @@
         inset: 0;
         background: rgba(20, 17, 15, 0.92);
         z-index: 300;
-        display: none;
+        display: flex;
         align-items: center;
         justify-content: center;
         padding: 24px;
         flex-direction: column;
+        opacity: 0;
+        visibility: hidden;
+        transition:
+          opacity 0.3s ease,
+          visibility 0s linear 0.3s;
       }
       .lightbox.open {
-        display: flex;
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 0.3s ease;
       }
       .lightbox-content {
         max-width: 600px;
@@ -1916,6 +1947,18 @@
         color: var(--ink-soft);
         font-size: 0.85rem;
         padding: 20px;
+        /* Base state for the shared-element (FLIP) open/close tween
+           driven from app.js — the transform itself is set inline. */
+        transition:
+          transform 0.42s cubic-bezier(0.22, 0.61, 0.36, 1),
+          opacity 0.42s ease;
+        will-change: transform;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .lightbox,
+        .lightbox-img {
+          transition: none !important;
+        }
       }
       .lightbox-cap {
         color: #f3ede3;
@@ -3488,9 +3531,14 @@
         flex-direction: column;
         gap: 3px;
       }
-      .cal-day:hover {
-        border-color: var(--sage);
-        transform: translateY(-1px);
+      /* Guarded to real hover (mouse/trackpad) — calendar cells get
+         rebuilt on every day change, so a touch "sticky hover" would
+         cause the same unwanted jump the tp-cards had. */
+      @media (hover: hover) and (pointer: fine) {
+        .cal-day:hover {
+          border-color: var(--sage);
+          transform: translateY(-1px);
+        }
       }
       .cal-day.other {
         opacity: 0.35;
@@ -3499,14 +3547,27 @@
         border-color: var(--green);
         box-shadow: 0 0 0 1px var(--green);
       }
+      /* Selected is a solid fill so it reads as "selected" even when it's
+         also today — a ring alone (today's style) isn't enough contrast
+         on its own to say "this is the one that's active". */
       .cal-day.selected {
-        background: var(--sage-dim);
+        background: var(--green);
         border-color: var(--green);
+        box-shadow: 0 0 0 2px var(--green-deep);
+      }
+      .cal-day.selected.today {
+        box-shadow:
+          0 0 0 2px var(--green-deep),
+          0 0 0 4px var(--sage-dim);
+      }
+      .cal-day.selected .cal-day-num {
+        color: #fff;
       }
       .cal-day-num {
         font-size: 0.82rem;
         font-weight: 700;
         color: var(--ink);
+        transition: color 0.15s ease;
       }
       .cal-dots {
         display: flex;
@@ -3865,7 +3926,10 @@
         margin-bottom: 36px;
       }
       .music-pl-btn {
-        padding: 11px 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 11px 20px 11px 16px;
         border-radius: 999px;
         font-weight: 700;
         font-size: 0.88rem;
@@ -3874,6 +3938,11 @@
         border: 1.5px solid transparent;
         transition: all 0.25s ease;
         letter-spacing: 0.01em;
+      }
+      .music-pl-btn .pl-icon {
+        font-size: 0.95em;
+        filter: grayscale(1) opacity(0.6);
+        transition: filter 0.25s ease;
       }
       .music-pl-btn:hover {
         background: var(--sage-dim);
@@ -3884,20 +3953,47 @@
         color: var(--cream);
         border-color: var(--green);
       }
+      .music-pl-btn.active .pl-icon {
+        filter: none;
+      }
+
+      /* ---------- the "device": a dark chassis instead of a plain
+         white card, so the player itself feels like an object
+         rather than another content block on the page ---------- */
       .music-player-wrap {
+        position: relative;
+        isolation: isolate;
         max-width: 720px;
         margin: 0 auto 28px;
-        background: #fff;
+        background: linear-gradient(165deg, #232b26 0%, #14100e 78%);
         border-radius: var(--radius-lg);
         overflow: hidden;
-        box-shadow: var(--shadow-soft);
-        border: 1px solid rgba(43, 38, 34, 0.06);
+        box-shadow:
+          var(--shadow-soft),
+          inset 0 1px 0 rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(0, 0, 0, 0.4);
+      }
+      /* Ambient light from the track's own cover art, same trick as
+         the movie posters — the chassis picks up a wash of colour
+         instead of staying one flat block for every song. */
+      .music-player-wrap.has-ambient::before {
+        content: "";
+        position: absolute;
+        inset: -45%;
+        z-index: 0;
+        background-image: var(--ambient);
+        background-size: cover;
+        background-position: center;
+        filter: blur(50px) saturate(1.7);
+        opacity: 0.45;
+        transition: opacity 0.4s ease;
       }
       .music-embed {
         position: relative;
+        z-index: 1;
         width: 100%;
         aspect-ratio: 16/9;
-        background: var(--cream-dim);
+        background: #0b0a09;
       }
       .music-embed iframe {
         position: absolute;
@@ -3907,42 +4003,176 @@
         border: 0;
       }
       .music-now {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        gap: 16px;
         padding: 18px 22px;
-        border-top: 1px solid rgba(43, 38, 34, 0.06);
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      /* Cover art / spinning-disc placeholder */
+      .music-cover {
+        flex-shrink: 0;
+        width: 64px;
+        height: 64px;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #0b0a09;
+        box-shadow:
+          0 4px 14px rgba(0, 0, 0, 0.4),
+          inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+      }
+      .music-cover img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        animation: musicCoverSpin 9s linear infinite;
+        border-radius: 50%;
+      }
+      .music-cover.has-art {
+        border-radius: 50%;
+      }
+      .music-cover-disc {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: repeating-radial-gradient(
+          circle at center,
+          var(--green-deep) 0px,
+          var(--green) 6px,
+          #0b0a09 7px,
+          #0b0a09 12px
+        );
+        position: relative;
+        animation: musicCoverSpin 9s linear infinite;
+      }
+      .music-cover-disc::after {
+        content: "";
+        position: absolute;
+        inset: 42%;
+        border-radius: 50%;
+        background: var(--cream);
+        box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.3);
+      }
+      @keyframes musicCoverSpin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .music-cover img,
+        .music-cover-disc {
+          animation: none;
+        }
+      }
+      .music-now-info {
+        flex: 1;
+        min-width: 0;
       }
       .music-now .now-label {
-        font-size: 0.72rem;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 0.7rem;
         text-transform: uppercase;
         letter-spacing: 0.12em;
-        color: var(--green);
+        color: #9fd6a3;
         font-weight: 700;
-        margin-bottom: 4px;
+        margin-bottom: 6px;
+      }
+      /* Little bouncing equalizer bars — purely decorative, but it's
+         the thing that says "this is playing" at a glance instead of
+         a static label, both here and next to the active track. */
+      .eq-bars {
+        display: inline-flex;
+        align-items: flex-end;
+        gap: 2px;
+        height: 11px;
+      }
+      .eq-bars span {
+        width: 3px;
+        background: currentColor;
+        border-radius: 1px;
+        animation: eqBounce 0.9s ease-in-out infinite;
+      }
+      .eq-bars span:nth-child(1) {
+        animation-delay: -0.6s;
+      }
+      .eq-bars span:nth-child(2) {
+        animation-delay: -0.3s;
+      }
+      .eq-bars span:nth-child(3) {
+        animation-delay: 0s;
+      }
+      @keyframes eqBounce {
+        0%,
+        100% {
+          height: 3px;
+        }
+        50% {
+          height: 11px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .eq-bars span {
+          animation: none;
+          height: 7px;
+        }
       }
       .music-now .now-title-row {
         display: flex;
         align-items: center;
         gap: 10px;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
       }
       .music-now .now-title {
         font-family: var(--serif);
         font-size: 1.2rem;
-        color: var(--ink);
+        color: #fff;
         font-weight: 600;
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+      /* LCD-style ticker: only applied by JS when the title actually
+         overflows its row. Scrolls over, pauses, then scrolls back —
+         a marquee that settles rather than one that loops forever. */
+      .now-title.marquee {
+        text-overflow: clip;
+        animation: nowTitleMarquee 8s ease-in-out infinite;
+      }
+      @keyframes nowTitleMarquee {
+        0%,
+        15% {
+          transform: translateX(0);
+        }
+        50%,
+        65% {
+          transform: translateX(var(--marquee-distance, 0));
+        }
+        100% {
+          transform: translateX(0);
+        }
       }
       .music-now .now-artist {
         font-size: 0.9rem;
-        color: var(--ink-soft);
+        color: rgba(255, 255, 255, 0.65);
         margin-top: 2px;
       }
       .music-now .now-desc {
         font-size: 0.85rem;
-        color: var(--ink-soft);
+        color: rgba(255, 255, 255, 0.5);
         font-style: normal;
         margin-top: 8px;
         line-height: 1.45;
         font-weight: 400;
-        opacity: 0.85;
       }
       .music-yt-icon {
         display: inline-flex;
@@ -3988,9 +4218,14 @@
         text-align: left;
         width: 100%;
       }
-      .music-track:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-soft);
+      /* Same touch-hover guard as the tp-cards / bucket-items / calendar
+         — the playlist re-renders on every add/select, so an
+         unguarded hover-lift would jump on tap. */
+      @media (hover: hover) and (pointer: fine) {
+        .music-track:hover {
+          transform: translateY(-2px);
+          box-shadow: var(--shadow-soft);
+        }
       }
       .music-track.active {
         background: var(--sage-dim);
@@ -4005,7 +4240,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.78rem;
+        font-family: "SF Mono", "Courier New", monospace;
+        font-size: 0.72rem;
         font-weight: 700;
         color: var(--ink-soft);
       }
@@ -4795,7 +5031,16 @@
         border: 1px solid rgba(43,38,34,0.07); box-shadow: var(--shadow-tiny); margin-bottom: 14px;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
       }
-      .tp-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-soft); }
+      /* Hover-lift only for real pointer hover (mouse/trackpad). On
+         touch, tapping a checkbox re-renders #tpMain from scratch —
+         the card you tapped is destroyed and a fresh one appears in
+         its place, and touchscreens apply a "sticky" hover to
+         whatever was just tapped. Without this guard, that fresh
+         card immediately animates into its lifted state, reading as
+         an unwanted little jump every time you check something off. */
+      @media (hover: hover) and (pointer: fine) {
+        .tp-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-soft); }
+      }
       .tp-card h3 { font-family: var(--serif); font-size: 1.25rem; margin-bottom: 6px; }
       .tp-card .tp-sub { font-size: 0.78rem; color: var(--ink-soft); margin-bottom: 12px; }
       .tp-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -4809,10 +5054,12 @@
         border-top: 3px solid var(--sage);
         transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
       }
-      .tp-stat:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-tiny);
-        background: var(--surface);
+      @media (hover: hover) and (pointer: fine) {
+        .tp-stat:hover {
+          transform: translateY(-2px);
+          box-shadow: var(--shadow-tiny);
+          background: var(--surface);
+        }
       }
       /* A little accent variety instead of six identical cream tiles in a row */
       .tp-grid-3 .tp-stat:nth-child(1) { border-top-color: var(--sage); }
