@@ -5165,8 +5165,9 @@
       }
       .tp-progress > i { display: block; height: 100%; background: var(--green); border-radius: 999px; }
       .tp-tag {
-        display: inline-block; font-size: 0.68rem; font-weight: 700; padding: 3px 8px;
+        display: inline-flex; align-items: center; gap: 4px; font-size: 0.68rem; font-weight: 700; padding: 3px 8px;
         border-radius: 999px; background: var(--sage-dim); color: var(--green-deep); margin-right: 4px;
+        line-height: 1.4;
       }
       .tp-tag.hi { background: #fde8d0; color: #9a5b1a; }
       .tp-tag.mid { background: var(--sage-dim); color: var(--green-deep); }
@@ -5186,6 +5187,32 @@
       html[data-theme="dark"] .tp-tag.rom-planned { background: #4b3b1d; color: #f0c66c; }
       .tp-item {
         padding: 12px; border-radius: var(--radius-sm); background: var(--cream-dim); margin-bottom: 8px;
+      }
+      /* Wishlist / recurring-buy items already marked "Got" — faded back
+         and the title struck through, so a glance at the list shows
+         what's still outstanding vs. already taken care of. The tag
+         and Edit/delete controls stay full-strength so they're still
+         easy to read and use. */
+      .tp-item.tp-item-got {
+        opacity: 0.6;
+      }
+      .tp-item.tp-item-got .tp-item-head strong {
+        text-decoration: line-through;
+        text-decoration-color: var(--ink-soft);
+      }
+      /* Long unbroken URLs (no spaces to wrap on) need an explicit
+         break-anywhere hint, or they push the whole card past the edge
+         of the page instead of wrapping inside it. */
+      .tp-wish-link {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        max-width: 100%;
+      }
+      .tp-wish-link a {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        display: inline-block;
+        max-width: 100%;
       }
       .tp-item-head { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; flex-wrap: wrap; }
       .tp-item-head strong { font-size: 0.92rem; }
@@ -5861,8 +5888,17 @@ nav.tabs .nav-more {
   z-index: 1;
 }
 /* the indicator itself supplies the green pill now, so the active
-   button's own background just needs to fade out of the way */
-nav.tabs .tab-btn.active {
+   button's own background just needs to fade out of the way — but
+   only for the always-visible top-level tabs the indicator actually
+   slides behind. The "···" (More) dropdown's own .tab-btn items are
+   nested *inside* nav.tabs too (nav-more-menu is a descendant), so a
+   plain descendant selector here would also blank out whichever item
+   is currently selected inside that dropdown — and nothing ever
+   fills it back in, since the indicator stays parked over the "···"
+   button itself. Using a direct-child combinator keeps this rule
+   scoped to the pill row and leaves the dropdown's own green
+   .tab-btn.active (see the base rule earlier in this file) alone. */
+nav.tabs > .tab-btn.active {
   background: transparent;
   transition: color 0.25s ease;
 }

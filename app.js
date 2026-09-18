@@ -4961,7 +4961,6 @@
         });
       }
       function toggleAlbumCollapsed(catEl, name) {
-        if (!collapsedAlbums) collapsedAlbums = new Set();
         const collapsed = collapsedAlbums.has(name);
         if (collapsed) collapsedAlbums.delete(name);
         else collapsedAlbums.add(name);
@@ -13410,7 +13409,24 @@
           return '<div class="tp-edit-field"><label for="'+id+'">'+label+'</label><textarea id="'+id+'" data-edit-key="'+key+'" '+(extra||'')+'>'+safe+'</textarea></div>';
         }
         if (type === "select") {
-          return '<div class="tp-edit-field"><label for="'+id+'">'+label+'</label><select id="'+id+'" data-edit-key="'+key+'">'+(extra||'')+'</select></div>';
+          // `extra` is a raw string of <option> tags with no "selected"
+          // baked in, so without this every dropdown silently reopened on
+          // whatever its first option was — never what was actually saved
+          // (e.g. a "Got, High priority, Gift" wishlist item would reopen
+          // showing "Want, High priority, For me"). Mark whichever option
+          // matches the current value as selected before rendering it.
+          var optsHtml = extra || "";
+          if (value != null) {
+            var marker = 'value="' + String(value).replace(/"/g, "&quot;") + '"';
+            var idx = optsHtml.indexOf(marker);
+            if (idx !== -1) {
+              var closeAt = optsHtml.indexOf(">", idx);
+              if (closeAt !== -1 && optsHtml.indexOf("selected", idx) !== closeAt + 1) {
+                optsHtml = optsHtml.slice(0, closeAt) + " selected" + optsHtml.slice(closeAt);
+              }
+            }
+          }
+          return '<div class="tp-edit-field"><label for="'+id+'">'+label+'</label><select id="'+id+'" data-edit-key="'+key+'">'+optsHtml+'</select></div>';
         }
         return '<div class="tp-edit-field"><label for="'+id+'">'+label+'</label><input id="'+id+'" type="'+type+'" value="'+safe+'" data-edit-key="'+key+'" '+(extra||'')+'></div>';
       }
@@ -13746,13 +13762,33 @@
       }
 
 
+      // Small icon+label pairs shared by the wishlist and recurring-buys
+      // cards, so "Gift"/"High priority"/"Got" etc. all get a quick visual
+      // cue instead of relying on badge color alone.
+      function tpWishForLabel(isGift) {
+        return isGift ? "🎁 Gift" : "🛍️ For me";
+      }
+      function tpWishPriLabel(p) {
+        return p === "high" ? "🔺 High" : p === "low" ? "🔻 Low" : "➖ Medium";
+      }
+      function tpWishStatusLabel(isGot) {
+        return isGot ? "✅ Got" : "✨ Want";
+      }
+      // Wraps a saved link in markup that can't blow out the card's width —
+      // long unbroken URLs need an explicit break hint, not just a wrapping
+      // container, or they push the whole item past the edge of the page.
+      function tpWishLinkHtml(link) {
+        if (!link) return "";
+        return '<div class="meta tp-wish-link" style="font-size:0.78rem"><a href="'+tpAttr(link)+'" target="_blank" rel="noopener" style="color:var(--sage)">'+link+'</a></div>';
+      }
+
       function tpViewWishlist() {
         var pri = { high: "hi", medium: "mid", low: "lo" };
         var edit = tpIsEdit("wishlist");
         var recEdit = tpIsEdit("recurringBuys");
         var freq = { weekly: "Weekly", monthly: "Monthly", every3months: "Every 3 months", every6months: "Every 6 months", yearly: "Yearly", asneeded: "As needed" };
-        var wishHtml = ((tpData.wishlist||[]).map(function(w){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+w.title+'</strong><span><span class="tp-tag '+(w.for==="gift"?"wish-gift":"wish-me")+'">'+(w.for==="gift"?"Gift":"For me")+'</span> <span class="tp-tag '+(pri[w.priority]||'mid')+'">'+(w.priority||'medium')+'</span> <span class="tp-tag '+(w.status==="got"?"wish-got":"wish-want")+'">'+(w.status==="got"?"Got":"Want")+'</span>'+(edit?' <button type="button" class="tp-btn sm outline" data-tp-edit="wishlist" data-id="'+w.id+'">Edit</button> <button type="button" class="tp-btn danger sm" data-tp-del-wish="'+w.id+'">✕</button>':'')+'</span></div>'+(w.notes?'<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft)">'+tpMd(w.notes)+'</div>':'')+(w.link?'<div class="meta" style="font-size:0.78rem"><a href="'+tpAttr(w.link)+'" target="_blank" rel="noopener" style="color:var(--sage)">'+w.link+'</a></div>':'')+'</div>'; }).join('') || '<p class="tp-empty">Wishlist is empty.</p>');
-        var recHtml = ((tpData.recurringBuys||[]).map(function(w){ return '<div class="tp-item"><div class="tp-item-head"><strong>'+w.title+'</strong><span><span class="tp-tag wish-me">'+(w.for==="gift"?"Gift":"For me")+'</span> <span class="tp-tag">'+(freq[w.frequency]||"Monthly")+'</span> <span class="tp-tag '+(pri[w.priority]||'mid')+'">'+(w.priority||'medium')+'</span> <span class="tp-tag '+(w.status==="got"?"wish-got":"wish-want")+'">'+(w.status==="got"?"Got":"Want")+'</span>'+(recEdit?' <button type="button" class="tp-btn sm outline" data-tp-edit="recurringBuy" data-id="'+w.id+'">Edit</button> <button type="button" class="tp-btn danger sm" data-tp-del-recurring="'+w.id+'">✕</button>':'')+'</span></div>'+(w.notes?'<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft)">'+tpMd(w.notes)+'</div>':'')+(w.link?'<div class="meta" style="font-size:0.78rem"><a href="'+tpAttr(w.link)+'" target="_blank" rel="noopener" style="color:var(--sage)">'+w.link+'</a></div>':'')+'</div>'; }).join('') || '<p class="tp-empty">No recurring buys yet.</p>');
+        var wishHtml = ((tpData.wishlist||[]).map(function(w){ var got=w.status==="got"; return '<div class="tp-item'+(got?" tp-item-got":"")+'"><div class="tp-item-head"><strong>'+w.title+'</strong><span><span class="tp-tag '+(w.for==="gift"?"wish-gift":"wish-me")+'">'+tpWishForLabel(w.for==="gift")+'</span> <span class="tp-tag '+(pri[w.priority]||'mid')+'">'+tpWishPriLabel(w.priority)+'</span> <span class="tp-tag '+(got?"wish-got":"wish-want")+'">'+tpWishStatusLabel(got)+'</span>'+(edit?' <button type="button" class="tp-btn sm outline" data-tp-edit="wishlist" data-id="'+w.id+'">Edit</button> <button type="button" class="tp-btn danger sm" data-tp-del-wish="'+w.id+'">✕</button>':'')+'</span></div>'+(w.notes?'<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft)">'+tpMd(w.notes)+'</div>':'')+tpWishLinkHtml(w.link)+'</div>'; }).join('') || '<p class="tp-empty">Wishlist is empty.</p>');
+        var recHtml = ((tpData.recurringBuys||[]).map(function(w){ var got=w.status==="got"; return '<div class="tp-item'+(got?" tp-item-got":"")+'"><div class="tp-item-head"><strong>'+w.title+'</strong><span><span class="tp-tag '+(w.for==="gift"?"wish-gift":"wish-me")+'">'+tpWishForLabel(w.for==="gift")+'</span> <span class="tp-tag">'+(freq[w.frequency]||"Monthly")+'</span> <span class="tp-tag '+(pri[w.priority]||'mid')+'">'+tpWishPriLabel(w.priority)+'</span> <span class="tp-tag '+(got?"wish-got":"wish-want")+'">'+tpWishStatusLabel(got)+'</span>'+(recEdit?' <button type="button" class="tp-btn sm outline" data-tp-edit="recurringBuy" data-id="'+w.id+'">Edit</button> <button type="button" class="tp-btn danger sm" data-tp-del-recurring="'+w.id+'">✕</button>':'')+'</span></div>'+(w.notes?'<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft)">'+tpMd(w.notes)+'</div>':'')+tpWishLinkHtml(w.link)+'</div>'; }).join('') || '<p class="tp-empty">No recurring buys yet.</p>');
         return '<div class="tp-card">' + tpCardHead("Wishlist", "Things to buy or achieve", "wishlist") +
           wishHtml +
           (edit ? '<div class="tp-row"><input id="tpWishTitle" placeholder="Item…"><select id="tpWishFor"><option value="me" selected>For me</option><option value="gift">Gift</option></select><select id="tpWishPri"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select><select id="tpWishStatus"><option value="want" selected>Want</option><option value="got">Got</option></select><input id="tpWishLink" placeholder="Link (optional)"></div>' +
