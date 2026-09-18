@@ -3218,6 +3218,11 @@
 
         activeTab = name;
         clearTabDot(name);
+        if (typeof musicUpdateMiniVisibility === "function") {
+          try {
+            musicUpdateMiniVisibility();
+          } catch (e) {}
+        }
         // Opening a tab must not erase a pending catch-up notification.
         // Snapshot handlers update the checkpoint after checking for changes.
         if (name === "games" && typeof renderGamesHub === "function") {
@@ -8408,6 +8413,214 @@
         return m ? m[1] : s;
       }
 
+      // ---- Lazy-loaded platform APIs, so we only pull in the YouTube /
+      // SoundCloud player scripts once a track from that platform is
+      // actually played, not on every page load. ----
+      let _ytApiPromise = null;
+      function loadYouTubeAPI() {
+        if (window.YT && window.YT.Player) return Promise.resolve(window.YT);
+        if (_ytApiPromise) return _ytApiPromise;
+        _ytApiPromise = new Promise(function (resolve) {
+          const prevCb = window.onYouTubeIframeAPIReady;
+          window.onYouTubeIframeAPIReady = function () {
+            if (typeof prevCb === "function") prevCb();
+            resolve(window.YT);
+          };
+          const s = document.createElement("script");
+          s.src = "https://www.youtube.com/iframe_api";
+          document.head.appendChild(s);
+        });
+        return _ytApiPromise;
+      }
+      let _scApiPromise = null;
+      function loadSoundCloudAPI() {
+        if (window.SC && window.SC.Widget) return Promise.resolve(window.SC);
+        if (_scApiPromise) return _scApiPromise;
+        _scApiPromise = new Promise(function (resolve) {
+          const s = document.createElement("script");
+          s.src = "https://w.soundcloud.com/player/api.js";
+          s.onload = function () { resolve(window.SC); };
+          document.head.appendChild(s);
+        });
+        return _scApiPromise;
+      }
+
+      // ---- Unified playback control, regardless of platform. Only one
+      // of ytPlayer/scWidget is ever alive at a time — starting a new
+      // track always tears down whichever one was active first, so we
+      // never end up with two players fighting over the mini bar. ----
+      let ytPlayer = null;
+      let scWidget = null;
+      let musicIsPlaying = false;
+      let musicMiniCollapsed = false;
+      let musicPlayGeneration = 0; // guards against a stale async init
+                                    // (e.g. slow YT API load) resurrecting
+                                    // a player after the track changed again
+
+      function musicTeardownPlayer() {
+        if (ytPlayer) {
+          try { ytPlayer.destroy(); } catch (e) {}
+          ytPlayer = null;
+        }
+        if (scWidget) {
+          try {
+            scWidget.unbind(SC.Widget.Events.PLAY);
+            scWidget.unbind(SC.Widget.Events.PAUSE);
+            scWidget.unbind(SC.Widget.Events.FINISH);
+          } catch (e) {}
+          scWidget = null;
+        }
+      }
+
+      function musicSetPlaying(isPlaying) {
+        musicIsPlaying = isPlaying;
+        const btn = document.getElementById("musicMiniPlayBtn");
+        if (btn) btn.textContent = isPlaying ? "⏸" : "▶";
+        const bar = document.getElementById("musicMiniPlayer");
+        if (bar) bar.classList.toggle("is-playing", isPlaying);
+        musicUpdateMiniVisibility();
+      }
+
+      function musicInitYouTubePlayer(videoId, gen) {
+        loadYouTubeAPI().then(function (YTns) {
+          if (gen !== musicPlayGeneration) return; // track changed again meanwhile
+          const target = document.getElementById("musicEmbedYT");
+          if (!target) return;
+          ytPlayer = new YTns.Player("musicEmbedYT", {
+            videoId: videoId,
+            playerVars: { rel: 0, modestbranding: 1, playsinline: 1 },
+            events: {
+              onReady: function (e) { e.target.playVideo(); },
+              onStateChange: function (e) {
+                if (e.data === YTns.PlayerState.PLAYING) musicSetPlaying(true);
+                else if (e.data === YTns.PlayerState.PAUSED) musicSetPlaying(false);
+                else if (e.data === YTns.PlayerState.ENDED) {
+                  musicSetPlaying(false);
+                  musicPlayNext();
+                }
+              },
+            },
+          });
+        });
+      }
+
+      function musicInitSoundCloudPlayer(iframeEl, gen) {
+        loadSoundCloudAPI().then(function (SCns) {
+          if (gen !== musicPlayGeneration || !iframeEl.isConnected) return;
+          scWidget = SCns.Widget(iframeEl);
+          scWidget.bind(SCns.Widget.Events.PLAY, function () { musicSetPlaying(true); });
+          scWidget.bind(SCns.Widget.Events.PAUSE, function () { musicSetPlaying(false); });
+          scWidget.bind(SCns.Widget.Events.FINISH, function () {
+            musicSetPlaying(false);
+            musicPlayNext();
+          });
+        });
+      }
+
+      function musicToggleMiniPlayPause() {
+        if (ytPlayer) {
+          const state = ytPlayer.getPlayerState();
+          if (state === 1) ytPlayer.pauseVideo();
+          else ytPlayer.playVideo();
+        } else if (scWidget) {
+          scWidget.isPaused(function (paused) {
+            if (paused) scWidget.play();
+            else scWidget.pause();
+          });
+        }
+      }
+
+      function musicPlayNext() {
+        const songs = getSongsForPlaylist(musicState.playlistId);
+        if (!songs.length) return;
+        playMusicTrack((musicState.trackIdx + 1) % songs.length);
+      }
+      function musicPlayPrev() {
+        const songs = getSongsForPlaylist(musicState.playlistId);
+        if (!songs.length) return;
+        playMusicTrack((musicState.trackIdx - 1 + songs.length) % songs.length);
+      }
+
+      // Stops playback entirely (the actual "✕" on the mini bar) — as
+      // opposed to minimizing, which leaves the track playing and just
+      // tucks the bar away behind the reopen nub.
+      function musicStopPlayback() {
+        musicPlayGeneration++;
+        musicTeardownPlayer();
+        musicIsPlaying = false;
+        musicMiniCollapsed = false;
+        musicState.currentSongId = null;
+        musicState.trackIdx = -1; // so the track list's "nothing selected"
+                                   // fallback doesn't re-highlight the last
+                                   // track as if it were still playing
+        const wrap = document.getElementById("musicPlayerWrap");
+        if (wrap) wrap.style.display = "none";
+        const embed = document.getElementById("musicEmbed");
+        if (embed) embed.innerHTML = "";
+        musicUpdateMiniVisibility();
+        if (typeof renderMusicTracks === "function") renderMusicTracks();
+      }
+
+      // Keeps the mini title/artist/cover in sync with whatever's
+      // actually loaded in the full player.
+      function musicSyncMiniPlayer(song, thumbUrl) {
+        const titleEl = document.getElementById("musicMiniTitle");
+        const artistEl = document.getElementById("musicMiniArtist");
+        const coverEl = document.getElementById("musicMiniCover");
+        if (titleEl) titleEl.textContent = song.title;
+        if (artistEl) artistEl.textContent = song.artist || "";
+        if (coverEl) {
+          coverEl.classList.toggle("has-art", !!thumbUrl);
+          coverEl.style.backgroundImage = thumbUrl ? `url("${thumbUrl}")` : "none";
+        }
+      }
+
+      // Decides whether the full mini bar, the small reopen nub, or
+      // neither should be visible right now: nothing shows unless a
+      // track is actually loaded, nothing shows while the person is
+      // looking at the full player on the Music tab itself (it would
+      // just be a redundant second player), and otherwise it's either
+      // the full bar or — if they minimized it — just the nub.
+      function musicUpdateMiniVisibility() {
+        const bar = document.getElementById("musicMiniPlayer");
+        const nub = document.getElementById("musicMiniNub");
+        if (!bar || !nub) return;
+        const hasTrack = !!musicState.currentSongId;
+        const relevant = hasTrack && activeTab !== "music";
+        if (!relevant) {
+          bar.hidden = true;
+          nub.hidden = true;
+          return;
+        }
+        bar.hidden = musicMiniCollapsed;
+        nub.hidden = !musicMiniCollapsed;
+      }
+
+      (function initMusicMiniPlayer() {
+        const playBtn = document.getElementById("musicMiniPlayBtn");
+        const prevBtn = document.getElementById("musicMiniPrevBtn");
+        const nextBtn = document.getElementById("musicMiniNextBtn");
+        const stopBtn = document.getElementById("musicMiniStopBtn");
+        const collapseBtn = document.getElementById("musicMiniCollapseBtn");
+        const nub = document.getElementById("musicMiniNub");
+        if (playBtn) playBtn.addEventListener("click", musicToggleMiniPlayPause);
+        if (prevBtn) prevBtn.addEventListener("click", musicPlayPrev);
+        if (nextBtn) nextBtn.addEventListener("click", musicPlayNext);
+        if (stopBtn) stopBtn.addEventListener("click", musicStopPlayback);
+        if (collapseBtn) {
+          collapseBtn.addEventListener("click", function () {
+            musicMiniCollapsed = true;
+            musicUpdateMiniVisibility();
+          });
+        }
+        if (nub) {
+          nub.addEventListener("click", function () {
+            musicMiniCollapsed = false;
+            musicUpdateMiniVisibility();
+          });
+        }
+      })();
+
       function playMusicTrack(idx) {
         const songs = getSongsForPlaylist(musicState.playlistId);
         if (!songs[idx]) return;
@@ -8419,14 +8632,19 @@
         const embed = document.getElementById("musicEmbed");
         wrap.style.display = "block";
 
+        musicPlayGeneration++;
+        const gen = musicPlayGeneration;
+        musicTeardownPlayer();
+
         if (source === "soundcloud") {
           const scUrl = song.soundcloudUrl || song.youtubeId || "";
           const playerUrl =
             "https://w.soundcloud.com/player/?url=" +
             encodeURIComponent(scUrl) +
-            "&color=%234F6F52&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false";
+            "&color=%234F6F52&auto_play=true&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false";
           embed.classList.add("soundcloud");
-          embed.innerHTML = `<iframe scrolling="no" frameborder="no" allow="autoplay" src="${playerUrl}" title="${song.title}" loading="lazy"></iframe>`;
+          embed.innerHTML = `<iframe id="musicEmbedFrame" scrolling="no" frameborder="no" allow="autoplay" src="${playerUrl}" title="${song.title}" loading="lazy"></iframe>`;
+          musicInitSoundCloudPlayer(document.getElementById("musicEmbedFrame"), gen);
           const openLink = document.getElementById("musicOpenLink");
           openLink.href = scUrl.startsWith("http")
             ? scUrl
@@ -8438,7 +8656,12 @@
         } else {
           const videoId = extractYoutubeId(song.youtubeId);
           embed.classList.remove("soundcloud");
-          embed.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&playsinline=1" title="${song.title}" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe>`;
+          // A nested target div (rather than handing the YouTube API our
+          // own #musicEmbed element directly) keeps the outer .music-embed
+          // wrapper — and its sizing/background CSS — intact, since the
+          // API fully replaces whatever element it's given with its iframe.
+          embed.innerHTML = `<div id="musicEmbedYT"></div>`;
+          musicInitYouTubePlayer(videoId, gen);
           const openLink = document.getElementById("musicOpenLink");
           openLink.href = "https://www.youtube.com/watch?v=" + videoId;
           openLink.title =
@@ -8508,6 +8731,11 @@
             document.getElementById("musicOpenLink").title,
           );
         renderMusicTracks();
+
+        // Sync the floating mini bar's title/artist/cover so it's ready
+        // to show the moment the person navigates to another tab.
+        musicSyncMiniPlayer(song, thumbUrl);
+        musicUpdateMiniVisibility();
       }
 
       function collectMusicFormPayload() {

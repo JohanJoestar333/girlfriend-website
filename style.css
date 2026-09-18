@@ -6607,3 +6607,169 @@ html[data-theme="dark"] .tp-tag-btn:hover { filter: brightness(1.2); }
   .tp-celebrate-pop { display: none; }
 }
 
+/* ============================================================
+   BACKGROUND MUSIC MINI PLAYER — floating bar that keeps a
+   YouTube/SoundCloud track controllable while browsing any other
+   tab. Hidden by default; shown by app.js only once something is
+   actually playing (or the person taps the reopen nub). See
+   musicUpdateMiniVisibility() in app.js for the show/hide rules.
+   ============================================================ */
+.music-mini-player {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%) translateY(0);
+  z-index: 420;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(420px, calc(100vw - 24px));
+  padding: 8px 10px 8px 8px;
+  border-radius: 999px;
+  background: var(--cream-dim);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 14px 34px -12px rgba(43, 38, 34, 0.35);
+  backdrop-filter: blur(10px);
+  animation: musicMiniIn 0.25s ease;
+}
+html[data-theme="dark"] .music-mini-player {
+  background: rgba(26, 24, 22, 0.92);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+@keyframes musicMiniIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(14px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.music-mini-collapse {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  transition: background 0.15s ease;
+}
+.music-mini-collapse:hover { background: rgba(0, 0, 0, 0.06); }
+html[data-theme="dark"] .music-mini-collapse:hover { background: rgba(255, 255, 255, 0.08); }
+.music-mini-cover {
+  position: relative;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(150deg, var(--blush-soft), var(--sage-dim));
+}
+.music-mini-cover.has-art { background-size: cover; background-position: center; }
+.music-mini-cover-disc {
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(255, 255, 255, 0.6);
+  opacity: 0.5;
+}
+.music-mini-player.is-playing .music-mini-cover {
+  animation: musicMiniSpin 6s linear infinite;
+}
+@keyframes musicMiniSpin { to { transform: rotate(360deg); } }
+.music-mini-info { min-width: 0; flex: 1 1 auto; }
+.music-mini-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.music-mini-artist {
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.music-mini-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.music-mini-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
+  color: var(--ink);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.music-mini-btn:hover { background: rgba(0, 0, 0, 0.06); }
+.music-mini-btn:active { transform: scale(0.9); }
+html[data-theme="dark"] .music-mini-btn:hover { background: rgba(255, 255, 255, 0.08); }
+.music-mini-play-btn {
+  background: var(--green);
+  color: var(--cream);
+  width: 34px;
+  height: 34px;
+  font-size: 0.9rem;
+}
+.music-mini-play-btn:hover { background: var(--green-deep); }
+.music-mini-stop {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.music-mini-stop:hover { background: rgba(180, 80, 80, 0.12); color: #a34c4c; }
+
+/* Small round "reopen" nub — shown only while the bar is manually
+   minimized but a track is still playing. */
+.music-mini-nub {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 420;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--green);
+  color: var(--cream);
+  display: grid;
+  place-items: center;
+  font-size: 1.1rem;
+  box-shadow: 0 10px 24px -8px rgba(76, 111, 82, 0.6);
+  animation: musicMiniIn 0.25s ease;
+}
+.music-mini-nub-icon { animation: musicNubPulse 1.6s ease-in-out infinite; }
+@keyframes musicNubPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.18); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .music-mini-player, .music-mini-nub { animation: none; }
+  .music-mini-player.is-playing .music-mini-cover { animation: none; }
+  .music-mini-nub-icon { animation: none; }
+}
+@media (max-width: 520px) {
+  .music-mini-player {
+    left: 12px;
+    right: 12px;
+    bottom: 14px;
+    width: auto;
+    transform: translateY(0);
+  }
+  @keyframes musicMiniIn {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+
