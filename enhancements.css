@@ -99,16 +99,6 @@
   scroll-snap-align: start;
 }
 
-/* Albums: shorter than the list default (58vh) so a "compact"
-   album actually reads as compact — about two rows of photos
-   before the fade + "Show all" kick in. */
-.scroll-pane.album-pane {
-  --pane-h: min(46vh, 440px);
-}
-.scroll-pane.album-pane .scroll-pane-scroller {
-  scroll-snap-type: none; /* grid rows, not a single-column list */
-}
-
 /* Visible focus ring when the pane is reached by keyboard. */
 .scroll-pane-scroller:focus-visible {
   outline: 2px solid var(--green);
@@ -191,6 +181,79 @@
   }
   .scroll-pane-scroller {
     scroll-snap-type: none;
+  }
+}
+
+
+/* ---- albums: collapse/expand instead of an inner scroll pane ----
+   Each album is its own section with a clickable header; the photo
+   grid underneath (.masonry, defined in style.css) is a normal,
+   un-scrolled grid — no max-height, no fade mask, no "Show all"
+   pagination. Collapsed by default (see app.js renderAlbum()), so
+   opening the Album tab doesn't start loading every photo in every
+   album at once — only the ones in whichever album is actually open. */
+.album-collapse-toggle {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--sage);
+  background: transparent;
+  color: var(--green-deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    transform 0.25s ease;
+}
+.album-collapse-toggle:hover {
+  background: var(--sage-dim);
+}
+.album-collapse-toggle:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+.album-collapse-chevron {
+  display: inline-block;
+  transition: transform 0.25s ease;
+}
+/* Collapsed is the default visual state — the chevron points right
+   (closed) and flips down to point down when the album is open. */
+.album-collapsible .album-collapse-chevron {
+  transform: rotate(-90deg);
+}
+.album-collapsible:not(.collapsed) .album-collapse-chevron {
+  transform: rotate(0deg);
+}
+.album-collapsible .masonry {
+  display: none;
+}
+.album-collapsible:not(.collapsed) .masonry {
+  display: grid;
+  animation: albumExpand 0.35s ease;
+}
+@keyframes albumExpand {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.album-collapsible.collapsed .album-cat-empty {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .album-collapse-chevron,
+  .album-collapse-toggle {
+    transition: none;
+  }
+  .album-collapsible:not(.collapsed) .masonry {
+    animation: none;
   }
 }
 

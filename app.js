@@ -4935,6 +4935,60 @@
       let customAlbums = []; // { id, name, order, createdAt }
       let albumsDb = null;
       let albumsSyncLive = false;
+      // Which album names are collapsed. renderAlbum() rebuilds the whole
+      // #albumWrap from scratch on every change (new photo, language
+      // toggle, Firebase sync, ...), so the open/closed state has to live
+      // out here rather than on the DOM nodes, or it would reset every time.
+      // Everything starts collapsed so opening the tab doesn't kick off a
+      // burst of image loads for every album at once.
+      let collapsedAlbums = null; // null = "not seeded yet"
+      function isAlbumCollapsed(name) {
+        if (!collapsedAlbums) collapsedAlbums = new Set();
+        return collapsedAlbums.has(name);
+      }
+      function seedCollapsedAlbums(names) {
+        if (collapsedAlbums) return; // only seed once, on first render
+        collapsedAlbums = new Set(names);
+      }
+      function toggleAlbumCollapsed(catEl, name) {
+        if (!collapsedAlbums) collapsedAlbums = new Set();
+        const collapsed = collapsedAlbums.has(name);
+        if (collapsed) collapsedAlbums.delete(name);
+        else collapsedAlbums.add(name);
+        catEl.classList.toggle("collapsed", !collapsed);
+        const btn = catEl.querySelector(".album-collapse-toggle");
+        if (btn) btn.setAttribute("aria-expanded", String(collapsed));
+      }
+      // Adds the click-to-expand header treatment to an album section.
+      // `head` is the element holding the <h3> (and, for custom albums,
+      // the delete button); `masonry` is the grid that gets shown/hidden.
+      function makeAlbumCollapsible(catEl, head, name) {
+        catEl.classList.add("album-collapsible");
+        if (isAlbumCollapsed(name)) catEl.classList.add("collapsed");
+        const toggle = document.createElement("button");
+        toggle.type = "button";
+        toggle.className = "album-collapse-toggle";
+        toggle.setAttribute("aria-expanded", String(!isAlbumCollapsed(name)));
+        toggle.setAttribute(
+          "aria-label",
+          currentLanguage() === "pt" ? "Mostrar/ocultar álbum" : "Show/hide album",
+        );
+        toggle.innerHTML = '<span class="album-collapse-chevron">▾</span>';
+        toggle.addEventListener("click", () =>
+          toggleAlbumCollapsed(catEl, name),
+        );
+        head.appendChild(toggle);
+        // The title itself is also clickable, for a bigger tap target —
+        // the delete button (if any) has its own listener and is a
+        // sibling of the title, not inside it, so it's unaffected.
+        const h3 = head.querySelector("h3");
+        if (h3) {
+          h3.style.cursor = "pointer";
+          h3.addEventListener("click", () =>
+            toggleAlbumCollapsed(catEl, name),
+          );
+        }
+      }
 
       function getStaticAlbumNames() {
         return (CONFIG.album || []).map((c) => c.category);
@@ -5062,16 +5116,35 @@
 
       function renderAlbum() {
         if (!albumWrap) return;
-        albumWrap.innerHTML = "";
         allPhotos = [];
         const seen = { full: new Set(), files: new Set(), paths: new Set() };
         const staticNames = getStaticAlbumNames();
+
+        // Seed every album as collapsed the first time we ever render,
+        // so nothing is expanded (and no photos in it start loading)
+        // until the person opens it. Later renders leave whatever the
+        // person already opened/closed alone.
+        const UNSORTED_KEY = "__unsorted__";
+        seedCollapsedAlbums(
+          [
+            ...staticNames,
+            ...getCustomAlbumNames().filter((n) => !staticNames.includes(n)),
+            UNSORTED_KEY,
+          ].filter(Boolean),
+        );
+
+        albumWrap.innerHTML = "";
 
         // 1) Built-in CONFIG albums
         (CONFIG.album || []).forEach((cat) => {
           const catEl = document.createElement("div");
           catEl.className = "album-cat";
-          catEl.innerHTML = `<h3>${tr(cat.category)}</h3>`;
+          const head = document.createElement("div");
+          head.className = "album-cat-head";
+          const h3 = document.createElement("h3");
+          h3.textContent = tr(cat.category);
+          head.appendChild(h3);
+          catEl.appendChild(head);
           const masonry = document.createElement("div");
           masonry.className = "masonry";
 
@@ -5090,6 +5163,7 @@
 
           appendLivePhotosToMasonry(masonry, cat.category, seen);
           catEl.appendChild(masonry);
+          makeAlbumCollapsible(catEl, head, cat.category);
           albumWrap.appendChild(catEl);
         });
 
@@ -5136,6 +5210,7 @@
               catEl.appendChild(empty);
             }
             catEl.appendChild(masonry);
+            makeAlbumCollapsible(catEl, head, alb.name);
             albumWrap.appendChild(catEl);
           });
 
@@ -5148,7 +5223,15 @@
         if (unsorted.length) {
           const catEl = document.createElement("div");
           catEl.className = "album-cat";
-          catEl.innerHTML = `<h3>${currentLanguage() === "pt" ? "Sem álbum (escolha um ao reenviar)" : "Unsorted (pick an album next time)"}</h3>`;
+          const head = document.createElement("div");
+          head.className = "album-cat-head";
+          const h3 = document.createElement("h3");
+          h3.textContent =
+            currentLanguage() === "pt"
+              ? "Sem álbum (escolha um ao reenviar)"
+              : "Unsorted (pick an album next time)";
+          head.appendChild(h3);
+          catEl.appendChild(head);
           const masonry = document.createElement("div");
           masonry.className = "masonry";
           unsorted.forEach((m) => {
@@ -5165,6 +5248,7 @@
           });
           if (masonry.children.length) {
             catEl.appendChild(masonry);
+            makeAlbumCollapsible(catEl, head, UNSORTED_KEY);
             albumWrap.appendChild(catEl);
           }
         }

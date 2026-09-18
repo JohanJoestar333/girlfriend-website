@@ -155,48 +155,15 @@
     return pane;
   }
 
-  // Photo albums get the same treatment, but they're not a single
-  // fixed-id list — renderAlbum() in app.js rebuilds a fresh
-  // .masonry grid per album category (and wipes #albumWrap
-  // entirely) any time a photo is added, an album is deleted, the
-  // language toggles, or Firebase pushes a sync update. So instead
-  // of wrapping once, we re-scan and wrap whatever's new every time
-  // albumWrap's contents change; build() already no-ops on grids
-  // that are already wrapped, so this stays cheap and idempotent.
-  function buildAlbumPanes() {
-    var wrap = document.getElementById("albumWrap");
-    if (!wrap) return;
-    wrap.querySelectorAll(".album-cat").forEach(function (catEl) {
-      var masonry = catEl.querySelector(".masonry");
-      if (!masonry) return;
-      var h3 = catEl.querySelector("h3");
-      var label = h3 ? h3.textContent : "Album";
-      var pane = build(masonry, label);
-      if (pane) pane.classList.add("album-pane");
-    });
-  }
-
-  function initAlbumPanes() {
-    var wrap = document.getElementById("albumWrap");
-    if (!wrap) return;
-    buildAlbumPanes();
-    if (!("MutationObserver" in window)) return;
-    var ticking = false;
-    new MutationObserver(function () {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(function () {
-        ticking = false;
-        buildAlbumPanes();
-      });
-    }).observe(wrap, { childList: true, subtree: true });
-  }
+  // Albums used to get this same inner-scroll treatment, but they now use
+  // a simple collapse/expand per album (see app.js renderAlbum() and the
+  // .album-collapsible rules in enhancements.css) with a plain, un-scrolled
+  // grid instead — so there's no album wrapping here anymore.
 
   function init() {
     PANES.forEach(function (cfg) {
       build(document.getElementById(cfg.id), cfg.label);
     });
-    initAlbumPanes();
   }
 
   if (document.readyState === "loading") {
