@@ -1112,11 +1112,238 @@ html[data-theme="dark"] .add-form-toggle:hover {
   background: rgba(255, 255, 255, 0.08);
 }
 
+/* The "+ Add a song ♥" toggle lands right after the playlist
+   description (#musicNote) with no gap of its own — .add-form-toggle's
+   margin is 0 on all sides, so the two sat edge-to-edge. Only the
+   music one gets extra breathing room here, since that's the pairing
+   that reads as cramped; the other three forms (calendar, photo
+   upload, new album) are unaffected. */
+#musicNote + .add-form-toggle {
+  margin-top: 26px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   #musicAddForm,
   #calAddForm,
   #memoryUploadForm,
   #albumCreateForm {
     transition: none;
+  }
+}
+
+
+/* ============================================================
+   SECTION 4 — PHOTO BOOTH POLISH
+   ------------------------------------------------------------
+   Cosmetic only: shadows, depth, hover states, and a couple of
+   entrance animations that ride on the [hidden] toggles app.js
+   already does. Nothing here adds, removes, or renames an element
+   app.js looks up, and nothing changes when/why a panel shows or
+   hides — nothing about the booth's behavior — only what it looks
+   like. Every other page already got this pass; this brings the
+   booth in line with it.
+   ============================================================ */
+
+/* ---- panels: give them the same depth as cards elsewhere ---- */
+.pb-panel {
+  box-shadow: var(--shadow-tiny);
+  transition:
+    box-shadow 0.3s ease,
+    transform 0.3s ease;
+}
+/* Panels toggle via the [hidden] attribute, which removes them from
+   the render tree — so re-showing one re-triggers this entrance
+   animation for free, no JS involved. */
+.pb-panel:not([hidden]) {
+  animation: pbPanelIn 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+@keyframes pbPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---- the two room-choice cards: same hover-lift language as
+   the bucket list / movie cards ---- */
+.pb-room-option {
+  border-radius: 16px;
+  transition:
+    box-shadow 0.28s ease,
+    transform 0.28s ease,
+    background 0.25s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .pb-room-option:hover {
+    box-shadow: var(--shadow-soft);
+    transform: translateY(-3px);
+    background: rgba(255, 255, 255, 0.5);
+  }
+  html[data-theme="dark"] .pb-room-option:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+}
+.pb-room-icon {
+  box-shadow: var(--shadow-tiny);
+  transition:
+    transform 0.28s ease,
+    box-shadow 0.28s ease;
+}
+.pb-room-option:hover .pb-room-icon {
+  transform: scale(1.08) rotate(-4deg);
+  box-shadow: var(--shadow-soft);
+}
+
+/* ---- booth code: reads like a ticket stub, not a form field ---- */
+.pb-room-code {
+  position: relative;
+  box-shadow: var(--shadow-tiny);
+  background: linear-gradient(150deg, var(--cream), var(--sage-dim));
+  animation: pbCodeIn 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+@keyframes pbCodeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+html[data-theme="dark"] .pb-room-code {
+  background: linear-gradient(150deg, var(--night), rgba(255, 255, 255, 0.04));
+}
+
+/* ---- live video stage: a soft frame instead of a flat box ---- */
+.pb-video-box {
+  box-shadow: var(--shadow-soft);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.pb-video-box::after {
+  /* A faint inner vignette — mimics the glass of a real camera
+     lens/viewfinder instead of a plain cropped rectangle. */
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.35);
+}
+.pb-video-label {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* ---- countdown: a steady pulse instead of a flat static number.
+   The 1s loop isn't hand-synced to the ticking JS, but since the
+   number only ever changes once per second, in practice it lands
+   close enough to read as intentional rather than coincidental. ---- */
+.pb-countdown-overlay span {
+  display: inline-block;
+  animation: pbCountdownPulse 1s ease-in-out infinite;
+}
+@keyframes pbCountdownPulse {
+  0% {
+    transform: scale(1);
+    text-shadow: 0 4px 24px rgba(0, 0, 0, 0.55);
+  }
+  30% {
+    transform: scale(1.18);
+    text-shadow:
+      0 4px 24px rgba(0, 0, 0, 0.55),
+      0 0 30px rgba(255, 255, 255, 0.5);
+  }
+  100% {
+    transform: scale(1);
+    text-shadow: 0 4px 24px rgba(0, 0, 0, 0.55);
+  }
+}
+
+/* ---- shot thumbnails: pop in as they're taken, lift on hover ---- */
+.pb-thumbs-row img {
+  box-shadow: var(--shadow-tiny);
+  animation: pbThumbIn 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+@keyframes pbThumbIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .pb-thumbs-row img:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: var(--shadow-soft);
+  }
+}
+
+/* ---- strip preview + theme swatches ---- */
+.pb-strip-canvas-wrap {
+  box-shadow: var(--shadow-lift);
+}
+.pb-theme-swatch {
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+}
+.pb-theme-swatch:hover {
+  transform: scale(1.06);
+  box-shadow: var(--shadow-soft);
+}
+.pb-theme-swatch.active {
+  box-shadow:
+    0 0 0 3px var(--cream),
+    0 0 0 5px var(--blush),
+    var(--shadow-tiny);
+}
+
+/* ---- buttons: the same lift the rest of the site's outline
+   buttons already have ---- */
+.pb-btn-outline {
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .pb-btn-outline:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-tiny);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pb-panel:not([hidden]),
+  .pb-room-code,
+  .pb-countdown-overlay span,
+  .pb-thumbs-row img {
+    animation: none;
+  }
+  .pb-panel,
+  .pb-room-option,
+  .pb-room-icon,
+  .pb-thumbs-row img,
+  .pb-theme-swatch,
+  .pb-btn-outline {
+    transition: none;
+  }
+  .pb-room-option:hover,
+  .pb-room-option:hover .pb-room-icon,
+  .pb-thumbs-row img:hover,
+  .pb-theme-swatch:hover,
+  .pb-btn-outline:hover {
+    transform: none;
   }
 }
