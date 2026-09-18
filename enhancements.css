@@ -247,6 +247,12 @@
 .album-collapsible.collapsed .album-cat-empty {
   display: none;
 }
+/* Delete ("✕") only makes sense once an album is open — closed albums
+   show just the title and chevron, so nothing looks deletable until
+   the person actually opens it up. */
+.album-collapsible.collapsed .album-del-btn {
+  display: none;
+}
 @media (prefers-reduced-motion: reduce) {
   .album-collapse-chevron,
   .album-collapse-toggle {

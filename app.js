@@ -4939,16 +4939,26 @@
       // #albumWrap from scratch on every change (new photo, language
       // toggle, Firebase sync, ...), so the open/closed state has to live
       // out here rather than on the DOM nodes, or it would reset every time.
-      // Everything starts collapsed so opening the tab doesn't kick off a
-      // burst of image loads for every album at once.
-      let collapsedAlbums = null; // null = "not seeded yet"
+      // Every album starts collapsed the first time we ever see its name —
+      // whether that's on the very first render or one added later (a
+      // brand-new album someone just created, or one synced in from
+      // Firebase) — so opening the tab (or creating an album) never kicks
+      // off a burst of image loads, and never leaves a fresh album sitting
+      // open by accident.
+      let collapsedAlbums = new Set();
+      let seenAlbumNames = new Set();
       function isAlbumCollapsed(name) {
-        if (!collapsedAlbums) collapsedAlbums = new Set();
         return collapsedAlbums.has(name);
       }
+      // Marks each name as collapsed the first time it's ever encountered;
+      // names we've already seen (including ones the person toggled open)
+      // are left alone.
       function seedCollapsedAlbums(names) {
-        if (collapsedAlbums) return; // only seed once, on first render
-        collapsedAlbums = new Set(names);
+        (names || []).forEach((name) => {
+          if (seenAlbumNames.has(name)) return;
+          seenAlbumNames.add(name);
+          collapsedAlbums.add(name);
+        });
       }
       function toggleAlbumCollapsed(catEl, name) {
         if (!collapsedAlbums) collapsedAlbums = new Set();
@@ -5120,10 +5130,11 @@
         const seen = { full: new Set(), files: new Set(), paths: new Set() };
         const staticNames = getStaticAlbumNames();
 
-        // Seed every album as collapsed the first time we ever render,
-        // so nothing is expanded (and no photos in it start loading)
-        // until the person opens it. Later renders leave whatever the
-        // person already opened/closed alone.
+        // Seed every album as collapsed the first time we ever see it —
+        // including a brand-new album created just now — so nothing is
+        // expanded (and no photos in it start loading) until the person
+        // opens it. Albums already seen keep whatever open/closed state
+        // the person left them in.
         const UNSORTED_KEY = "__unsorted__";
         seedCollapsedAlbums(
           [
@@ -14640,6 +14651,14 @@ function tpViewWorkout() {
           return document.getElementById(id);
         }
 
+        // Solo mode only ever has one camera feed, so the "Partner" video
+        // box is fully hidden (not just blank) and the remaining box is
+        // centered — see the .pb-solo-active rules in style.css.
+        function pbSetSoloVisualMode(isSolo) {
+          const row = document.querySelector("#tab-photobooth .pb-video-row");
+          if (row) row.classList.toggle("pb-solo-active", !!isSolo);
+        }
+
         function pbSetSyncPill(state) {
           const pill = pbEl("pbSyncPill");
           if (!pill) return;
@@ -15456,6 +15475,7 @@ function tpViewWorkout() {
 
           pbEl("pbSetup").hidden = true;
           pbEl("pbStage").hidden = false;
+          pbSetSoloVisualMode(pbSoloMode);
           pbShots = [];
           pbShotImages = [];
           const stageFilterSelect = pbEl("pbFilterSelectStage");
@@ -15496,6 +15516,7 @@ function tpViewWorkout() {
           pbConnected = false;
           pbCameraOn = false;
           pbSoloMode = false;
+          pbSetSoloVisualMode(false);
           pbRole = null;
         }
 
@@ -15668,12 +15689,29 @@ function tpViewWorkout() {
 
         function pbUpdateShotCounter() {
           const el = pbEl("pbShotCounter");
-          if (!el) return;
           const shown = Math.min(pbShots.length + 1, pbPoseCount);
-          el.textContent = pbT(
-            "Shot " + shown + " of " + pbPoseCount,
-            "Foto " + shown + " de " + pbPoseCount,
-          );
+          if (el) {
+            el.textContent = pbT(
+              "Shot " + shown + " of " + pbPoseCount,
+              "Foto " + shown + " de " + pbPoseCount,
+            );
+          }
+          pbRenderShotDots();
+        }
+
+        // Small "•••" progress row above the shot counter — filled dots for
+        // poses already captured, a highlighted dot for the one coming up.
+        function pbRenderShotDots() {
+          const wrap = pbEl("pbShotDots");
+          if (!wrap) return;
+          wrap.innerHTML = "";
+          const done = pbShots.length;
+          for (let i = 0; i < pbPoseCount; i++) {
+            const dot = document.createElement("span");
+            if (i < done) dot.className = "filled";
+            else if (i === done) dot.className = "current";
+            wrap.appendChild(dot);
+          }
         }
 
         function pbRenderThumbs() {

@@ -1123,7 +1123,7 @@
           <!-- ROOM ENTRY: this is deliberately shown before camera/settings -->
           <div class="pb-panel pb-room-panel" id="pbRoomGate">
             <div class="pb-room-choice" id="pbRoomChoice">
-              <div class="pb-room-option">
+              <div class="pb-room-option pb-room-card">
                 <span class="pb-room-icon">♥</span>
                 <h3>Join the same booth</h3>
                 <p>One person creates a booth code. The other enters that code to join the exact same session.</p>
@@ -1134,13 +1134,14 @@
                 <p class="pb-room-error" id="pbRoomError" aria-live="polite"></p>
               </div>
               <div class="pb-room-divider"><span>or</span></div>
-              <div class="pb-room-option">
+              <div class="pb-room-option pb-room-card">
                 <span class="pb-room-icon">✦</span>
                 <h3>Start a new booth</h3>
                 <p>Create a private six-character code and send it to the other person.</p>
                 <button type="button" class="btn" id="pbCreateRoomBtn">Create a new booth</button>
               </div>
               <div class="pb-room-solo">
+                <span class="pb-room-icon pb-room-icon-solo">☺</span>
                 <button type="button" class="pb-btn-outline" id="pbSoloStartBtn">Use solo mode</button>
                 <span>Take the photos yourself — no partner or connection needed.</span>
               </div>
@@ -1157,7 +1158,7 @@
           </div>
 
           <!-- CAMERA + SETTINGS (shown only after choosing solo/create/join) -->
-          <div class="pb-panel" id="pbSetup" hidden>
+          <div class="pb-panel pb-setup-panel" id="pbSetup" hidden>
             <div class="pb-setup-row">
               <label class="pb-field">
                 <span id="pbPosesLabel">Poses per strip</span>
@@ -1172,7 +1173,7 @@
                 <select id="pbFilterSelect"></select>
               </label>
             </div>
-            <button type="button" class="btn" id="pbStartBtn">
+            <button type="button" class="btn pb-start-btn" id="pbStartBtn">
               Turn on camera ♥
             </button>
             <p class="pb-hint" id="pbSetupHint">
@@ -1183,21 +1184,22 @@
           </div>
 
           <!-- LIVE STAGE -->
-          <div class="pb-panel" id="pbStage" hidden>
+          <div class="pb-panel pb-stage-panel" id="pbStage" hidden>
             <div class="pb-video-row">
               <div class="pb-video-box pb-local">
                 <video id="pbLocalVideo" autoplay playsinline muted></video>
-                <span class="pb-video-label" id="pbLocalLabel">You</span>
+                <span class="pb-video-label" id="pbLocalLabel"><span class="pb-video-dot" aria-hidden="true"></span>You</span>
               </div>
               <div class="pb-video-box pb-remote">
                 <video id="pbRemoteVideo" autoplay playsinline muted></video>
-                <span class="pb-video-label" id="pbRemoteLabel">Partner</span>
+                <span class="pb-video-label" id="pbRemoteLabel"><span class="pb-video-dot" aria-hidden="true"></span>Partner</span>
                 <div class="pb-video-status" id="pbRemoteStatus">
                   Waiting for partner…
                 </div>
               </div>
               <div class="pb-flash" id="pbFlash"></div>
               <div class="pb-countdown-overlay" id="pbCountdownOverlay" hidden>
+                <span class="pb-countdown-ring" aria-hidden="true"></span>
                 <span id="pbCountdownNum">3</span>
               </div>
             </div>
@@ -1207,10 +1209,13 @@
                 <span id="pbFilterLabelStage">Filter</span>
                 <select id="pbFilterSelectStage"></select>
               </label>
-              <p class="pb-shot-counter" id="pbShotCounter">Shot 1 of 4</p>
+              <div class="pb-shot-progress">
+                <p class="pb-shot-counter" id="pbShotCounter">Shot 1 of 4</p>
+                <div class="pb-shot-dots" id="pbShotDots" aria-hidden="true"></div>
+              </div>
               <div class="pb-thumbs-row" id="pbThumbsRow"></div>
               <div class="pb-btn-row">
-                <button type="button" class="btn" id="pbTakeBtn" disabled>
+                <button type="button" class="btn pb-take-btn" id="pbTakeBtn" disabled>
                   Start countdown 📸
                 </button>
                 <button
@@ -1241,51 +1246,67 @@
           </div>
 
           <!-- PREVIEW / ASSEMBLY -->
-          <div class="pb-panel" id="pbPreviewStage" hidden>
+          <div class="pb-panel pb-editor-panel" id="pbPreviewStage" hidden>
             <div class="pb-preview-layout">
               <div class="pb-strip-canvas-wrap">
+                <span class="pb-tape pb-tape-left" aria-hidden="true"></span>
+                <span class="pb-tape pb-tape-right" aria-hidden="true"></span>
                 <canvas id="pbStripCanvas"></canvas>
               </div>
               <div class="pb-preview-controls">
-                <p class="pb-controls-label" id="pbBgColorLabelRow">Background color</p>
-                <label class="pb-color-label pb-color-label-solo">
-                  <span id="pbBgColorLabel">Pick any color</span>
-                  <input type="color" id="pbBgColorInput" value="#ffffff" />
-                </label>
+                <div class="pb-editor-section">
+                  <p class="pb-controls-label" id="pbBgColorLabelRow"><span class="pb-section-icon" aria-hidden="true">🎨</span>Background color</p>
+                  <label class="pb-color-label pb-color-label-solo">
+                    <span class="pb-color-swatch-frame">
+                      <input type="color" id="pbBgColorInput" value="#ffffff" />
+                    </span>
+                    <span id="pbBgColorLabel">Pick any color</span>
+                  </label>
+                </div>
 
-                <p class="pb-controls-label" id="pbBorderLabel">Pattern</p>
-                <div class="pb-theme-swatches" id="pbThemeSwatches"></div>
+                <div class="pb-editor-section">
+                  <p class="pb-controls-label" id="pbBorderLabel"><span class="pb-section-icon" aria-hidden="true">✨</span>Pattern</p>
+                  <div class="pb-theme-swatches" id="pbThemeSwatches"></div>
 
-                <label class="pb-color-label" id="pbPatternColorRow" hidden>
-                  <span id="pbPatternColorLabel">Pattern &amp; frame color</span>
-                  <input type="color" id="pbPatternColorInput" value="#111111" />
-                </label>
+                  <label class="pb-color-label" id="pbPatternColorRow" hidden>
+                    <span class="pb-color-swatch-frame">
+                      <input type="color" id="pbPatternColorInput" value="#111111" />
+                    </span>
+                    <span id="pbPatternColorLabel">Pattern &amp; frame color</span>
+                  </label>
+                </div>
 
-                <label class="pb-polaroid-toggle">
-                  <input type="checkbox" id="pbPolaroidToggle" />
-                  <span id="pbPolaroidLabel">Polaroid style (no frame border)</span>
-                </label>
-                <label class="pb-caption-label">
-                  <span id="pbCaptionLabel">Caption (optional)</span>
-                  <input
-                    type="text"
-                    id="pbCaptionInput"
-                    maxlength="40"
-                    placeholder="Us · 2026"
-                  />
-                </label>
-                <div class="pb-btn-row">
-                  <button type="button" class="btn" id="pbDownloadBtn">
-                    Download strip
+                <div class="pb-editor-section pb-editor-section-tight">
+                  <label class="pb-polaroid-toggle">
+                    <input type="checkbox" id="pbPolaroidToggle" />
+                    <span class="pb-switch" aria-hidden="true"></span>
+                    <span id="pbPolaroidLabel">Polaroid style (no frame border)</span>
+                  </label>
+                  <label class="pb-caption-label">
+                    <span id="pbCaptionLabel">Caption (optional)</span>
+                    <input
+                      type="text"
+                      id="pbCaptionInput"
+                      maxlength="40"
+                      placeholder="Us · 2026"
+                    />
+                  </label>
+                </div>
+
+                <div class="pb-editor-actions">
+                  <div class="pb-btn-row">
+                    <button type="button" class="btn pb-download-btn" id="pbDownloadBtn">
+                      <span class="pb-btn-icon" aria-hidden="true">⬇</span>Download strip
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    class="pb-btn-outline pb-new-strip-btn"
+                    id="pbNewStripBtn"
+                  >
+                    Start a new booth
                   </button>
                 </div>
-                <button
-                  type="button"
-                  class="pb-btn-outline"
-                  id="pbNewStripBtn"
-                >
-                  Start a new booth
-                </button>
               </div>
             </div>
           </div>
