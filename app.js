@@ -8643,7 +8643,13 @@
             encodeURIComponent(scUrl) +
             "&color=%234F6F52&auto_play=true&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false";
           embed.classList.add("soundcloud");
-          embed.innerHTML = `<iframe id="musicEmbedFrame" scrolling="no" frameborder="no" allow="autoplay" src="${playerUrl}" title="${song.title}" loading="lazy"></iframe>`;
+          // No loading="lazy" here: unlike the initial pick made from the
+          // visible Music tab, "next"/"prev" from the floating mini player
+          // can create this iframe while the Music tab panel is
+          // display:none — a lazy iframe never loads in that case, since
+          // the browser only fetches it once it's actually visible on
+          // screen, so playback would silently never start.
+          embed.innerHTML = `<iframe id="musicEmbedFrame" scrolling="no" frameborder="no" allow="autoplay" src="${playerUrl}" title="${song.title}"></iframe>`;
           musicInitSoundCloudPlayer(document.getElementById("musicEmbedFrame"), gen);
           const openLink = document.getElementById("musicOpenLink");
           openLink.href = scUrl.startsWith("http")
