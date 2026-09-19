@@ -1919,81 +1919,84 @@
         <p id="tpCrashRevealText"></p>
         <button type="button" id="tpCrashCloseBtn">Try again</button>
       </div>
+    </div>
 
-      <!-- Persistent background-music mini player. Lives outside every
-           tab panel so it survives switching tabs; JS shows/hides it
-           based on whether something is playing and whether the person
-           is currently on the Music tab itself (see musicUpdateMiniVisibility
-           in app.js). Hidden by default. -->
-      <div class="music-mini-player" id="musicMiniPlayer" hidden>
-        <button
-          type="button"
-          class="music-mini-collapse"
-          id="musicMiniCollapseBtn"
-          aria-label="Minimize player"
-          title="Minimize"
-        >
-          ⌄
-        </button>
-        <div class="music-mini-cover" id="musicMiniCover" aria-hidden="true">
-          <div class="music-mini-cover-disc"></div>
-        </div>
-        <div class="music-mini-info">
-          <div class="music-mini-title" id="musicMiniTitle"></div>
-          <div class="music-mini-artist" id="musicMiniArtist"></div>
-        </div>
-        <div class="music-mini-controls">
-          <button
-            type="button"
-            class="music-mini-btn"
-            id="musicMiniPrevBtn"
-            aria-label="Previous song"
-            title="Previous"
-          >
-            ⏮
-          </button>
-          <button
-            type="button"
-            class="music-mini-btn music-mini-play-btn"
-            id="musicMiniPlayBtn"
-            aria-label="Play or pause"
-            title="Play/Pause"
-          >
-            ⏸
-          </button>
-          <button
-            type="button"
-            class="music-mini-btn"
-            id="musicMiniNextBtn"
-            aria-label="Next song"
-            title="Next"
-          >
-            ⏭
-          </button>
-        </div>
-        <button
-          type="button"
-          class="music-mini-stop"
-          id="musicMiniStopBtn"
-          aria-label="Stop music"
-          title="Stop"
-        >
-          ✕
-        </button>
-      </div>
-      <!-- Small reopen nub, shown only while the mini player has been
-           manually minimized but a song is still playing. -->
+    <!-- Persistent background-music mini player. Lives outside every
+         tab panel — and outside #tpCrashOverlay, which sits at
+         opacity:0/pointer-events:none until an actual crash — so it
+         survives switching tabs and is actually visible/clickable. JS
+         shows/hides it based on whether something is playing and
+         whether the person is currently on the Music tab itself (see
+         musicUpdateMiniVisibility in app.js). Hidden by default. -->
+    <div class="music-mini-player" id="musicMiniPlayer" hidden>
       <button
         type="button"
-        class="music-mini-nub"
-        id="musicMiniNub"
-        hidden
-        aria-label="Reopen music player"
-        title="Reopen music player"
+        class="music-mini-collapse"
+        id="musicMiniCollapseBtn"
+        aria-label="Minimize player"
+        title="Minimize"
       >
-        <span class="music-mini-nub-icon" aria-hidden="true">♪</span>
+        ⌄
+      </button>
+      <div class="music-mini-cover" id="musicMiniCover" aria-hidden="true">
+        <div class="music-mini-cover-disc"></div>
+      </div>
+      <div class="music-mini-info">
+        <div class="music-mini-title" id="musicMiniTitle"></div>
+        <div class="music-mini-artist" id="musicMiniArtist"></div>
+      </div>
+      <div class="music-mini-controls">
+        <button
+          type="button"
+          class="music-mini-btn"
+          id="musicMiniPrevBtn"
+          aria-label="Previous song"
+          title="Previous"
+        >
+          ⏮
+        </button>
+        <button
+          type="button"
+          class="music-mini-btn music-mini-play-btn"
+          id="musicMiniPlayBtn"
+          aria-label="Play or pause"
+          title="Play/Pause"
+        >
+          ⏸
+        </button>
+        <button
+          type="button"
+          class="music-mini-btn"
+          id="musicMiniNextBtn"
+          aria-label="Next song"
+          title="Next"
+        >
+          ⏭
+        </button>
+      </div>
+      <button
+        type="button"
+        class="music-mini-stop"
+        id="musicMiniStopBtn"
+        aria-label="Stop music"
+        title="Stop"
+      >
+        ✕
       </button>
     </div>
+    <!-- Small reopen nub, shown only while the mini player has been
+         manually minimized but a song is still playing. -->
+    <button
+      type="button"
+      class="music-mini-nub"
+      id="musicMiniNub"
+      hidden
+      aria-label="Reopen music player"
+      title="Reopen music player"
+    >
+      <span class="music-mini-nub-icon" aria-hidden="true">♪</span>
+    </button>
+
 
     <script src="app.js"></script>
     <script src="enhancements.js"></script>
