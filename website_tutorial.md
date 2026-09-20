@@ -17,7 +17,10 @@ girlfriend-website/
 ├── style.css           ← Design (colors, fonts, layout, animations)
 ├── app.js              ← Logic + CONFIG (almost everything you edit lives here)
 ├── gate.js             ← Password gate (the lock screen)
+├── photobooth-studio.js  ← Photo Booth strip editor (stickers, text, filters…)
+├── photobooth-studio.css ← Design for the strip editor
 ├── photos/             ← Your images
+├── stickers/           ← Your Photo Booth stickers (transparent PNGs)
 ├── news-backend/       ← Optional Cloudflare Worker for better news
 ├── .github/workflows/  ← Automatic deploy + secret injection
 ├── firebase_setup.md   ← How to connect Firebase (sync)
@@ -34,6 +37,7 @@ girlfriend-website/
 | `style.css` | All visual design (colors, spacing, fonts)   | Only for design tweaks|
 | `app.js`    | **CONFIG** + all interactive features        | **Yes — main file**   |
 | `gate.js`   | Password lock screen                         | Only to change password|
+| `photobooth-studio.js` / `.css` | The Photo Booth strip editor | Almost never          |
 
 **Most of the time you only need to open `app.js` and edit the `CONFIG` object.**
 
@@ -57,10 +61,14 @@ Girlfriend Website/
 ├── style.css
 ├── app.js              ← edit CONFIG here
 ├── gate.js
+├── photobooth-studio.js   (Photo Booth editor — no need to edit)
+├── photobooth-studio.css
 ├── photos/
 │   ├── hero.jpeg
 │   ├── final.jpeg
 │   └── ... (all your album photos)
+├── stickers/
+│   └── ... (your Photo Booth sticker PNGs)
 ├── news-backend/       (optional)
 └── .github/
     └── workflows/
@@ -155,6 +163,72 @@ photos: {
   final: "photos/final.jpeg",
 },
 ```
+
+### Photo Booth stickers
+
+After you take your Photo Booth photos, the strip opens in an editor. Its
+**Stickers** tab shows emoji plus any stickers **you** add. Adding them works
+just like photos: put the files in a folder, then list them in `CONFIG`.
+
+```javascript
+photoBoothStickers: [
+  "stickers/heart.png",
+  "stickers/bow.png",
+],
+```
+
+**Step by step:**
+
+1. **Get your stickers as PNG files with a transparent background** (only use
+   images you made or that you're allowed to use). Small files are best —
+   roughly 300–600 px wide is plenty.
+2. **Put them in the `stickers/` folder** of the project, next to `photos/`.
+   Short names with no capitals or spaces (`heart.png`, `pink-bow.png`) save
+   you trouble.
+3. **Copy the file names.** Open Terminal (Mac), go into the stickers folder,
+   and run:
+
+   ```bash
+   cd path/to/girlfriend-website/stickers
+   ls -1 | pbcopy
+   ```
+
+   `ls -1` lists one file name per line and `pbcopy` puts that list on your
+   clipboard, ready to paste. (`pbcopy` is Mac-only. On Windows use
+   `dir /b | clip` in Command Prompt.)
+
+   **Shortcut that writes the list for you:** run this from the *project*
+   folder (not inside `stickers/`) and it copies each name already wrapped in
+   quotes with the folder path and a comma, ready to paste straight into the
+   list:
+
+   ```bash
+   ls -1 stickers | sed 's|.*|  "stickers/&",|' | pbcopy
+   ```
+
+4. **Paste them into `photoBoothStickers` in `app.js`.** If you used the plain
+   `ls -1 | pbcopy` command, each name needs `"stickers/` in front, `"` after
+   it, and a comma at the end, like `"stickers/heart.png",`. The shortcut
+   command above already does this.
+5. **Bump `CACHE_VERSION`** in `service-worker.js` (see section 9), then
+   commit and push. The stickers appear on every device after the deploy
+   finishes, under **Stickers → My stickers ⭐**.
+
+**Good to know**
+
+- The names in the list must match the files **exactly**, including capital
+  letters and the `.png` ending. A sticker that isn't in the list (or is
+  spelled differently) won't show up.
+- Only the images you list are used. Leaving extra files in the folder is
+  harmless.
+- Each time you add or remove a sticker, update the list again (re-run the
+  copy command — it always copies everything in the folder).
+- To remove a sticker, delete its line from `photoBoothStickers` (and the file
+  if you like).
+- In the editor, a sticker can also get a white cut-out outline: tap it, then
+  switch on **White cut-out outline**.
+- Stickers don't need Firebase or Cloudinary — they're just files on your
+  site.
 
 ### Things I Miss / You Made Me Better / Little Things
 
@@ -645,6 +719,7 @@ After saving `style.css`, refresh the website to see your changes.
 | `reunionDate`        | Countdown target                          |
 | `myLocation` / `herLocation` | Cities + weather                   |
 | `photos`             | Hero & final photos                       |
+| `photoBoothStickers` | Sticker files for the Photo Booth editor  |
 | `thingsIMiss`        | Things you miss                           |
 | `youMadeMeBetter`    | How she made you better                   |
 | `littleThings`       | Small things you love                     |
@@ -674,7 +749,7 @@ Your job is simply:
 1. Open `app.js`
 2. Find `const CONFIG = {`
 3. Personalize the content
-4. Add photos to the `photos/` folder
+4. Add photos to the `photos/` folder (and Photo Booth stickers to `stickers/`)
 5. (Optional) Set up Firebase + Cloudinary once
 6. Push to GitHub → the site updates automatically
 
