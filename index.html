@@ -23,18 +23,15 @@
     <link rel="icon" type="image/jpeg" href="photos/icon.jpeg" />
     <link rel="manifest" href="manifest.json" />
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
-    <meta name="theme-color" content="#4f6f52" />
+    <meta name="theme-color" content="#f2f6f3" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="For You" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Dancing+Script:wght@500;700&family=Karla:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <!-- Fonts are local: SF Pro on Apple devices, each device's own system font elsewhere. No external font host. -->
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="enhancements.css" />
     <link rel="stylesheet" href="photobooth-studio.css" />
+    <link rel="stylesheet" href="modern.css" />
     <!-- Firebase — only used for the Bucket List's cross-device sync.
      Nothing loads or runs unless CONFIG.firebase below is filled in. -->
     <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
@@ -140,6 +137,7 @@
             </div>
           </div>
         </nav>
+        <div class="nav-actions">
         <div class="lang-switch" aria-label="Language selector">
           <button
             class="lang-btn"
@@ -170,6 +168,8 @@
         <button class="hamburger" id="hamburgerBtn" aria-label="Open menu">
           <span></span><span></span><span></span>
         </button>
+      
+        </div>
       </div>
       <div class="mobile-menu" id="mobileMenu">
         <div class="lang-switch" aria-label="Language selector">
@@ -558,7 +558,7 @@
               Choose which album it belongs to.
             </p>
             <span
-              class="bucket-sync-pill"
+              class="bucket-sync-pill" tabindex="0"
               id="memoriesSyncPill"
               style="margin-bottom: 16px"
             ></span>
@@ -754,7 +754,7 @@
             try, and the little (and big) adventures we're saving for each
             other.
           </p>
-          <span class="bucket-sync-pill" id="bucketSyncPill"></span>
+          <span class="bucket-sync-pill" tabindex="0" id="bucketSyncPill"></span>
 
           <div
             class="bucket-progress"
@@ -798,7 +798,7 @@
             </div>
 
             <p class="bucket-intro">Search for a movie to add it to our watchlist, then move it over and rate it together once we've actually watched it.</p>
-            <span class="bucket-sync-pill" id="moviesSyncPill"></span>
+            <span class="bucket-sync-pill" tabindex="0" id="moviesSyncPill"></span>
 
             <div class="movie-search-row">
               <input
@@ -929,7 +929,7 @@
             </p>
           </div>
 
-          <span class="music-sync-pill local" id="musicSyncPill"></span>
+          <span class="music-sync-pill local" tabindex="0" id="musicSyncPill"></span>
 
           <div class="music-copyright-banner" id="musicCopyrightBanner">
             <div style="flex: 1">
@@ -1119,7 +1119,7 @@
             </p>
           </div>
 
-          <div class="bucket-sync-pill" id="pbSyncPill">🟡 Choose how you want to use the booth</div>
+          <div class="bucket-sync-pill" tabindex="0" id="pbSyncPill">🟡 Choose how you want to use the booth</div>
 
           <!-- ROOM ENTRY: this is deliberately shown before camera/settings -->
           <div class="pb-panel pb-room-panel" id="pbRoomGate">
@@ -1336,7 +1336,7 @@
           </div>
 
           <span
-            class="bucket-sync-pill cal-sync-pill local"
+            class="bucket-sync-pill cal-sync-pill local" tabindex="0"
             id="calSyncPill"
           ></span>
 
@@ -1501,7 +1501,7 @@
             </p>
           </div>
           <span
-            class="bucket-sync-pill"
+            class="bucket-sync-pill" tabindex="0"
             id="daycardsSyncPill"
             style="display: block; text-align: center; margin: 0 auto 20px"
           ></span>
@@ -1607,7 +1607,7 @@
         <div class="container">
           <div class="section-head">
             <p class="eyebrow">A little collection, just for us</p>
-            <h2>🎴 Our Games</h2>
+            <h2>Our Games</h2>
             <p>Five decks, five different feelings. Pick one and draw a card.</p>
           </div>
 

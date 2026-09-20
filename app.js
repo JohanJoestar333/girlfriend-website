@@ -3869,7 +3869,7 @@ function applyTheme(theme) {
   else document.documentElement.removeAttribute("data-theme");
   const metaTheme = document.querySelector('meta[name="theme-color"]');
   if (metaTheme)
-    metaTheme.setAttribute("content", dark ? "#12161c" : "#4f6f52");
+    metaTheme.setAttribute("content", dark ? "#000000" : "#f2f6f3");
   const label = dark
     ? currentLanguage() === "pt"
       ? "Modo claro"
