@@ -27,6 +27,12 @@
           final: "photos/final.jpeg",
         },
 
+        // Photo Booth editor stickers. Drop transparent PNGs into the stickers/
+        // folder, then list them here like photos, e.g.
+        //   photoBoothStickers: ["stickers/heart.png", "stickers/bow.png"],
+        // They appear under Stickers → My stickers, on every device.
+        photoBoothStickers: [],
+
         // News backend (Cloudflare Worker). After deploy, paste your URL here:
         // e.g. "https://gf-news.YOUR_SUBDOMAIN.workers.dev"  (no trailing slash)
         // Leave "" to use public CORS proxies as fallback.
@@ -15043,6 +15049,22 @@ function tpViewWorkout() {
           return document.getElementById(id);
         }
 
+        // What the strip editor (photobooth-studio.js) needs from the booth:
+        // the captured shots, whether it was a solo session, translations,
+        // and a way back to the start.
+        window.PBStudioBridge = {
+          getShots: function () { return pbShotImages; },
+          isSolo: function () { return pbSoloMode; },
+          stickerFiles: function () { return CONFIG.photoBoothStickers || []; },
+          t: pbT,
+          defaultCaption: function () {
+            return CONFIG.names && CONFIG.names.me && CONFIG.names.her
+              ? CONFIG.names.me + " ♥ " + CONFIG.names.her
+              : "Photo Booth";
+          },
+          onNewBooth: function () { pbResetToSetup(); },
+        };
+
         // Solo mode only ever has one camera feed, so the "Partner" video
         // box is fully hidden (not just blank) and the remaining box is
         // centered — see the .pb-solo-active rules in style.css.
@@ -16160,6 +16182,9 @@ function tpViewWorkout() {
         }
 
         function pbRenderStripPreview() {
+          // The strip editor draws and edits the strip. If it didn't load,
+          // fall through to the original preview below.
+          if (window.PBStudio && window.PBStudio.refresh()) return;
           const canvas = pbEl("pbStripCanvas");
           if (!canvas || pbShotImages.length === 0) return;
           const pad = 18;
@@ -16239,6 +16264,7 @@ function tpViewWorkout() {
         // screen showing — rather than dropping the user back into a live
         // stage with the cameras already running.
         function pbResetToSetup() {
+          if (window.PBStudio) window.PBStudio.reset();
           pbStopCamera();
           pbShots = [];
           pbShotImages = [];
@@ -16350,6 +16376,7 @@ function tpViewWorkout() {
         };
 
         window.pbOnLeaveTab = function () {
+          if (window.PBStudio) window.PBStudio.reset();
           pbStopCamera();
           const gate = pbEl("pbRoomGate");
           const setup = pbEl("pbSetup");

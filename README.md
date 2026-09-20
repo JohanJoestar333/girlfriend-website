@@ -66,10 +66,13 @@ girlfriend-website/
 ├── style.css               # All design (colors, layout, animations)
 ├── app.js                  # CONFIG + all interactive logic  ← edit this most
 ├── gate.js                 # Password lock screen
+├── photobooth-studio.js    # Photo Booth strip editor (stickers, text, filters, backdrop, export)
+├── photobooth-studio.css   # Styles for the strip editor
 ├── manifest.json           # PWA app name/icon/colors (installable app)
 ├── service-worker.js       # PWA offline caching — bump CACHE_VERSION on code changes!
 ├── icons/                  # Generated app icons (PWA + Apple touch icon)
 ├── photos/                 # Static images used by the site
+├── stickers/               # Your Photo Booth stickers (transparent PNGs)
 ├── news-backend/           # Optional Cloudflare Worker for news
 ├── .github/workflows/      # GitHub Actions deploy + secret injection
 ├── website_tutorial.md     # Full beginner-friendly guide
@@ -148,6 +151,33 @@ This is intentionally a lightweight “while you were away” system, not a push
 ## 📸 Photo Booth across different networks
 
 The Photo Booth provides a live browser-to-browser video call. When both people are on the same wifi it can usually connect directly; across different networks (for example, wifi ↔ mobile data), a TURN relay may be needed. Follow **`metered_turn_setup.md`** to configure the optional Metered TURN relay for reliable cross-network calls.
+
+---
+
+## 🎞️ Photo Booth strip editor
+
+After the photos are taken, the strip opens in an editor (`photobooth-studio.js` + `photobooth-studio.css`):
+
+- **Tabs:** Frame · Stickers · Text · Dot art · Filters · Spot · Backdrop
+- **Toolbar:** Undo/Redo, Zoom, Eye line, Gutters, Cut strip, Reset
+- **Move things:** drag to move, pull the corner to resize, top handle to rotate, arrow keys to nudge, `Delete` to remove, `Ctrl/Cmd + Z` to undo, pinch on a touch screen
+- **Export:** Download PNG (1080×1920 when a backdrop is on)
+- If the editor script ever fails to load, the original strip preview is shown instead.
+
+### Adding your own stickers
+
+The Stickers tab has emoji plus whatever stickers you add yourself.
+
+Works like photos: put the file in a folder, then list it in `CONFIG`.
+
+1. Save transparent PNGs into the `stickers/` folder (only use images you made or have the right to use).
+2. In `app.js`, add them to `CONFIG.photoBoothStickers`:
+   ```js
+   photoBoothStickers: ["stickers/heart.png", "stickers/bow.png"],
+   ```
+3. Bump `CACHE_VERSION` in `service-worker.js`, commit and push.
+
+They show up under **Stickers → My stickers ⭐** on every device.
 
 ---
 

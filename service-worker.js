@@ -4,7 +4,7 @@
   Bump CACHE_VERSION whenever you deploy a change to make sure everyone's
   browser drops the old cached files instead of getting stuck on them.
 */
-const CACHE_VERSION = "v1.2.5";
+const CACHE_VERSION = "v1.2.6";
 const CORE_CACHE = "for-you-core-" + CACHE_VERSION;
 const RUNTIME_CACHE = "for-you-runtime-" + CACHE_VERSION;
 
@@ -16,6 +16,8 @@ const CORE_ASSETS = [
   "./index.html",
   "./style.css",
   "./app.js",
+  "./photobooth-studio.js",
+  "./photobooth-studio.css",
   "./gate.js",
   "./manifest.json",
   "./icons/icon-192.png",

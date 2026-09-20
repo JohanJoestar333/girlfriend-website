@@ -34,6 +34,7 @@
     />
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="enhancements.css" />
+    <link rel="stylesheet" href="photobooth-studio.css" />
     <!-- Firebase — only used for the Bucket List's cross-device sync.
      Nothing loads or runs unless CONFIG.firebase below is filled in. -->
     <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
@@ -1247,6 +1248,11 @@
 
           <!-- PREVIEW / ASSEMBLY -->
           <div class="pb-panel pb-editor-panel" id="pbPreviewStage" hidden>
+            <!-- The strip editor (photobooth-studio.js) mounts into #pbStudioRoot.
+                 The original editor below stays as a fallback and is hidden as
+                 soon as the studio loads. -->
+            <div id="pbStudioRoot"></div>
+            <div id="pbLegacyEditor">
             <div class="pb-preview-layout">
               <div class="pb-strip-canvas-wrap">
                 <span class="pb-tape pb-tape-left" aria-hidden="true"></span>
@@ -1308,6 +1314,7 @@
                   </button>
                 </div>
               </div>
+            </div>
             </div>
           </div>
 
@@ -2000,6 +2007,7 @@
 
     <script src="app.js"></script>
     <script src="enhancements.js"></script>
+    <script src="photobooth-studio.js"></script>
     <script>
       // Registers the service worker so the site can be installed as an app
       // and its core files work offline. Safe no-op in browsers/contexts
