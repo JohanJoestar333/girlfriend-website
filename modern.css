@@ -1868,3 +1868,158 @@ html[data-theme="dark"] .tp-filter-field select {
   border-color: transparent;
   color: var(--ink);
 }
+
+
+/* =========================================================================
+   PHOTO BOOTH EDITOR (the .pbs-* styles in photobooth-studio.css)
+   ========================================================================= */
+.pbs { font-size: 0.9rem; }
+.pbs-toolbar, html[data-theme="dark"] .pbs-toolbar {
+  background: var(--surface);
+  border: 0;
+  border-radius: 22px;
+  padding: 14px 16px;
+}
+.pbs-slider { font-weight: 500; }
+.pbs-slabel { font-size: 0.8rem; }
+
+/* buttons */
+.pbs-ibtn, .pbs-tbtn, .pbs-sbtn,
+html[data-theme="dark"] .pbs-ibtn, html[data-theme="dark"] .pbs-tbtn, html[data-theme="dark"] .pbs-sbtn {
+  background: var(--field);
+  color: var(--ink);
+  border: 0;
+  font-weight: 600;
+  letter-spacing: -0.008em;
+}
+.pbs-ibtn:hover:not(:disabled), .pbs-tbtn:hover:not(:disabled), .pbs-sbtn:hover:not(:disabled) { background: var(--line-strong); }
+.pbs-tbtn.on, html[data-theme="dark"] .pbs-tbtn.on { background: var(--green); color: var(--on-accent); border: 0; }
+.pbs-sbtn.danger, html[data-theme="dark"] .pbs-sbtn.danger { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); border: 0; }
+
+/* the work surface behind the strip: calm neutral, no dotted beige */
+.pbs-stage, html[data-theme="dark"] .pbs-stage {
+  background: var(--cream-dim);
+  border: 0;
+  border-radius: 28px;
+}
+html[data-theme="dark"] .pbs-stage { background: #0d0f0e; }
+.pbs-canvas { filter: drop-shadow(0 14px 22px rgba(0, 0, 0, 0.22)); }
+.pbs-hint { color: var(--ink-soft); }
+
+/* panel */
+.pbs-sheet, html[data-theme="dark"] .pbs-sheet {
+  background: var(--surface);
+  border: 0;
+  border-radius: 28px;
+  box-shadow: none;
+}
+.pbs-tabs, html[data-theme="dark"] .pbs-tabs {
+  background: transparent;
+  border-bottom: 0.5px solid var(--line);
+  padding: 12px 14px;
+  gap: 4px;
+}
+.pbs-tab { font-weight: 600; letter-spacing: -0.01em; color: var(--ink-soft); padding-left: 14px; padding-right: 14px; }
+.pbs-tab:hover { background: var(--field); }
+.pbs-tab.on, html[data-theme="dark"] .pbs-tab.on { background: var(--green); color: var(--on-accent); }
+.pbs-tab-ic { display: none; }            /* text-only tabs, like the main navigation */
+.pbs-glabel { color: var(--ink); font-weight: 600; font-size: 0.85rem; letter-spacing: -0.01em; }
+.pbs-note { color: var(--ink-soft); }
+
+/* chips */
+.pbs-chip, html[data-theme="dark"] .pbs-chip {
+  background: var(--field);
+  border: 0;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+.pbs-chip:hover { background: var(--line-strong); color: var(--ink); }
+.pbs-chip.on, html[data-theme="dark"] .pbs-chip.on { background: var(--sage-dim); color: var(--green-deep); border: 0; }
+
+/* fields */
+.pbs-input, .pbs-select, html[data-theme="dark"] .pbs-input, html[data-theme="dark"] .pbs-select {
+  background-color: var(--field);
+  border: 1px solid transparent;
+  color: var(--ink);
+}
+.pbs-input:focus, .pbs-select:focus { background-color: var(--surface); border-color: var(--green); outline: none; box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 22%, transparent); }
+
+/* swatches, styles, patterns, presets */
+.pbs-swatch, .pbs-solid { border: 0; box-shadow: 0 0 0 0.5px var(--line-strong); }
+.pbs-swatch:hover, .pbs-solid:hover { transform: scale(1.08); }
+.pbs-swatch.on, .pbs-solid.on { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--green); }
+.pbs-style, html[data-theme="dark"] .pbs-style { background: var(--field); border: 0; border-radius: 14px; }
+.pbs-style.on { box-shadow: 0 0 0 2px var(--green); border: 0; }
+.pbs-pattern { border: 0; border-radius: 14px; box-shadow: 0 0 0 0.5px var(--line-strong); }
+.pbs-pattern:hover, .pbs-preset:hover { transform: none; }
+.pbs-pattern.on { border: 0; box-shadow: 0 0 0 2.5px var(--green); }
+.pbs-preset { border: 0; border-radius: 14px; box-shadow: 0 0 0 0.5px var(--line-strong); }
+.pbs-car-btn { background: var(--field); border: 0; color: var(--ink); }
+.pbs-car-btn:hover { background: var(--line-strong); }
+.pbs-filter:hover, .pbs-pic:hover { background: var(--field); }
+.pbs-filter.on, .pbs-pic.on { border-color: transparent; background: var(--sage-dim); box-shadow: 0 0 0 2px var(--green); color: var(--ink); }
+.pbs-filter canvas { background: var(--field); }
+.pbs-pic canvas { box-shadow: 0 0 0 0.5px var(--line-strong); }
+
+/* stickers: borderless tiles (no white/grey outline) */
+.pbs-sticker, html[data-theme="dark"] .pbs-sticker {
+  background: var(--field);
+  border: 0;
+  border-radius: 18px;
+}
+.pbs-sticker:hover { transform: none; background: var(--sage-dim); }
+.pbs-sticker:active { transform: scale(0.96); }
+.pbs-sel-only { border-top: 0.5px solid var(--line-strong); }
+.pbs-cut-hint, html[data-theme="dark"] .pbs-cut-hint { color: var(--green-deep); }
+.pbs-status { color: var(--ink-soft); }
+.pbs-add { font-weight: 600; }
+
+
+/* =========================================================================
+   CLEAN-UPS
+   ========================================================================= */
+
+/* bucket list: the intro sat under a double gap (heading margin + intro margin) */
+.section-head + .bucket-intro { margin-top: -20px; }
+
+/* Music: quiet neutral note instead of a loud pink banner */
+.music-copyright-banner, html[data-theme="dark"] .music-copyright-banner {
+  background: var(--field);
+  color: var(--ink-soft);
+  border-radius: 16px;
+  padding: 12px 16px;
+  font-size: 0.86rem;
+}
+.music-copyright-banner strong { color: var(--ink); font-weight: 600; }
+
+/* Music: the playlist scrolls inside its own box, so a long song list never
+   pushes the page down. Soft shadows appear at whichever edge has more to scroll. */
+.music-track-list {
+  max-height: min(430px, 62vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120, 120, 128, 0.4) transparent;
+  background-color: var(--surface);
+  background-image:
+    linear-gradient(var(--surface) 30%, transparent),
+    linear-gradient(transparent, var(--surface) 70%),
+    radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, 0.16), transparent),
+    radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, 0.16), transparent);
+  background-position: top, bottom, top, bottom;
+  background-size: 100% 28px, 100% 28px, 100% 12px, 100% 12px;
+  background-repeat: no-repeat;
+  background-attachment: local, local, scroll, scroll;
+}
+html[data-theme="dark"] .music-track-list {
+  background-image:
+    linear-gradient(var(--surface) 30%, transparent),
+    linear-gradient(transparent, var(--surface) 70%),
+    radial-gradient(farthest-side at 50% 0, rgba(255, 255, 255, 0.1), transparent),
+    radial-gradient(farthest-side at 50% 100%, rgba(255, 255, 255, 0.1), transparent);
+}
+.music-track-list::-webkit-scrollbar { width: 10px; }
+.music-track-list::-webkit-scrollbar-thumb { background: rgba(120, 120, 128, 0.4); border: 3px solid transparent; background-clip: padding-box; border-radius: 10px; }
+.music-track-list { position: relative; }
+.music-track .track-num { font-family: var(--font); font-variant-numeric: tabular-nums; letter-spacing: 0; font-size: 0.85rem; }

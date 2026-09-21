@@ -392,9 +392,9 @@
   ------------------------------------------------------------------ */
   var STICKERS = [];
   var STICKER_CATS = [
-    { id: "all", en: "All ✨", pt: "Todos ✨" },
-    { id: "emoji", en: "Emoji 😊", pt: "Emoji 😊" },
-    { id: "mine", en: "My stickers ⭐", pt: "Os meus ⭐" }
+    { id: "all", en: "All", pt: "Todos" },
+    { id: "emoji", en: "Emoji", pt: "Emoji" },
+    { id: "mine", en: "My stickers", pt: "Os meus" }
   ];
 
   function addSticker(id, cat, aspect, color, spec, tint) {
@@ -1310,7 +1310,9 @@
     var w = def.custom ? (def.aspect >= 1 ? 120 : 120 * def.aspect + 20)
       : def.aspect > 2.2 ? (def.cat === "words" ? 130 : 170) : def.cat === "emoji" ? 70 : 92;
     var o = { t: "sticker", sid: sid, x: p.x, y: p.y, w: w, rot: (Math.random() - 0.5) * 0.3, color: def.color, flip: false };
-    if (def.custom) o.outline = true;
+    // White cut-out outline is OFF by default; it can still be switched on per sticker
+    // in the editor ("White cut-out outline" toggle).
+    if (def.custom) o.outline = false;
     pushObj(o);
   }
   function addTextObj(spec) {
@@ -2148,7 +2150,7 @@
     });
     var fileInput = h("input", { type: "file", accept: "image/*", hidden: true });
     fileInput.addEventListener("change", function () { loadBackdropFile(fileInput.files && fileInput.files[0]); fileInput.value = ""; });
-    var upBtn = h("button", { type: "button", class: "pb-btn-outline pbs-upload", onclick: function () { fileInput.click(); } }, "⬆ " + T("Use your own picture", "Usar a tua imagem"));
+    var upBtn = h("button", { type: "button", class: "pb-btn-outline pbs-upload", onclick: function () { fileInput.click(); } }, T("Use your own picture", "Usar a tua imagem"));
     addSync(function () {
       picBtns.forEach(function (b) {
         var on = bd().mode === "picture" && bd().pic === b._p.id;
@@ -2207,7 +2209,7 @@
       cutMode = !cutMode;
       if (cutMode) selectObj(null, { keepTab: true });
       syncUI(); requestRender();
-    } }, "✂ " + T("Cut strip", "Cortar tira"));
+    } }, T("Cut strip", "Cortar tira"));
     var resetBtn = h("button", { type: "button", class: "pbs-tbtn", onclick: resetLayoutTools }, T("Reset", "Repor"));
     addSync(function () {
       gutterBtn.setAttribute("aria-pressed", st.gutters ? "true" : "false");

@@ -783,10 +783,10 @@ const PT_TRANSLATIONS = {
   "A little collection, just for us": "Uma pequena coleção, só nossa",
   "Five decks, five different feelings. Pick one and draw a card.":
     "Cinco baralhos, cinco sensações diferentes. Escolha um e puxe uma carta.",
-  "🎲 Random": "🎲 Aleatório",
+  "Random": "Aleatório",
   "♡ My Favorites": "♡ Meus Favoritos",
   "My Favorites": "Meus Favoritos",
-  "💌 Card of the Day": "💌 Carta do Dia",
+  "Card of the Day": "Carta do Dia",
   Categories: "Categorias",
   Rounds: "Rodadas",
   "∞ Endless": "∞ Sem Fim",
@@ -794,7 +794,7 @@ const PT_TRANSLATIONS = {
   "Select one or more categories": "Selecione uma ou mais categorias",
   "Start Game": "Começar Jogo",
   "← Back to Our Games": "← Voltar aos Nossos Jogos",
-  "✕ Exit": "✕ Sair",
+  "Exit": "Sair",
   Skip: "Pular",
   "Next Card →": "Próxima Carta →",
   "End game & see summary": "Terminar e ver o resumo",
@@ -808,7 +808,7 @@ const PT_TRANSLATIONS = {
   Matches: "Combinações",
   Disasters: "Desastres",
   "Prediction accuracy": "Precisão da previsão",
-  "🔮 Predict my answer first": "🔮 Prever minha resposta primeiro",
+  "Predict my answer first": "Prever minha resposta primeiro",
   "Did the prediction match?": "A previsão bateu?",
   "Both answered — did you match?": "Os dois responderam — vocês combinaram?",
   "🎯 Match!": "🎯 Combinou!",
@@ -839,12 +839,12 @@ const PT_TRANSLATIONS = {
     "Músicas para cada humor — nossas, suas e tudo no meio.",
   "Now playing": "Tocando agora",
   "No songs in this playlist yet.": "Ainda não há músicas nesta playlist.",
-  "🟢 Synced — songs save for both of you.":
-    "🟢 Sincronizado — as músicas ficam salvas para nós dois.",
-  "🟡 Not synced yet — songs only stay on this device.":
-    "🟡 Ainda não sincronizado — as músicas ficam apenas neste dispositivo.",
-  "Add a song ♥": "Adicionar música ♥",
-  "Add song ♥": "Adicionar ♥",
+  "Synced — songs save for both of you.":
+    "Sincronizado — as músicas ficam salvas para nós dois.",
+  "Not synced yet — songs only stay on this device.":
+    "Ainda não sincronizado — as músicas ficam apenas neste dispositivo.",
+  "Add a song": "Adicionar música",
+  "Add song": "Adicionar",
 
   "Test your memory": "Teste sua memória",
   "How well do you really know us? Pick a quiz and find out.":
@@ -857,7 +857,7 @@ const PT_TRANSLATIONS = {
   "15 questions about us": "15 perguntas sobre nós",
   "← Back to quizzes": "← Voltar aos quizzes",
   "Next →": "Próxima →",
-  "Try again ♥": "Tentar de novo ♥",
+  "Try again": "Tentar de novo",
   "← All quizzes": "← Todos os quizzes",
   Results: "Resultado",
   "Final score": "Resultado final",
@@ -933,7 +933,7 @@ const PT_TRANSLATIONS = {
   "A running list of the places we want to see, the things we want to try, and the little (and big) adventures we're saving for each other.":
     "Uma lista dos lugares que ainda queremos conhecer, das coisas que queremos experimentar e das pequenas (e grandes) aventuras que ainda temos pela frente.",
   "Add something to the list...": "Adicione alguma coisa à lista...",
-  "Add ♥": "Adicionar ♥",
+  "Add": "Adicionar",
   "What we're watching together": "O que estamos assistindo juntos",
   "Movie Nights": "Noites de Cinema",
   "Search for a movie to add it to our watchlist, then move it over and rate it together once we've actually watched it.":
@@ -949,6 +949,9 @@ const PT_TRANSLATIONS = {
   "No movies found — try a different title.":
     "Nenhum filme encontrado — tente outro título.",
   "+ Add": "+ Adicionar",
+  "Turn on camera": "Ligar a câmara",
+  "Continue to camera": "Continuar para a câmara",
+  "Start countdown": "Iniciar contagem",
   "Mark as watched": "Marcar como assistido",
   "Move back to watchlist": "Mover de volta pra lista",
   Remove: "Remover",
@@ -991,10 +994,10 @@ const PT_TRANSLATIONS = {
   done: "concluídos",
   "Move up": "Mover para cima",
   "Move down": "Mover para baixo",
-  "🟢 Synced — changes save for both of you.":
-    "🟢 Sincronizado — as mudanças ficam salvas para nós dois.",
-  "🟡 Not synced yet — changes only stay on this device.":
-    "🟡 Ainda não sincronizado — as mudanças ficam apenas neste dispositivo.",
+  "Synced — changes save for both of you.":
+    "Sincronizado — as mudanças ficam salvas para nós dois.",
+  "Not synced yet — changes only stay on this device.":
+    "Ainda não sincronizado — as mudanças ficam apenas neste dispositivo.",
   "Today. Finally. ♥": "Hoje. Finalmente. ♥",
   "Different places. Same moon. Same love. Just counting the days until we're together again.":
     "Lugares diferentes. A mesma lua. O mesmo amor. Só contando os dias até estarmos juntos de novo.",
@@ -1065,7 +1068,7 @@ const PT_TRANSLATIONS = {
   "Party Pictures": "Fotos de Festa",
   "Our Memories": "Nossas Lembranças",
   "— add your own!": "— adicione as suas!",
-  "Add a photo ♥": "Adicionar uma foto ♥",
+  "Add a photo": "Adicionar uma foto",
   "Choose which album it belongs to.": "Escolha a que álbum ela pertence.",
   Album: "Álbum",
   Calendar: "Calendário",
@@ -1077,7 +1080,7 @@ const PT_TRANSLATIONS = {
   "Thinking of you…": "A pensar em ti…",
   "Thinking of you… (optional if you send audio)":
     "A pensar em ti… (opcional se enviares áudio)",
-  "Send card ♥": "Enviar cartão ♥",
+  "Send card": "Enviar cartão",
   "No cards yet — leave the first one above.":
     "Ainda sem cartões — deixa o primeiro em cima.",
   "Clear audio": "Limpar áudio",
@@ -1104,26 +1107,26 @@ const PT_TRANSLATIONS = {
     "Cria uma pasta para novas lembranças — aparece na lista quando enviares fotos.",
   "Album name": "Nome do álbum",
   "e.g. Trip to the beach": "ex.: Viagem à praia",
-  "Add album ♥": "Adicionar álbum ♥",
+  "Add album": "Adicionar álbum",
   "Our schedules": "Nossas agendas",
   "Shared Calendar": "Calendário Compartilhado",
   "See each other's plans so we know when to text — and when to wait.":
     "Veja os planos um do outro pra saber quando mandar mensagem — e quando esperar.",
   Both: "Os dois",
-  "Add to the calendar ♥": "Adicionar ao calendário ♥",
+  "Add to the calendar": "Adicionar ao calendário",
   What: "O quê",
   Who: "Quem",
   "Start (optional)": "Início (opcional)",
   "End (optional)": "Fim (opcional)",
   "Notes (optional)": "Notas (opcional)",
-  "Add event ♥": "Adicionar evento ♥",
+  "Add event": "Adicionar evento",
   "Select a day": "Selecione um dia",
   "No plans this day.": "Nada agendado neste dia.",
   "Class, work, study, date night…": "Aula, trabalho, estudo, date…",
   "Don't call during this, or free after…":
     "Não ligar durante isso, ou livre depois…",
-  "Edit event ♥": "Editar evento ♥",
-  "Save event ♥": "Salvar evento ♥",
+  "Edit event": "Editar evento",
+  "Save event": "Salvar evento",
   Repeat: "Repetir",
   "Does not repeat": "Não se repete",
   "Every day": "Todos os dias",
@@ -1144,7 +1147,7 @@ const PT_TRANSLATIONS = {
   "Choose a photo": "Escolha uma foto",
   Caption: "Legenda",
   "Date (optional)": "Data (opcional)",
-  "Add Memory ♥": "Adicionar Lembrança ♥",
+  "Add Memory": "Adicionar Lembrança",
   "Converting & uploading...": "A converter e enviar...",
   "WebP is not allowed. Use JPEG or PNG (PNG is auto-converted to JPEG).":
     "WebP não é permitido. Usa JPEG ou PNG (PNG vira JPEG automaticamente).",
@@ -7933,11 +7936,11 @@ function isFirebaseConfigured() {
 function setBucketSyncPill() {
   const pill = document.getElementById("bucketSyncPill");
   if (bucketSyncLive) {
-    pill.textContent = tr("🟢 Synced — changes save for both of you.");
+    pill.textContent = tr("Synced — changes save for both of you.");
     pill.className = "bucket-sync-pill live";
   } else {
     pill.textContent = tr(
-      "🟡 Not synced yet — changes only stay on this device.",
+      "Not synced yet — changes only stay on this device.",
     );
     pill.className = "bucket-sync-pill local";
   }
@@ -8144,8 +8147,8 @@ function scheduleBucketOnCalendar(item) {
     if (dateEl) dateEl.focus();
     showToast(
       isPt
-        ? "Escolhe a data e grava o evento ♥"
-        : "Pick a date and save the event ♥",
+        ? "Escolhe a data e grava o evento"
+        : "Pick a date and save the event",
       "created",
     );
   }, 80);
@@ -8422,11 +8425,11 @@ function setMoviesSyncPill() {
   const pill = document.getElementById("moviesSyncPill");
   if (!pill) return;
   if (movieSyncLive) {
-    pill.textContent = tr("🟢 Synced — changes save for both of you.");
+    pill.textContent = tr("Synced — changes save for both of you.");
     pill.className = "bucket-sync-pill live";
   } else {
     pill.textContent = tr(
-      "🟡 Not synced yet — changes only stay on this device.",
+      "Not synced yet — changes only stay on this device.",
     );
     pill.className = "bucket-sync-pill local";
   }
@@ -10047,11 +10050,11 @@ function setMusicSyncPill() {
   const pill = document.getElementById("musicSyncPill");
   if (!pill) return;
   if (musicSyncLive) {
-    pill.textContent = tr("🟢 Synced — songs save for both of you.");
+    pill.textContent = tr("Synced — songs save for both of you.");
     pill.className = "music-sync-pill live";
   } else {
     pill.textContent = tr(
-      "🟡 Not synced yet — songs only stay on this device.",
+      "Not synced yet — songs only stay on this device.",
     );
     pill.className = "music-sync-pill local";
   }
@@ -10176,13 +10179,13 @@ function setMusicFormMode(editing) {
   const cancel = document.getElementById("musicCancelEditBtn");
   const pt = currentLanguage() === "pt";
   if (editing) {
-    if (heading) heading.textContent = pt ? "Editar música ♥" : "Edit song ♥";
-    if (btn) btn.textContent = pt ? "Salvar ♥" : "Save ♥";
+    if (heading) heading.textContent = pt ? "Editar música" : "Edit song";
+    if (btn) btn.textContent = pt ? "Salvar" : "Save";
     if (cancel) cancel.style.display = "";
   } else {
     if (heading)
-      heading.textContent = pt ? "Adicionar música ♥" : "Add a song ♥";
-    if (btn) btn.textContent = pt ? "Adicionar ♥" : "Add song ♥";
+      heading.textContent = pt ? "Adicionar música" : "Add a song";
+    if (btn) btn.textContent = pt ? "Adicionar" : "Add song";
     if (cancel) cancel.style.display = "none";
     musicState.editingId = null;
   }
@@ -11015,14 +11018,14 @@ function setMemoriesSyncPill() {
   if (memoriesSyncLive) {
     pill.textContent =
       currentLanguage() === "pt"
-        ? "🟢 Sincronizado — visível para os dois"
-        : "🟢 Synced — visible to both of you";
+        ? "Sincronizado — visível para os dois"
+        : "Synced — visible to both of you";
     pill.className = "bucket-sync-pill live";
   } else {
     pill.textContent =
       currentLanguage() === "pt"
-        ? "🟡 Ainda não sincronizado (só neste aparelho)"
-        : "🟡 Not synced yet (this device only)";
+        ? "Ainda não sincronizado (só neste aparelho)"
+        : "Not synced yet (this device only)";
     pill.className = "bucket-sync-pill local";
   }
 }
@@ -11186,8 +11189,8 @@ function setMemoryFormMode(editing) {
   const photoLabel = document.getElementById("memoryPhotoLabel");
   const isPt = currentLanguage() === "pt";
   if (editing) {
-    if (title) title.textContent = isPt ? "Editar foto ♥" : "Edit photo ♥";
-    if (btn) btn.textContent = isPt ? "Salvar ♥" : "Save ♥";
+    if (title) title.textContent = isPt ? "Editar foto" : "Edit photo";
+    if (btn) btn.textContent = isPt ? "Salvar" : "Save";
     if (cancel) cancel.style.display = "";
     if (photoLabel)
       photoLabel.textContent = isPt
@@ -11195,8 +11198,8 @@ function setMemoryFormMode(editing) {
         : "New photo (optional)";
   } else {
     if (title)
-      title.textContent = isPt ? "Adicionar uma foto ♥" : "Add a photo ♥";
-    if (btn) btn.textContent = isPt ? "Adicionar ♥" : "Add Memory ♥";
+      title.textContent = isPt ? "Adicionar uma foto" : "Add a photo";
+    if (btn) btn.textContent = isPt ? "Adicionar" : "Add Memory";
     if (cancel) cancel.style.display = "none";
     if (photoLabel)
       photoLabel.textContent = isPt ? "Escolha uma foto" : "Choose a photo";
@@ -11461,14 +11464,14 @@ function setCalSyncPill() {
   if (calSyncLive) {
     pill.textContent =
       currentLanguage() === "pt"
-        ? "🟢 Sincronizado — a agenda dos dois aparece aqui"
-        : "🟢 Synced — both of your schedules show up here";
+        ? "Sincronizado — a agenda dos dois aparece aqui"
+        : "Synced — both of your schedules show up here";
     pill.className = "bucket-sync-pill cal-sync-pill live";
   } else {
     pill.textContent =
       currentLanguage() === "pt"
-        ? "🟡 Ainda não sincronizado (só neste aparelho)"
-        : "🟡 Not synced yet (this device only)";
+        ? "Ainda não sincronizado (só neste aparelho)"
+        : "Not synced yet (this device only)";
     pill.className = "bucket-sync-pill cal-sync-pill local";
   }
 }
@@ -11764,12 +11767,12 @@ function setCalFormMode(editing) {
   const btn = document.getElementById("calAddBtn");
   const cancel = document.getElementById("calCancelEditBtn");
   if (editing) {
-    if (heading) heading.textContent = tr("Edit event ♥");
-    if (btn) btn.textContent = tr("Save event ♥");
+    if (heading) heading.textContent = tr("Edit event");
+    if (btn) btn.textContent = tr("Save event");
     if (cancel) cancel.style.display = "";
   } else {
-    if (heading) heading.textContent = tr("Add to the calendar ♥");
-    if (btn) btn.textContent = tr("Add event ♥");
+    if (heading) heading.textContent = tr("Add to the calendar");
+    if (btn) btn.textContent = tr("Add event");
     if (cancel) cancel.style.display = "none";
     calEditingId = null;
   }
@@ -12252,7 +12255,7 @@ async function toggleDaycardRecording() {
       }
       if (btn) {
         btn.classList.remove("recording");
-        btn.textContent = isPt ? "🎤 Gravar" : "🎤 Record";
+        btn.textContent = isPt ? "Gravar" : "Record";
       }
       const blob = new Blob(daycardRecChunks, {
         type: daycardMediaRecorder.mimeType || "audio/webm",
@@ -12295,14 +12298,14 @@ function setDaycardsSyncPill() {
   if (daycardsSyncLive) {
     pill.textContent =
       currentLanguage() === "pt"
-        ? "🟢 Sincronizado — os dois veem os cartões"
-        : "🟢 Synced — both of you see the cards";
+        ? "Sincronizado — os dois veem os cartões"
+        : "Synced — both of you see the cards";
     pill.className = "bucket-sync-pill live";
   } else {
     pill.textContent =
       currentLanguage() === "pt"
-        ? "🟡 Ainda não sincronizado (só neste aparelho)"
-        : "🟡 Not synced yet (this device only)";
+        ? "Ainda não sincronizado (só neste aparelho)"
+        : "Not synced yet (this device only)";
     pill.className = "bucket-sync-pill local";
   }
 }
@@ -12682,7 +12685,7 @@ function initDaycardsUI() {
   }
   const recBtn = document.getElementById("daycardRecBtn");
   if (recBtn) {
-    recBtn.textContent = currentLanguage() === "pt" ? "🎤 Gravar" : "🎤 Record";
+    recBtn.textContent = currentLanguage() === "pt" ? "Gravar" : "Record";
     recBtn.addEventListener("click", toggleDaycardRecording);
   }
   document
@@ -24534,7 +24537,7 @@ function tpViewGoals() {
                 '<div class="tp-item"><div class="tp-item-head"><strong>' +
                 g.title +
                 "</strong><span>" +
-                (g.done ? '<span class="tp-tag done">✅ Done</span> ' : "") +
+                (g.done ? '<span class="tp-tag done">Done</span> ' : "") +
                 '<button type="button" class="tp-btn sm outline" data-tp-goal-prog="' +
                 g.id +
                 '" data-cat="' +
@@ -24584,13 +24587,13 @@ function tpViewGoals() {
 // cards, so "Gift"/"High priority"/"Got" etc. all get a quick visual
 // cue instead of relying on badge color alone.
 function tpWishForLabel(isGift) {
-  return isGift ? "🎁 Gift" : "🛍️ For me";
+  return isGift ? "Gift" : "For me";
 }
 function tpWishPriLabel(p) {
-  return p === "high" ? "🔺 High" : p === "low" ? "🔻 Low" : "➖ Medium";
+  return p === "high" ? "High" : p === "low" ? "Low" : "Medium";
 }
 function tpWishStatusLabel(isGot) {
-  return isGot ? "✅ Got" : "✨ Want";
+  return isGot ? "Got" : "Want";
 }
 // Wraps a saved link in markup that can't blow out the card's width —
 // long unbroken URLs need an explicit break hint, not just a wrapping
@@ -24721,20 +24724,20 @@ function tpCelebrate(el) {
 // as the wishlist tags, for visual consistency across the app.
 function tpRomTypeLabel(t) {
   var map = {
-    date: "💕 Date",
-    surprise: "🎉 Surprise",
-    plan: "📝 Plan",
-    memory: "📸 Memory",
-    goal: "🎯 Goal",
+    date: "Date",
+    surprise: "Surprise",
+    plan: "Plan",
+    memory: "Memory",
+    goal: "Goal",
   };
   return map[t] || map.date;
 }
 function tpRomStatusLabel(status) {
   return status === "done"
-    ? "✅ Done"
+    ? "Done"
     : status === "planned"
-      ? "📅 Planned"
-      : "💡 Idea";
+      ? "Planned"
+      : "Idea";
 }
 
 function tpViewWishlist() {
@@ -26640,32 +26643,32 @@ initThommyPersonal();
     if (!pill) return;
     if (state === "connected") {
       pill.textContent = pbT(
-        "🟢 Connected — you're both live",
-        "🟢 Conectados — os dois ao vivo",
+        "Connected — you're both live",
+        "Conectados — os dois ao vivo",
       );
       pill.className = "bucket-sync-pill live";
     } else if (state === "waiting") {
       pill.textContent = pbT(
-        "🟡 Waiting for your partner…",
-        "🟡 A aguardar o seu par…",
+        "Waiting for your partner…",
+        "A aguardar o seu par…",
       );
       pill.className = "bucket-sync-pill local";
     } else if (state === "solo") {
       pill.textContent = pbT(
-        "🟡 Solo mode (no partner connected)",
-        "🟡 Modo solo (sem par conectado)",
+        "Solo mode (no partner connected)",
+        "Modo solo (sem par conectado)",
       );
       pill.className = "bucket-sync-pill local";
     } else if (state === "unavailable") {
       pill.textContent = pbT(
-        "🔴 Firebase isn't configured — live mode unavailable",
-        "🔴 Firebase não configurado — modo ao vivo indisponível",
+        "Firebase isn't configured — live mode unavailable",
+        "Firebase não configurado — modo ao vivo indisponível",
       );
       pill.className = "bucket-sync-pill local";
     } else {
       pill.textContent = pbT(
-        "🟡 Not connected yet — start the camera",
-        "🟡 Ainda não conectado — ligue a câmera",
+        "Not connected yet — start the camera",
+        "Ainda não conectado — ligue a câmera",
       );
       pill.className = "bucket-sync-pill local";
     }
@@ -27604,7 +27607,7 @@ initThommyPersonal();
         );
       if (startBtn) {
         startBtn.disabled = false;
-        startBtn.textContent = pbT("Turn on camera ♥", "Ligar a câmara ♥");
+        startBtn.textContent = pbT("Turn on camera", "Ligar a câmara");
       }
       return;
     }
@@ -28029,7 +28032,7 @@ initThommyPersonal();
     const startBtn = pbEl("pbStartBtn");
     if (startBtn) {
       startBtn.disabled = false;
-      startBtn.textContent = pbT("Turn on camera ♥", "Ligar a câmara ♥");
+      startBtn.textContent = pbT("Turn on camera", "Ligar a câmara");
     }
     pbSetSyncPill(pbGetDb() ? "idle" : "unavailable");
     pbUpdateShotCounter();
@@ -28140,7 +28143,7 @@ initThommyPersonal();
     const startBtn = pbEl("pbStartBtn");
     if (startBtn) {
       startBtn.disabled = false;
-      startBtn.textContent = pbT("Turn on camera ♥", "Ligar a câmara ♥");
+      startBtn.textContent = pbT("Turn on camera", "Ligar a câmara");
     }
   };
 

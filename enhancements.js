@@ -796,9 +796,9 @@
   "use strict";
 
   var FORMS = [
-    { id: "musicAddForm", label: "+ Add a song ♥", labelPt: "+ Adicionar uma música ♥" },
-    { id: "calAddForm", label: "+ Add to the calendar ♥", labelPt: "+ Adicionar ao calendário ♥" },
-    { id: "memoryUploadForm", label: "+ Add a photo ♥", labelPt: "+ Adicionar uma foto ♥" },
+    { id: "musicAddForm", label: "+ Add a song", labelPt: "+ Adicionar uma música" },
+    { id: "calAddForm", label: "+ Add to the calendar", labelPt: "+ Adicionar ao calendário" },
+    { id: "memoryUploadForm", label: "+ Add a photo", labelPt: "+ Adicionar uma foto" },
     { id: "albumCreateForm", label: "+ New album", labelPt: "+ Novo álbum" },
   ];
 
@@ -923,4 +923,51 @@
   } else {
     init();
   }
+})();
+
+/* ---- Music: keep the playing song in view inside the scrollable playlist ----
+   The playlist now scrolls inside its own box (see modern.css). When the
+   active track changes (tap a song, Next, autoplay) this nudges only the
+   playlist's own scroll, never the page, so the current song stays visible. */
+(function () {
+  "use strict";
+  var list = document.getElementById("musicTrackList");
+  if (!list || !window.MutationObserver) return;
+  var lastKey = null;
+  var timer = null;
+  var reduce =
+    window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function follow() {
+    try {
+      var rows = list.querySelectorAll(".music-track");
+      var active = list.querySelector(".music-track.active");
+      if (!active) {
+        lastKey = null;
+        return;
+      }
+      var idx = Array.prototype.indexOf.call(rows, active);
+      var key = idx + "|" + (active.textContent || "").slice(0, 40);
+      if (key === lastKey) return;
+      lastKey = key;
+      var top = active.offsetTop;
+      var bottom = top + active.offsetHeight;
+      if (top >= list.scrollTop && bottom <= list.scrollTop + list.clientHeight) return;
+      var target = top - (list.clientHeight - active.offsetHeight) / 2;
+      list.scrollTo({ top: Math.max(0, target), behavior: reduce ? "auto" : "smooth" });
+    } catch (e) {
+      /* never let a scroll nicety break the player */
+    }
+  }
+
+  new MutationObserver(function () {
+    clearTimeout(timer);
+    timer = setTimeout(follow, 60);
+  }).observe(list, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["class"],
+  });
 })();
