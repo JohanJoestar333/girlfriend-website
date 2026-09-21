@@ -137,162 +137,35 @@ const CONFIG = {
     "Making memories out of ordinary days",
   ],
 
+  // ---------------------------------------------------------------------
+  // ALBUM
+  // ---------------------------------------------------------------------
+  // Each category needs a "category" name — that's the album heading, and
+  // the name shown in the "Add a photo" dropdown — and an "items" list.
+  // "items" can stay empty: the category still shows up and still accepts
+  // photos added live from the "Our Album" tab (those are stored separately,
+  // not here). This is only for photos you want to hardcode into the code
+  // itself, the way this file used to.
+  //
+  // To hardcode a photo, add an item to the matching category like this:
+  //   {
+  //     caption: "Us, somewhere ordinary",  // shown under the photo
+  //     date: "08/02/2026",                 // optional, shown next to the caption
+  //     img: "photos/us-1.jpeg",            // path to a file in the /photos folder
+  //   },
+  //
+  // (The photos that used to be hardcoded here — Us, Favorite Memories,
+  // Foods We've Eaten, Places We've Been, Polaroid Pictures, Party Pictures —
+  // were removed from /photos and from here on purpose, so they wouldn't
+  // sit in the public GitHub repo. They're still on the live site as photos
+  // added through "Our Album", which are stored separately from this file.)
   album: [
-    {
-      category: "Us",
-      items: [
-        {
-          caption: "Us, somewhere ordinary",
-          date: "08/02/2026",
-          img: "photos/us-1.jpeg",
-        },
-        {
-          caption: "That afternoon we didn't want to end",
-          date: "08/14/2026",
-          img: "photos/us-2.jpeg",
-        },
-        {
-          caption: "Us, mid-phonecall",
-          date: "08/17/2026",
-          img: "photos/us-3.jpeg",
-        },
-        {
-          caption: "Us, kissing",
-          date: "06/22/2026",
-          img: "photos/us-4.jpeg",
-        },
-      ],
-    },
-    {
-      category: "Favorite Memories",
-      items: [
-        {
-          caption: "Our last date togheter",
-          date: "08/14/2026",
-          img: "photos/memories-1.jpeg",
-        },
-        {
-          caption: "A very good day",
-          date: "08/10/2026",
-          img: "photos/memories-2.jpeg",
-        },
-      ],
-    },
-    {
-      category: "Foods We've Eaten",
-      items: [
-        {
-          caption: "Restaurant at Sao Jose",
-          date: "05/18/2026",
-          img: "photos/foods-1.jpeg",
-        },
-        {
-          caption: "Restaurant at Lagoa",
-          date: "05/18/2026",
-          img: "photos/foods-2.jpeg",
-        },
-        {
-          caption: "Restaurant at Santa Monica",
-          date: "07/08/2026",
-          img: "photos/foods-3.jpeg",
-        },
-        {
-          caption: "Restaurant at Rio Tavarez",
-          date: "08/10/2026",
-          img: "photos/foods-4.jpeg",
-        },
-        {
-          caption: "Starbucks do Iguatemi",
-          date: "07/09/2026",
-          img: "photos/foods-5.jpeg",
-        },
-        {
-          caption: "Match And Hotchocolate at PB",
-          date: "07/31/2026",
-          img: "photos/foods-6.jpeg",
-        },
-        {
-          caption: "First Homemade Meal",
-          date: "08/14/2026",
-          img: "photos/foods-7.jpeg",
-        },
-      ],
-    },
-    {
-      category: "Places We've Been",
-      items: [
-        {
-          caption: "Miami Red String Teory",
-          date: "01/10/2025",
-          img: "photos/places-1.jpeg",
-        },
-        {
-          caption: "That one Airbnb",
-          date: "08/14/2026",
-          img: "photos/places-2.jpeg",
-        },
-      ],
-    },
-    {
-      category: "Polaroid Pictures",
-      items: [
-        {
-          caption: "Polaroid one",
-          date: "08/07/2026",
-          img: "photos/polaroid-1.jpeg",
-        },
-        {
-          caption: "Polaroid two",
-          date: "08/07/2026",
-          img: "photos/polaroid-2.jpeg",
-        },
-        {
-          caption: "Polaroid three",
-          date: "08/07/2026",
-          img: "photos/polaroid-3.jpeg",
-        },
-        {
-          caption: "Polaroid four",
-          date: "08/12/2026",
-          img: "photos/polaroid-4.jpeg",
-        },
-        {
-          caption: "Polaroid two",
-          date: "08/13/2026",
-          img: "photos/polaroid-5.jpeg",
-        },
-      ],
-    },
-    {
-      category: "Party Pictures",
-      items: [
-        {
-          caption: "Toma Tudo",
-          date: "06/22/2026",
-          img: "photos/party-1.jpeg",
-        },
-        {
-          caption: "Toma Tudo",
-          date: "06/22/2026",
-          img: "photos/party-2.jpeg",
-        },
-        {
-          caption: "Spartano",
-          date: "08/10/2026",
-          img: "photos/party-3.jpeg",
-        },
-        {
-          caption: "Spartano",
-          date: "08/10/2026",
-          img: "photos/party-4.jpeg",
-        },
-        {
-          caption: "Spartano",
-          date: "08/10/2026",
-          img: "photos/party-5.jpeg",
-        },
-      ],
-    },
+    { category: "Us", items: [] },
+    { category: "Favorite Memories", items: [] },
+    { category: "Foods We've Eaten", items: [] },
+    { category: "Places We've Been", items: [] },
+    { category: "Polaroid Pictures", items: [] },
+    { category: "Party Pictures", items: [] },
   ],
 
   favorites: {

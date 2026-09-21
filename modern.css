@@ -2023,3 +2023,32 @@ html[data-theme="dark"] .music-track-list {
 .music-track-list::-webkit-scrollbar-thumb { background: rgba(120, 120, 128, 0.4); border: 3px solid transparent; background-clip: padding-box; border-radius: 10px; }
 .music-track-list { position: relative; }
 .music-track .track-num { font-family: var(--font); font-variant-numeric: tabular-nums; letter-spacing: 0; font-size: 0.85rem; }
+
+
+/* Footer switch for tap vibration (only rendered on touch devices) */
+.haptics-row { margin: 16px 0 0; }
+.haptics-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px 7px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--field);
+  color: var(--ink-soft);
+  font-family: var(--font);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.haptics-toggle::before {
+  content: "";
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 20%, transparent);
+}
+.haptics-toggle.is-off::before { background: var(--ink-faint); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink-faint) 20%, transparent); }
+.haptics-toggle:active { transform: scale(0.97); }

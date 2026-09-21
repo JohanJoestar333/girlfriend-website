@@ -720,57 +720,11 @@
 /* ============================================================
    SECTION 4 — HAPTICS
    ------------------------------------------------------------
-   Short vibration pulses on the taps that matter most on mobile:
-   checking something off, and adding something new. Delegated
-   listeners so this doesn't need touching every existing wiring
-   line for the tp-tracker checkboxes (which get re-attached on
-   every tpRender() call). navigator.vibrate silently no-ops on
-   desktop/iOS Safari, so no extra feature detection needed beyond
-   the try/catch.
+   Moved to haptics.js, which now handles all tap vibration in
+   one place (Android + iPhone, on/off switch in the footer).
+   It covers everything this section used to: checking off
+   habits/goals/routines/bucket items, and the "add" buttons.
    ============================================================ */
-
-(function () {
-  "use strict";
-
-  function tap(ms) {
-    try {
-      if (navigator.vibrate) navigator.vibrate(ms);
-    } catch (e) {}
-  }
-
-  // Checking off a habit, a daily goal, a routine step, a bucket
-  // item, or a study portion in the personal tracker.
-  document.addEventListener("change", function (e) {
-    var t = e.target;
-    if (!t || t.tagName !== "INPUT" || t.type !== "checkbox") return;
-    if (
-      t.hasAttribute("data-tp-habit") ||
-      t.hasAttribute("data-tp-goal") ||
-      t.hasAttribute("data-tp-routine") ||
-      t.hasAttribute("data-tp-bucket") ||
-      t.hasAttribute("data-tp-portion") ||
-      t.hasAttribute("data-tp-routine-ex")
-    ) {
-      tap(t.checked ? 12 : 8);
-    }
-  });
-
-  // Marking the shared bucket list done, and the handful of
-  // "add new thing" buttons across the site.
-  document.addEventListener("click", function (e) {
-    var el = e.target.closest(
-      [
-        ".bucket-check",
-        "#bucketAddBtn",
-        "#newAlbumBtn",
-        "#tpAddHabit",
-        "#tpAddGoal",
-        "#tpAddAffirm",
-      ].join(","),
-    );
-    if (el) tap(12);
-  });
-})();
 
 
 /* ============================================================
