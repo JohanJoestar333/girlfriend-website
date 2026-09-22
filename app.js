@@ -848,6 +848,7 @@ const PT_TRANSLATIONS = {
   Foggy: "Nebuloso",
   "Clear night": "Noite limpa",
   "Feels like": "Sensação de",
+  "Weather": "Clima",
   "New Moon": "Lua Nova",
   "Waxing Crescent": "Lua Crescente",
   "First Quarter": "Lua Quarto Crescente",
@@ -6612,6 +6613,7 @@ function renderWeatherCard(el, cityName, data) {
     <div class="cond">${weatherLabel(kind)}</div>
     <div class="feels">${tr("Feels like")} ${Math.round(cw.apparent_temperature)}° · ${cw.relative_humidity_2m}% ${currentLanguage() === "pt" ? "umidade" : "humidity"}</div>
     <div class="local-time">${currentLanguage() === "pt" ? "Hora local" : "Local time"} · ${formatWeatherLocalTime(cw.time)}</div>`;
+  el.appendChild(buildWeatherForecastStrip(data));
 }
 function formatWeatherLocalTime(value) {
   if (!value) return "—";
@@ -6620,22 +6622,81 @@ function formatWeatherLocalTime(value) {
   return String(value);
 }
 
-async function fetchWeather(loc, el) {
+// A week-ahead strip (today + next 6 days) shown under the current
+// conditions on each big weather card. Uses the "daily" fields from the
+// same Open-Meteo response fetchWeather() already pulls in — no extra
+// network request.
+function buildWeatherForecastStrip(data) {
+  const wrap = document.createElement("div");
+  wrap.className = "weather-forecast";
+  const daily = data && data.daily;
+  if (!daily || !Array.isArray(daily.time)) return wrap;
+  const locale = currentLanguage() === "pt" ? "pt-BR" : "en-US";
+  daily.time.forEach((iso, i) => {
+    const [y, m, d] = iso.split("-").map(Number);
+    const dt = new Date(y, m - 1, d);
+    const isToday = i === 0;
+    const label = isToday
+      ? tr("Today")
+      : dt.toLocaleDateString(locale, { weekday: "short" });
+    const kind = classifyWeather(daily.weather_code[i], true);
+    const hi = Math.round(daily.temperature_2m_max[i]);
+    const lo = Math.round(daily.temperature_2m_min[i]);
+    const day = document.createElement("div");
+    day.className = "weather-forecast-day" + (isToday ? " is-today" : "");
+    day.innerHTML = `
+      <div class="wf-label">${label}</div>
+      <div class="wf-icon">${WEATHER_ICONS[kind]}</div>
+      <div class="wf-hi">${hi}°</div>
+      <div class="wf-lo">${lo}°</div>`;
+    wrap.appendChild(day);
+  });
+  return wrap;
+}
+
+// Compact side-by-side summary shown in the "Today" panel, so both of
+// you can glance at each other's weather without leaving that tab. Fed
+// by the same fetchWeather() calls as the big cards below — see fetchWeather().
+function renderTodayWeatherMini(who, cityName, data) {
+  const row = document.getElementById(
+    who === "me" ? "todayWeatherMe" : "todayWeatherHer",
+  );
+  if (!row) return;
+  if (!data || !data.current) {
+    row.innerHTML = `<span class="today-weather-mini-name">${cityName}</span><span class="today-weather-mini-na">${tr("Weather unavailable right now.")}</span>`;
+    return;
+  }
+  const cw = data.current;
+  const kind = classifyWeather(cw.weather_code, cw.is_day);
+  row.innerHTML = `
+    <span class="today-weather-mini-name">${cityName}</span>
+    <span class="today-weather-mini-icon">${WEATHER_ICONS[kind]}</span>
+    <span class="today-weather-mini-temp">${Math.round(cw.temperature_2m)}°</span>
+    <span class="today-weather-mini-cond">${weatherLabel(kind)}</span>`;
+}
+
+async function fetchWeather(loc, el, who) {
   try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&timezone=auto&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,is_day`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&timezone=auto&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min&forecast_days=7`;
     const res = await fetch(url);
     const data = await res.json();
     renderWeatherCard(el, loc.city, data);
+    renderTodayWeatherMini(who, loc.city, data);
   } catch (e) {
     renderWeatherCard(el, loc.city, null);
+    renderTodayWeatherMini(who, loc.city, null);
   }
 }
-fetchWeather(CONFIG.myLocation, document.getElementById("myWeather"));
-fetchWeather(CONFIG.herLocation, document.getElementById("herWeather"));
+fetchWeather(CONFIG.myLocation, document.getElementById("myWeather"), "me");
+fetchWeather(CONFIG.herLocation, document.getElementById("herWeather"), "her");
 setInterval(
   () => {
-    fetchWeather(CONFIG.myLocation, document.getElementById("myWeather"));
-    fetchWeather(CONFIG.herLocation, document.getElementById("herWeather"));
+    fetchWeather(CONFIG.myLocation, document.getElementById("myWeather"), "me");
+    fetchWeather(
+      CONFIG.herLocation,
+      document.getElementById("herWeather"),
+      "her",
+    );
   },
   15 * 60 * 1000,
 );

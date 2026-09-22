@@ -38,6 +38,7 @@
   --ic-camera: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8.5A2.5 2.5 0 0 1 6.5 6h1.2l1.3-2h6l1.3 2h1.2A2.5 2.5 0 0 1 20 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-9Z'/%3E%3Ccircle cx='12' cy='13' r='3.4'/%3E%3C/svg%3E");
   --ic-mic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='9' y='3.5' width='6' height='11' rx='3'/%3E%3Cpath d='M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5'/%3E%3C/svg%3E");
   --ic-clip: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 11.5l-6.6 6.6a4.4 4.4 0 0 1-6.2-6.2l7-7a3 3 0 0 1 4.3 4.3l-7 7a1.6 1.6 0 0 1-2.2-2.2l6.4-6.4'/%3E%3C/svg%3E");
+  --ic-star-fill: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2.6l2.9 5.98 6.5.96-4.7 4.62 1.1 6.6L12 17.7l-5.8 3.06 1.1-6.6-4.7-4.62 6.5-.96L12 2.6Z' fill='black'/%3E%3C/svg%3E");
 }
 
 /* -------------------------------------------------------------------------
@@ -2052,3 +2053,314 @@ html[data-theme="dark"] .music-track-list {
 }
 .haptics-toggle.is-off::before { background: var(--ink-faint); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink-faint) 20%, transparent); }
 .haptics-toggle:active { transform: scale(0.97); }
+
+
+/* =========================================================================
+   ICON CENTERING FIX
+   --------------------------------------------------------------------------
+   Several buttons still carry their original glyph character in the HTML/JS
+   (e.g. "▾", "✕", "✎", "···", "↑") — we hide it with font-size:0 and draw a
+   line icon instead via ::before. But a hidden character is still a real
+   box in the layout, so when the container centers its ::before with
+   display:grid/flex, that leftover glyph quietly competes for space and
+   nudges the icon off-centre (worse at some zoom levels/fonts than others).
+   Fix: take the icon out of that flow entirely and centre it by absolute
+   position instead, which no longer cares what else is inside the button.
+   ========================================================================= */
+.album-collapse-chevron,
+.album-del-btn,
+.bucket-icon-btn,
+.bucket-move,
+.music-copyright-banner .banner-x,
+.music-track .track-edit,
+.music-track .track-del,
+.music-track .track-move,
+.music-track .track-play,
+.today-quote-refresh,
+.today-toggle-chevron,
+#passwordGate .gate-heart {
+  position: relative;
+}
+.album-collapse-chevron::before,
+.album-del-btn::before,
+.bucket-icon-btn.delete::before,
+.bucket-icon-btn:not(.delete):not(:has(svg))::before,
+.bucket-move::before,
+.lightbox-close::before,
+.lightbox-nav::before,
+.music-copyright-banner .banner-x::before,
+.music-track .track-del::before,
+.music-track .track-edit::before,
+.music-track .track-move::before,
+.music-track .track-play:not(:has(.eq-bars))::before,
+.nav-more-btn::before,
+.photo-tile .memory-del::before,
+.photo-tile .memory-edit::before,
+.today-quote-refresh::before,
+.today-toggle-chevron::before,
+#passwordGate .gate-heart::before,
+html[data-theme="dark"] #passwordGate .gate-heart::before {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+}
+/* .back-to-top is already position:fixed, so its ::before centres the same way */
+.back-to-top::before {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+}
+
+/* -------------------------------------------------------------------------
+   CALENDAR MARKER DOTS — star & heart used to be plain Unicode glyphs with
+   no fixed size (unlike the circle/square dots, which are exact 6-7px
+   shapes). At small calendar-day sizes that let the glyph render larger
+   than its box and spill past the day cell's rounded corners. They now
+   match the circle/square dots exactly: same footprint, same crisp icon.
+   ------------------------------------------------------------------------- */
+.cal-mark.star, .cal-mark.heart {
+  width: 7px;
+  height: 7px;
+  font-size: 0;
+  position: relative;
+  overflow: visible;
+}
+.cal-mark.star::before, .cal-mark.heart::before {
+  content: "";
+  position: absolute;
+  inset: -1px; /* the star/heart shapes read visually smaller than a circle at identical box size */
+  margin: auto;
+  background: currentColor;
+  -webkit-mask: var(--ic-star-fill) center / contain no-repeat;
+  mask: var(--ic-star-fill) center / contain no-repeat;
+}
+.cal-mark.heart::before {
+  -webkit-mask-image: var(--ic-heart);
+  mask-image: var(--ic-heart);
+}
+
+
+/* =========================================================================
+   WEATHER — 7-day forecast strip on the big cards, plus a compact summary
+   inside the "Today" panel (same fetch, no extra network calls).
+   ========================================================================= */
+
+/* Big weather card: room for the forecast strip under the current conditions */
+.weather-card { padding-bottom: 16px; }
+
+.weather-forecast {
+  display: flex;
+  gap: 2px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.22);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.weather-forecast::-webkit-scrollbar { display: none; }
+.weather-forecast-day {
+  flex: 1 0 13%;
+  min-width: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 2px;
+  border-radius: 12px;
+  color: #fff;
+}
+.weather-forecast-day.is-today { background: rgba(255, 255, 255, 0.16); }
+.wf-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  opacity: 0.85;
+  text-transform: capitalize;
+}
+.weather-forecast-day.is-today .wf-label { opacity: 1; }
+.wf-icon { font-size: 1.15rem; line-height: 1; }
+.wf-hi { font-size: 0.86rem; font-weight: 600; letter-spacing: -0.01em; }
+.wf-lo { font-size: 0.78rem; opacity: 0.7; }
+
+/* Today panel: compact side-by-side weather summary */
+.today-weather-mini { display: flex; flex-direction: column; gap: 10px; }
+.today-weather-mini-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--field);
+}
+.today-weather-mini-name {
+  flex: 1 1 auto;
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: -0.014em;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.today-weather-mini-icon { font-size: 1.2rem; line-height: 1; flex: 0 0 auto; }
+.today-weather-mini-temp {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  flex: 0 0 auto;
+}
+.today-weather-mini-cond {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  flex: 0 0 auto;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.today-weather-mini-na {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  flex: 1 1 auto;
+}
+
+@media (max-width: 480px) {
+  .today-weather-mini-cond { display: none; } /* keep the row from crowding on very small phones */
+}
+
+
+/* =========================================================================
+   PREMIUM HOVER — quizzes, songs, calendar, bucket list
+   --------------------------------------------------------------------------
+   Desktop-only (hover:hover + pointer:fine), so nothing gets "stuck" hovered
+   after a tap on a phone or tablet. Two treatments, matched to the layout
+   each element actually has:
+     • Grouped, hairline-separated rows (bucket items, song rows) —
+       a soft green accent bar fades in on the left, the way Notion/Podcasts
+       highlight a hovered row without disturbing the list's dividers.
+     • Spaced-out tiles and cards (quiz cards, quiz answers, calendar days) —
+       a gentle lift with a soft shadow, since each already sits on its own
+       with room around it.
+   All transitions use the site's existing --ease curve; reduced-motion
+   turns the movement off but keeps the colour/shadow change.
+   ========================================================================= */
+
+@media (hover: hover) and (pointer: fine) {
+
+  /* ---- bucket list rows ---- */
+  .bucket-item {
+    position: relative;
+    transition: background-color 0.2s var(--ease);
+  }
+  .bucket-item::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 50%;
+    width: 3px; height: 0%;
+    background: var(--green);
+    border-radius: 0 3px 3px 0;
+    transform: translateY(-50%);
+    transition: height 0.2s var(--ease);
+  }
+  .bucket-item:hover {
+    background-color: var(--field);
+  }
+  .bucket-item:hover::before {
+    height: 60%;
+  }
+  .bucket-item:hover .bucket-check:not(:disabled) {
+    border-color: var(--green);
+  }
+
+  /* ---- song rows ---- */
+  .music-track {
+    position: relative;
+    transition: background-color 0.2s var(--ease);
+  }
+  .music-track::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 50%;
+    width: 3px; height: 0%;
+    background: var(--green);
+    border-radius: 0 3px 3px 0;
+    transform: translateY(-50%);
+    transition: height 0.2s var(--ease);
+  }
+  .music-track:not(.active):hover {
+    background-color: var(--field);
+  }
+  .music-track:hover::before {
+    height: 60%;
+  }
+  .music-track:hover .track-title {
+    color: var(--green-deep);
+  }
+  html[data-theme="dark"] .music-track:hover .track-title {
+    color: var(--green);
+  }
+  .music-track .track-play {
+    transition: transform 0.2s var(--ease);
+  }
+  .music-track:hover .track-play {
+    transform: scale(1.18);
+  }
+
+  /* ---- calendar day tiles ---- */
+  .cal-day {
+    transition: transform 0.18s var(--ease), box-shadow 0.18s var(--ease), background-color 0.18s var(--ease);
+  }
+  .cal-day:not(.selected):hover {
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.28);
+    z-index: 1;
+  }
+  html[data-theme="dark"] .cal-day:not(.selected):hover {
+    box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.6);
+  }
+  .cal-day:not(.selected):hover .cal-day-num {
+    color: var(--green);
+  }
+
+  /* ---- quiz picker cards ---- */
+  .quiz-select-card {
+    transition: transform 0.22s var(--ease), box-shadow 0.22s var(--ease), background-color 0.22s var(--ease);
+  }
+  .quiz-select-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-soft);
+  }
+  .quiz-select-card:hover .q-ic {
+    transform: scale(1.08);
+  }
+  .q-ic { transition: transform 0.22s var(--ease); }
+
+  /* ---- quiz answer rows ---- */
+  .quiz-opt {
+    transition: transform 0.18s var(--ease), box-shadow 0.18s var(--ease), background-color 0.18s var(--ease), border-color 0.18s var(--ease);
+  }
+  .quiz-opt:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px -12px rgba(0, 0, 0, 0.22);
+  }
+  html[data-theme="dark"] .quiz-opt:hover:not(:disabled) {
+    box-shadow: 0 10px 22px -12px rgba(0, 0, 0, 0.55);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: reduce) {
+  .bucket-item, .music-track, .cal-day, .quiz-select-card, .quiz-opt, .music-track .track-play, .q-ic {
+    transition-property: background-color, border-color, color;
+  }
+  .cal-day:not(.selected):hover,
+  .quiz-select-card:hover,
+  .quiz-opt:hover:not(:disabled) {
+    transform: none;
+  }
+  .music-track:hover .track-play,
+  .quiz-select-card:hover .q-ic {
+    transform: none;
+  }
+}
