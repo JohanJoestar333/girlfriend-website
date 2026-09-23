@@ -1063,6 +1063,29 @@
           grid-column: 1 / -1;
         }
       }
+      .today-bouquet-body {
+        text-align: center;
+      }
+      .today-bouquet-stage {
+        display: block;
+        width: 100%;
+        max-width: 130px;
+        height: auto;
+        aspect-ratio: 600 / 720;
+        margin: 0 auto 6px;
+        border-radius: var(--radius-sm);
+        box-shadow: 0 2px 8px rgba(43, 38, 34, 0.14);
+      }
+      .today-bouquet-stage.wilted {
+        filter: grayscale(0.75) sepia(0.25) brightness(0.9);
+        opacity: 0.75;
+      }
+      .today-bouquet-countdown {
+        font-size: 0.72rem;
+        color: var(--ink-soft);
+        font-weight: 600;
+        margin: 0;
+      }
       /* ---- daily quote (Today widget) — compact so photo fits below ---- */
       .today-quote-card {
         display: flex;
@@ -4100,12 +4123,6 @@
         font-size: 0.8rem;
         font-weight: 700;
         color: var(--ink-soft);
-      }
-      .bouquet-count-row span.in-range {
-        color: var(--green-deep);
-      }
-      .bouquet-count-row span.out-of-range {
-        color: #a34a4a;
       }
       .bouquet-form textarea {
         width: 100%;

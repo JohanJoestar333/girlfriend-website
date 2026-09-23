@@ -85,9 +85,6 @@
               hidden
             ></span>
           </button>
-          <button class="tab-btn" data-tab="bouquet">
-            Bouquet<span class="tab-dot" data-dot-for="bouquet" hidden></span>
-          </button>
           <button class="tab-btn" data-tab="quizzes">Quizzes</button>
           <button class="tab-btn" data-tab="music">
             Music<span class="tab-dot" data-dot-for="music" hidden></span>
@@ -103,6 +100,7 @@
               aria-expanded="false"
             >
               ···
+              <span class="tab-dot" data-dot-for="bouquet" hidden></span>
               <span class="tab-dot" data-dot-for="photobooth" hidden></span>
               <span class="tab-dot" data-dot-for="calendar" hidden></span>
               <span class="tab-dot" data-dot-for="daycards" hidden></span>
@@ -110,6 +108,13 @@
             </button>
             <div class="nav-more-menu" id="navMoreMenu" role="menu">
               <div class="nav-more-label">More</div>
+              <button class="tab-btn" data-tab="bouquet" role="menuitem">
+                Bouquet<span
+                  class="tab-dot"
+                  data-dot-for="bouquet"
+                  hidden
+                ></span>
+              </button>
               <button class="tab-btn" data-tab="photobooth" role="menuitem">
                 Photo Booth<span
                   class="tab-dot"
@@ -216,14 +221,14 @@
             hidden
           ></span>
         </button>
-        <button class="tab-btn" data-tab="bouquet">
-          Bouquet<span class="tab-dot" data-dot-for="bouquet" hidden></span>
-        </button>
         <button class="tab-btn" data-tab="quizzes">Quizzes</button>
         <button class="tab-btn" data-tab="music">
           Music<span class="tab-dot" data-dot-for="music" hidden></span>
         </button>
         <div class="mobile-more-label">More</div>
+        <button class="tab-btn" data-tab="bouquet">
+          Bouquet<span class="tab-dot" data-dot-for="bouquet" hidden></span>
+        </button>
         <button class="tab-btn" data-tab="photobooth">
           Photo Booth<span
             class="tab-dot"
@@ -337,6 +342,13 @@
               <div class="today-card today-note">
                 <div class="today-card-label">Latest day card</div>
                 <div id="todayDaycard" class="today-daycard-body">
+                  <p class="today-empty">Loading…</p>
+                </div>
+              </div>
+
+              <div class="today-card today-bouquet">
+                <div class="today-card-label">This week's bouquet</div>
+                <div id="todayBouquetBody" class="today-bouquet-body">
                   <p class="today-empty">Loading…</p>
                 </div>
               </div>
@@ -868,9 +880,9 @@
             <p class="eyebrow">Fresh for a week</p>
             <h2>Bouquet</h2>
             <p>
-              A little bouquet just for you. Arrange up to 10 blooms on the
-              page — it stays fresh for a week, then it wilts away, or gets
-              replaced the moment you make a new one.
+              A little bouquet just for you. Arrange as many blooms as you
+              like on the page — it stays fresh for a week, then it wilts
+              away, or gets replaced the moment you make a new one.
             </p>
           </div>
           <span
@@ -912,7 +924,25 @@
             No bouquet yet — build one below 💐
           </p>
 
-          <form class="bouquet-form" id="bouquetForm">
+          <button
+            type="button"
+            class="today-toggle"
+            id="bouquetBuildToggle"
+            aria-expanded="false"
+            aria-controls="bouquetForm"
+            style="margin-top: 18px"
+          >
+            <span class="today-toggle-left">
+              <span class="eyebrow">Arrange it yourself</span>
+              <span class="today-toggle-title">Build a bouquet</span>
+              <span class="today-toggle-hint" id="bouquetBuildHint"
+                >Tap to open</span
+              >
+            </span>
+            <span class="today-toggle-chevron" aria-hidden="true">▾</span>
+          </button>
+
+          <form class="bouquet-form" id="bouquetForm" hidden>
             <label class="bouquet-form-label">Choose one wrap</label>
             <div class="bouquet-wrap-swatches" id="bouquetWrapSwatches"></div>
 
@@ -960,7 +990,7 @@
 
             <div class="bouquet-palette" id="bouquetPalette"></div>
             <div class="bouquet-count-row">
-              <span id="bouquetCountLabel">0 of 10 blooms</span>
+              <span id="bouquetCountLabel">0 blooms added</span>
               <button
                 type="button"
                 class="btn outline"

@@ -3659,10 +3659,13 @@ const PT_TRANSLATIONS = {
   // Bouquet
   "Fresh for a week": "Fresco por uma semana",
   Bouquet: "Buquê",
-  "A little bouquet just for you. Arrange up to 10 blooms on the page — it stays fresh for a week, then it wilts away, or gets replaced the moment you make a new one.":
-    "Um buquezinho só para você. Arrume até 10 flores na página — ele fica fresco por uma semana, depois murcha, ou é substituído assim que você monta um novo.",
+  "A little bouquet just for you. Arrange as many blooms as you like on the page — it stays fresh for a week, then it wilts away, or gets replaced the moment you make a new one.":
+    "Um buquezinho só para você. Arrume quantas flores quiser na página — ele fica fresco por uma semana, depois murcha, ou é substituído assim que você monta um novo.",
   "No bouquet yet — build one below 💐":
     "Ainda sem buquê — monte um abaixo 💐",
+  "Arrange it yourself": "Arrume você mesmo",
+  "Build a bouquet": "Montar um buquê",
+  "This week's bouquet": "O buquê desta semana",
   "Choose one wrap": "Escolha um embrulho",
   "Tap a flower to add it, then drag it into place": "Toque numa flor para adicioná-la, depois arraste até o lugar",
   Clear: "Limpar",
@@ -4281,7 +4284,7 @@ function clearTabDot(tab) {
 }
 
 // Tabs that live under the ··· "More" menu (add future ones here)
-const MORE_TABS = ["photobooth", "calendar", "daycards", "games", "personal"];
+const MORE_TABS = ["bouquet", "photobooth", "calendar", "daycards", "games", "personal"];
 
 // Valid tab ids — used for URL hash routing (#album, #music, #calendar, …)
 const VALID_TABS = [
@@ -6507,6 +6510,7 @@ function renderTodayWidget() {
   renderTodayNews();
   renderTodayQuote();
   renderTodayOnThisDay();
+  if (typeof renderTodayBouquet === "function") renderTodayBouquet();
 }
 function initTodayToggle() {
   const btn = document.getElementById("todayToggle");
@@ -12744,10 +12748,9 @@ function initDaycardsUI() {
 
 // ================================================================
 // BOUQUET — a digital bouquet you arrange freely on a notebook page,
-// like a sticker in the photo booth. Pick one wrap, add up to 10
-// blooms anywhere you like, then create it. It stays fresh for a
-// week and then deletes itself — or gets replaced the moment you
-// make a new one.
+// like a sticker in the photo booth. Pick one wrap, add as many blooms
+// as you like, drag them into place. It stays fresh for a week and
+// then deletes itself — or gets replaced the moment you make a new one.
 // Firestore: "bouquets" (kept to at most one live document).
 // ================================================================
 const BOUQUET_FLOWERS = [
@@ -12764,14 +12767,15 @@ const BOUQUET_FLOWERS = [
   { id: "dark-red-lily", label: "Dark Red Lily", src: "stickers/flower-dark-red-lily.png" },
   { id: "golden-lily", label: "Golden Lily", src: "stickers/flower-golden-lily.png" },
 ];
+// Backgrounds already removed — these are transparent PNGs now, so the wrap
+// sits right on the notebook page instead of showing a white box.
 const BOUQUET_WRAPS = [
-  { id: "kraft", label: "Kraft Wrap", src: "stickers/bouquet-wrap-beige.jpg" },
-  { id: "white", label: "White Wrap", src: "stickers/bouquet-white.jpg" },
-  { id: "black", label: "Black Wrap", src: "stickers/bouquet-wrap-brack.jpg" },
-  { id: "pink", label: "Pink Wrap", src: "stickers/bouquet-wrap-pink.jpg" },
-  { id: "newspaper", label: "Newspaper Wrap", src: "stickers/bouquet-newspaper.jpg" },
+  { id: "kraft", label: "Kraft Wrap", src: "stickers/bouquet-wrap-beige.png" },
+  { id: "white", label: "White Wrap", src: "stickers/bouquet-white.png" },
+  { id: "black", label: "Black Wrap", src: "stickers/bouquet-wrap-black.png" },
+  { id: "pink", label: "Pink Wrap", src: "stickers/bouquet-wrap-pink.png" },
+  { id: "newspaper", label: "Newspaper Wrap", src: "stickers/bouquet-newspaper.png" },
 ];
-const BOUQUET_MAX = 10;
 const BOUQUET_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000; // saved for a week, then it deletes itself
 const BOUQUET_STAGE_W = 600;
 const BOUQUET_STAGE_H = 720;
@@ -12784,8 +12788,14 @@ let bouquetWrapChoice = BOUQUET_WRAPS[0].id; // exactly one wrap, always
 let bouquetSelectedUid = null;
 let bouquetDragUid = null;
 let bouquetDragOffset = { x: 0, y: 0 };
+let bouquetDragMoved = false;
 let bouquetUidSeq = 1;
+let bouquetRafPending = false;
 const bouquetImgCache = {};
+let bouquetImagesLoaded = false;
+let bouquetImagesLoading = false;
+const bouquetImagesWaiters = [];
+let bouquetBuilderBgCanvas = null; // offscreen cache: notebook + wrap only, redrawn just on wrap change
 
 function bouquetFlowerById(id) {
   return BOUQUET_FLOWERS.find((f) => f.id === id) || null;
@@ -12843,18 +12853,33 @@ function bouquetSetSyncPill() {
   }
 }
 
-// ---- image preloading ----
-function bouquetPreloadImages(cb) {
-  const all = BOUQUET_FLOWERS.concat(BOUQUET_WRAPS);
-  let remaining = all.length;
-  if (!remaining) {
+// ---- image preloading, done lazily the first time a bouquet is actually
+// drawn (tab opened, builder opened, or the Today card needs it) instead of
+// blocking page load with 17 images nobody may look at yet ----
+function bouquetEnsureImages(cb) {
+  if (bouquetImagesLoaded) {
     if (cb) cb();
     return;
   }
+  if (cb) bouquetImagesWaiters.push(cb);
+  if (bouquetImagesLoading) return;
+  bouquetImagesLoading = true;
+  const all = BOUQUET_FLOWERS.concat(BOUQUET_WRAPS);
+  let remaining = all.length;
   const done = () => {
     remaining -= 1;
-    if (remaining <= 0 && cb) cb();
+    if (remaining <= 0) {
+      bouquetImagesLoaded = true;
+      bouquetImagesLoading = false;
+      const waiters = bouquetImagesWaiters.splice(0);
+      waiters.forEach((fn) => fn());
+    }
   };
+  if (!remaining) {
+    bouquetImagesLoaded = true;
+    bouquetImagesLoading = false;
+    return;
+  }
   all.forEach((d) => {
     if (bouquetImgCache[d.src]) {
       done();
@@ -12887,12 +12912,7 @@ function bouquetPaintNotebook(ctx, W, H) {
   ctx.stroke();
 }
 
-// Draws the whole scene — optional notebook background, one wrap, then every
-// flower item on top at its own x/y/scale/rot — into a 2D context sized W×H.
-function bouquetDrawScene(ctx, W, H, wrapId, items, opts) {
-  opts = opts || {};
-  ctx.clearRect(0, 0, W, H);
-  if (opts.withBackground !== false) bouquetPaintNotebook(ctx, W, H);
+function bouquetDrawWrap(ctx, W, H, wrapId) {
   const wrap = bouquetWrapById(wrapId);
   const wrapImg = wrap && bouquetImgCache[wrap.src];
   if (wrapImg && wrapImg.complete && wrapImg.naturalWidth) {
@@ -12900,32 +12920,80 @@ function bouquetDrawScene(ctx, W, H, wrapId, items, opts) {
     const wH = wW * (wrapImg.naturalHeight / wrapImg.naturalWidth);
     ctx.drawImage(wrapImg, (W - wW) / 2, H - wH - H * 0.03, wW, wH);
   }
+}
+
+function bouquetDrawItem(ctx, W, H, it, selected) {
+  const f = bouquetFlowerById(it.flowerId);
+  const img = f && bouquetImgCache[f.src];
+  if (!img || !img.complete || !img.naturalWidth) return;
+  const bW = W * 0.22 * (it.scale || 1);
+  const bH = bW * (img.naturalHeight / img.naturalWidth);
+  ctx.save();
+  ctx.translate((it.x || 0.5) * W, (it.y || 0.4) * H);
+  ctx.rotate(((it.rot || 0) * Math.PI) / 180);
+  ctx.drawImage(img, -bW / 2, -bH / 2, bW, bH);
+  if (selected) {
+    ctx.strokeStyle = "rgba(201,166,107,0.95)";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 4]);
+    ctx.strokeRect(-bW / 2 - 5, -bH / 2 - 5, bW + 10, bH + 10);
+  }
+  ctx.restore();
+}
+
+// Ground-truth full render — background + wrap + every item, from scratch.
+// Used for the current-bouquet card, the Today widget and PNG export, none
+// of which redraw more than a few times a minute.
+function bouquetDrawScene(ctx, W, H, wrapId, items, opts) {
+  opts = opts || {};
+  ctx.clearRect(0, 0, W, H);
+  if (opts.withBackground !== false) bouquetPaintNotebook(ctx, W, H);
+  bouquetDrawWrap(ctx, W, H, wrapId);
   (items || []).forEach((it) => {
-    const f = bouquetFlowerById(it.flowerId);
-    const img = f && bouquetImgCache[f.src];
-    if (!img || !img.complete || !img.naturalWidth) return;
-    const bW = W * 0.22 * (it.scale || 1);
-    const bH = bW * (img.naturalHeight / img.naturalWidth);
-    ctx.save();
-    ctx.translate((it.x || 0.5) * W, (it.y || 0.4) * H);
-    ctx.rotate(((it.rot || 0) * Math.PI) / 180);
-    ctx.drawImage(img, -bW / 2, -bH / 2, bW, bH);
-    if (opts.selectedUid && opts.selectedUid === it.uid) {
-      ctx.strokeStyle = "rgba(201,166,107,0.95)";
-      ctx.lineWidth = 2;
-      ctx.setLineDash([6, 4]);
-      ctx.strokeRect(-bW / 2 - 5, -bH / 2 - 5, bW + 10, bH + 10);
-    }
-    ctx.restore();
+    bouquetDrawItem(ctx, W, H, it, opts.selectedUid && opts.selectedUid === it.uid);
   });
+}
+
+// ---- the interactive builder stage: background+wrap is cached to an
+// offscreen canvas so dragging a flower only costs one cheap blit plus the
+// items themselves, instead of repainting the notebook lines every frame ----
+function bouquetRebuildBuilderBg() {
+  if (!bouquetBuilderBgCanvas) {
+    bouquetBuilderBgCanvas = document.createElement("canvas");
+    bouquetBuilderBgCanvas.width = BOUQUET_STAGE_W;
+    bouquetBuilderBgCanvas.height = BOUQUET_STAGE_H;
+  }
+  const ctx = bouquetBuilderBgCanvas.getContext("2d");
+  ctx.clearRect(0, 0, BOUQUET_STAGE_W, BOUQUET_STAGE_H);
+  bouquetPaintNotebook(ctx, BOUQUET_STAGE_W, BOUQUET_STAGE_H);
+  bouquetDrawWrap(ctx, BOUQUET_STAGE_W, BOUQUET_STAGE_H, bouquetWrapChoice);
 }
 
 function bouquetRenderBuilderStage() {
   const canvas = document.getElementById("bouquetStage");
-  if (!canvas) return;
-  bouquetDrawScene(canvas.getContext("2d"), BOUQUET_STAGE_W, BOUQUET_STAGE_H, bouquetWrapChoice, bouquetItems, {
-    withBackground: true,
-    selectedUid: bouquetSelectedUid,
+  if (!canvas || canvas.hidden || canvas.closest("[hidden]")) return;
+  if (!bouquetImagesLoaded) {
+    bouquetEnsureImages(() => {
+      bouquetRebuildBuilderBg();
+      bouquetRenderBuilderStage();
+    });
+    return;
+  }
+  if (!bouquetBuilderBgCanvas) bouquetRebuildBuilderBg();
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, BOUQUET_STAGE_W, BOUQUET_STAGE_H);
+  ctx.drawImage(bouquetBuilderBgCanvas, 0, 0);
+  bouquetItems.forEach((it) => {
+    bouquetDrawItem(ctx, BOUQUET_STAGE_W, BOUQUET_STAGE_H, it, it.uid === bouquetSelectedUid);
+  });
+}
+
+function bouquetRequestBuilderRender() {
+  if (bouquetRafPending) return;
+  bouquetRafPending = true;
+  requestAnimationFrame(() => {
+    bouquetRafPending = false;
+    bouquetRenderBuilderStage();
   });
 }
 
@@ -12941,20 +13009,15 @@ function renderBouquetPaletteCounts() {
   const n = bouquetItems.length;
   const isPt = currentLanguage() === "pt";
   label.textContent = isPt
-    ? `${n} de ${BOUQUET_MAX} flores`
-    : `${n} of ${BOUQUET_MAX} blooms`;
-  label.classList.toggle("out-of-range", n >= BOUQUET_MAX);
+    ? n === 1
+      ? "1 flor adicionada"
+      : `${n} flores adicionadas`
+    : n === 1
+      ? "1 bloom added"
+      : `${n} blooms added`;
 }
 
 function bouquetAddFlower(flowerId) {
-  const isPt = currentLanguage() === "pt";
-  if (bouquetItems.length >= BOUQUET_MAX) {
-    showToast(
-      isPt ? `Máximo de ${BOUQUET_MAX} flores.` : `Max ${BOUQUET_MAX} blooms.`,
-      "updated",
-    );
-    return;
-  }
   const uid = "f" + bouquetUidSeq++;
   bouquetItems.push({
     uid,
@@ -12978,7 +13041,7 @@ function renderBouquetPalette() {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "bouquet-flower-btn";
-    btn.innerHTML = `<img src="${f.src}" alt=""><span>${tr(f.label)}</span>`;
+    btn.innerHTML = `<img src="${f.src}" alt="" loading="lazy"><span>${tr(f.label)}</span>`;
     btn.addEventListener("click", () => bouquetAddFlower(f.id));
     pal.appendChild(btn);
   });
@@ -12994,11 +13057,12 @@ function renderBouquetWrapSwatches() {
     btn.type = "button";
     btn.className =
       "bouquet-wrap-swatch" + (bouquetWrapChoice === w.id ? " active" : "");
-    btn.innerHTML = `<img src="${w.src}" alt="">`;
+    btn.innerHTML = `<img src="${w.src}" alt="" loading="lazy">`;
     btn.title = tr(w.label);
     btn.addEventListener("click", () => {
       bouquetWrapChoice = w.id;
       renderBouquetWrapSwatches();
+      bouquetRebuildBuilderBg();
       bouquetRenderBuilderStage();
     });
     wrap.appendChild(btn);
@@ -13047,6 +13111,7 @@ function bouquetStagePointerDown(evt) {
   const canvas = evt.currentTarget;
   const pt = bouquetEventToStage(canvas, evt);
   const hit = bouquetHitTest(pt);
+  bouquetDragMoved = false;
   if (hit) {
     bouquetItems = bouquetItems.filter((x) => x !== hit).concat(hit); // bring to front
     bouquetSelectedUid = hit.uid;
@@ -13069,9 +13134,10 @@ function bouquetStagePointerMove(evt) {
   const pt = bouquetEventToStage(canvas, evt);
   const it = bouquetItems.find((x) => x.uid === bouquetDragUid);
   if (!it) return;
+  bouquetDragMoved = true;
   it.x = Math.min(0.95, Math.max(0.05, pt.x - bouquetDragOffset.x));
   it.y = Math.min(0.95, Math.max(0.05, pt.y - bouquetDragOffset.y));
-  bouquetRenderBuilderStage();
+  bouquetRequestBuilderRender();
   evt.preventDefault();
 }
 
@@ -13081,26 +13147,28 @@ function bouquetStagePointerUp() {
 
 // ---- save the finished bouquet to the device, with or without the notebook page ----
 function bouquetDownload(b, withBackground) {
-  const scale = 2;
-  const off = document.createElement("canvas");
-  off.width = BOUQUET_STAGE_W * scale;
-  off.height = BOUQUET_STAGE_H * scale;
-  const ctx = off.getContext("2d");
-  ctx.scale(scale, scale);
-  bouquetDrawScene(ctx, BOUQUET_STAGE_W, BOUQUET_STAGE_H, b.wrap, b.items || [], {
-    withBackground,
+  bouquetEnsureImages(() => {
+    const scale = 2;
+    const off = document.createElement("canvas");
+    off.width = BOUQUET_STAGE_W * scale;
+    off.height = BOUQUET_STAGE_H * scale;
+    const ctx = off.getContext("2d");
+    ctx.scale(scale, scale);
+    bouquetDrawScene(ctx, BOUQUET_STAGE_W, BOUQUET_STAGE_H, b.wrap, b.items || [], {
+      withBackground,
+    });
+    off.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "bouquet" + (withBackground ? "" : "-no-background") + ".png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+    }, "image/png");
   });
-  off.toBlob((blob) => {
-    if (!blob) return;
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "bouquet" + (withBackground ? "" : "-no-background") + ".png";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 4000);
-  }, "image/png");
 }
 
 function renderBouquetCurrent() {
@@ -13118,12 +13186,15 @@ function renderBouquetCurrent() {
   if (!current) {
     wrapEl.hidden = true;
     if (emptyEl) emptyEl.hidden = false;
+    renderTodayBouquet();
     return;
   }
   wrapEl.hidden = false;
   if (emptyEl) emptyEl.hidden = true;
-  bouquetDrawScene(canvas.getContext("2d"), BOUQUET_STAGE_W, BOUQUET_STAGE_H, current.wrap, current.items || [], {
-    withBackground: true,
+  bouquetEnsureImages(() => {
+    bouquetDrawScene(canvas.getContext("2d"), BOUQUET_STAGE_W, BOUQUET_STAGE_H, current.wrap, current.items || [], {
+      withBackground: true,
+    });
   });
   const wilted = bouquetIsWilted(current);
   canvas.classList.toggle("wilted", wilted);
@@ -13148,6 +13219,36 @@ function renderBouquetCurrent() {
   }
   if (saveBgBtn) saveBgBtn.onclick = () => bouquetDownload(current, true);
   if (saveNoBgBtn) saveNoBgBtn.onclick = () => bouquetDownload(current, false);
+  renderTodayBouquet();
+}
+
+// ---- small bouquet card on the Today widget ----
+function renderTodayBouquet() {
+  const box = document.getElementById("todayBouquetBody");
+  if (!box) return;
+  const isPt = currentLanguage() === "pt";
+  const current = bouquets[0];
+  if (!current) {
+    box.innerHTML = `<p class="today-empty">${isPt ? "Ainda sem buquê" : "No bouquet yet"}</p>
+            <button type="button" class="today-link" data-go="bouquet">${isPt ? "Montar um" : "Build one"}</button>`;
+  } else {
+    const wilted = bouquetIsWilted(current);
+    box.innerHTML = `<canvas class="today-bouquet-stage${wilted ? " wilted" : ""}" width="${BOUQUET_STAGE_W}" height="${BOUQUET_STAGE_H}"></canvas>
+            <p class="today-bouquet-countdown"></p>
+            <button type="button" class="today-link" data-go="bouquet">${isPt ? "Ver buquê" : "See bouquet"}</button>`;
+    box.querySelector(".today-bouquet-countdown").textContent = bouquetRemainingLabel(current);
+    const canvas = box.querySelector("canvas");
+    bouquetEnsureImages(() => {
+      bouquetDrawScene(canvas.getContext("2d"), BOUQUET_STAGE_W, BOUQUET_STAGE_H, current.wrap, current.items || [], {
+        withBackground: true,
+      });
+    });
+  }
+  box.querySelectorAll("[data-go]").forEach((btn) => {
+    btn.addEventListener("click", () =>
+      switchTab(btn.dataset.go, { updateHash: true, scroll: true }),
+    );
+  });
 }
 
 // deletes any doc older than its week, straight out of the database
@@ -13165,6 +13266,34 @@ function bouquetPurgeExpired() {
     });
   }
   bouquets = bouquets.filter((b) => expired.indexOf(b) === -1);
+}
+
+// ---- collapsible "Build a bouquet" panel — closable, and images/canvas
+// only spin up the first time it's actually opened ----
+function bouquetSetBuilderOpen(open) {
+  const btn = document.getElementById("bouquetBuildToggle");
+  const panel = document.getElementById("bouquetForm");
+  const hint = document.getElementById("bouquetBuildHint");
+  if (!btn || !panel) return;
+  const isPt = currentLanguage() === "pt";
+  btn.setAttribute("aria-expanded", open ? "true" : "false");
+  panel.hidden = !open;
+  if (hint) hint.textContent = open ? (isPt ? "Toque para fechar" : "Tap to close") : (isPt ? "Toque para abrir" : "Tap to open");
+  if (open) {
+    bouquetEnsureImages(() => {
+      bouquetRebuildBuilderBg();
+      bouquetRenderBuilderStage();
+    });
+  }
+}
+
+function initBouquetBuildToggle() {
+  const btn = document.getElementById("bouquetBuildToggle");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    bouquetSetBuilderOpen(btn.getAttribute("aria-expanded") !== "true");
+  });
+  bouquetSetBuilderOpen(false);
 }
 
 async function sendBouquet() {
@@ -13205,6 +13334,7 @@ async function sendBouquet() {
     bouquetWrapChoice = BOUQUET_WRAPS[0].id;
     if (noteEl) noteEl.value = "";
     renderBouquetWrapSwatches();
+    bouquetRebuildBuilderBg();
     bouquetRenderBuilderStage();
     bouquetRenderToolbar();
     renderBouquetPaletteCounts();
@@ -13212,6 +13342,7 @@ async function sendBouquet() {
     showToast(isPt ? "Buquê criado." : "Bouquet created.", "created");
     if (btn) spawnHeartBurst(btn, 6);
     markSelfWrite("bouquet");
+    bouquetSetBuilderOpen(false);
   }
 
   if (bouquetSyncLive && bouquetDb) {
@@ -13279,12 +13410,9 @@ function initBouquetUI() {
             <option value="her">${currentLanguage() === "pt" ? "De" : "From"} ${CONFIG.names.her}</option>
           `;
   }
-  bouquetPreloadImages(() => {
-    renderBouquetPalette();
-    renderBouquetWrapSwatches();
-    bouquetRenderBuilderStage();
-    renderBouquetCurrent();
-  });
+  renderBouquetPalette();
+  renderBouquetWrapSwatches();
+  initBouquetBuildToggle();
   const stage = document.getElementById("bouquetStage");
   if (stage) {
     stage.addEventListener("pointerdown", bouquetStagePointerDown);
@@ -13319,6 +13447,7 @@ function initBouquetUI() {
   document
     .getElementById("bouquetRemoveBtn")
     ?.addEventListener("click", bouquetRemoveSelected);
+  renderBouquetCurrent();
   setInterval(() => {
     bouquetPurgeExpired();
     if (activeTab === "bouquet") renderBouquetCurrent();
@@ -13362,7 +13491,6 @@ function initBouquetUI() {
     renderBouquetCurrent();
   }
 })();
-
 // Today widget — mood Firebase sync (after getSharedFirestore exists)
 (function initMoodAndTodaySync() {
   try {
