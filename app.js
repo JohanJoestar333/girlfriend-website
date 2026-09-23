@@ -12775,10 +12775,10 @@ const BOUQUET_FLOWERS = [
 // sits right on the notebook page instead of showing a white box.
 const BOUQUET_WRAPS = [
   { id: "kraft", label: "Kraft Wrap", src: "stickers/bouquet-wrap-beige.png" },
-  { id: "white", label: "White Wrap", src: "stickers/bouquet-white.png" },
+  { id: "white", label: "White Wrap", src: "stickers/bouquet-wrap-white.png" },
   { id: "black", label: "Black Wrap", src: "stickers/bouquet-wrap-black.png" },
   { id: "pink", label: "Pink Wrap", src: "stickers/bouquet-wrap-pink.png" },
-  { id: "newspaper", label: "Newspaper Wrap", src: "stickers/bouquet-newspaper.png" },
+  { id: "newspaper", label: "Newspaper Wrap", src: "stickers/bouquet-wrap-newspaper.png" },
 ];
 // Bows sit in the same palette as the flowers — same drag/resize/rotate
 // behavior, just a different picture. bouquetFlowerById() looks them up
