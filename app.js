@@ -3657,35 +3657,47 @@ const PT_TRANSLATIONS = {
   Filter: "Filtro",
   "Pattern color": "Cor do padrão",
   // Bouquet
-  "Fresh every week": "Fresco toda semana",
+  "Fresh for a week": "Fresco por uma semana",
   Bouquet: "Buquê",
-  "A little bouquet just for you. It stays fresh until Sunday at midnight, then it's time to pick a new one.":
-    "Um buquezinho só para você. Ele fica fresco até domingo à meia-noite, depois é hora de escolher um novo.",
-  "No bouquet yet — build this week's below 💐":
-    "Ainda sem buquê — monte o desta semana logo abaixo 💐",
-  "Pick 6 to 10 blooms": "Escolha de 6 a 10 flores",
-  "0 selected": "0 selecionadas",
+  "A little bouquet just for you. Arrange up to 10 blooms on the page — it stays fresh for a week, then it wilts away, or gets replaced the moment you make a new one.":
+    "Um buquezinho só para você. Arrume até 10 flores na página — ele fica fresco por uma semana, depois murcha, ou é substituído assim que você monta um novo.",
+  "No bouquet yet — build one below 💐":
+    "Ainda sem buquê — monte um abaixo 💐",
+  "Choose one wrap": "Escolha um embrulho",
+  "Tap a flower to add it, then drag it into place": "Toque numa flor para adicioná-la, depois arraste até o lugar",
   Clear: "Limpar",
-  "Wrap it with a bow": "Embrulhe com um laço",
   "A little note (optional)": "Um bilhetinho (opcional)",
   "Something sweet to go with it…": "Algo fofo para acompanhar…",
-  "Create this week's bouquet": "Criar o buquê desta semana",
-  "Past bouquets": "Buquês anteriores",
-  "Pink Lily": "Lírio Rosa",
-  Hibiscus: "Hibisco",
-  Orchid: "Orquídea",
-  Periwinkle: "Vinca",
-  "Gerbera Daisy": "Margarida Gérbera",
+  "Create this bouquet": "Criar este buquê",
+  "White & Pink Lily": "Lírio Branco e Rosa",
+  "Bright Pink Hibiscus": "Hibisco Rosa Vivo",
+  "Pale Pink Orchid": "Orquídea Rosa Claro",
+  "Blue Periwinkle": "Vinca Azul",
+  "Green Gerbera Daisy": "Margarida Gérbera Verde",
   "Iridescent Bloom": "Flor Iridescente",
-  "Blue Stripe": "Listrado Azul",
-  "Green Plaid": "Xadrez Verde",
-  "Satin Bow": "Laço de Cetim",
+  "Leopard Print Lily": "Lírio Estampa de Onça",
+  "Purple Cornflower": "Centáurea Roxa",
+  "Cream Lily": "Lírio Creme",
+  "Cream Plumeria": "Plumeria Creme",
+  "Dark Red Lily": "Lírio Vermelho Escuro",
+  "Golden Lily": "Lírio Dourado",
+  "Kraft Wrap": "Embrulho Kraft",
+  "White Wrap": "Embrulho Branco",
+  "Black Wrap": "Embrulho Preto",
+  "Pink Wrap": "Embrulho Rosa",
+  "Newspaper Wrap": "Embrulho de Jornal",
   Wilted: "Murcho",
-  "Make a new one below": "Monte um novo abaixo",
+  Bigger: "Maior",
+  Smaller: "Menor",
+  "Rotate left": "Girar à esquerda",
+  "Rotate right": "Girar à direita",
+  Remove: "Remover",
+  "Save with page": "Salvar com a página",
+  "Save, no background": "Salvar sem fundo",
   "Delete this bouquet?": "Apagar este buquê?",
   "Bouquet created.": "Buquê criado.",
   "Bouquet deleted.": "Buquê apagado.",
-  "Pick between 6 and 10 blooms.": "Escolha entre 6 e 10 flores.",
+  "Add at least one flower.": "Adicione ao menos uma flor.",
 };
 
 const PT_FIRST_DESC = {
@@ -12731,103 +12743,71 @@ function initDaycardsUI() {
 })();
 
 // ================================================================
-// BOUQUET — a weekly digital bouquet, picked from 6–10 blooms and
-// wrapped with a bow. Stays fresh until Sunday 23:59:59 (local
-// time), then it wilts and it's time to make a new one.
-// Firestore: "bouquets".
+// BOUQUET — a digital bouquet you arrange freely on a notebook page,
+// like a sticker in the photo booth. Pick one wrap, add up to 10
+// blooms anywhere you like, then create it. It stays fresh for a
+// week and then deletes itself — or gets replaced the moment you
+// make a new one.
+// Firestore: "bouquets" (kept to at most one live document).
 // ================================================================
 const BOUQUET_FLOWERS = [
-  { id: "lily", label: "Pink Lily", src: "stickers/white-pink-lily.png" },
-  {
-    id: "hibiscus",
-    label: "Hibiscus",
-    src: "stickers/bright-pink-hibiscus.png",
-  },
-  { id: "orchid", label: "Orchid", src: "stickers/pale-pink-orchid.png" },
-  {
-    id: "periwinkle",
-    label: "Periwinkle",
-    src: "stickers/blue-periwinkle-flower-1.png",
-  },
-  {
-    id: "gerbera",
-    label: "Gerbera Daisy",
-    src: "stickers/green-gerbera-daisy-1.png",
-  },
-  {
-    id: "glass",
-    label: "Iridescent Bloom",
-    src: "stickers/iridescent-glass-flower.png",
-  },
+  { id: "white-pink-lily", label: "White & Pink Lily", src: "stickers/flower-white-pink-lily.png" },
+  { id: "bright-pink-hibiscus", label: "Bright Pink Hibiscus", src: "stickers/flower-bright-pink-hibiscus.png" },
+  { id: "pale-pink-orchid", label: "Pale Pink Orchid", src: "stickers/flower-pale-pink-orchid.png" },
+  { id: "blue-periwinkle", label: "Blue Periwinkle", src: "stickers/flower-blue-periwinkle.png" },
+  { id: "green-gerbera-daisy", label: "Green Gerbera Daisy", src: "stickers/flower-green-gerbera-daisy-1.png" },
+  { id: "iridescent-bloom", label: "Iridescent Bloom", src: "stickers/flower-iridescent-glass.png" },
+  { id: "leopard-print-lily", label: "Leopard Print Lily", src: "stickers/flower-leopard-print-lily.png" },
+  { id: "purple-cornflower", label: "Purple Cornflower", src: "stickers/flower-purple-cornflower.png" },
+  { id: "cream-lily", label: "Cream Lily", src: "stickers/flower-cream-lily.png" },
+  { id: "cream-plumeria", label: "Cream Plumeria", src: "stickers/flower-cream-plumeria.png" },
+  { id: "dark-red-lily", label: "Dark Red Lily", src: "stickers/flower-dark-red-lily.png" },
+  { id: "golden-lily", label: "Golden Lily", src: "stickers/flower-golden-lily.png" },
 ];
-const BOUQUET_BOWS = [
-  {
-    id: "brown-satin",
-    label: "Satin Bow",
-    src: "stickers/brown-satin-bow.png",
-  },
-  {
-    id: "blue-stripe",
-    label: "Blue Stripe",
-    src: "stickers/blue-striped-bow.png",
-  },
-  {
-    id: "green-plaid",
-    label: "Green Plaid",
-    src: "stickers/green-plaid-bow.png",
-  },
+const BOUQUET_WRAPS = [
+  { id: "kraft", label: "Kraft Wrap", src: "stickers/bouquet-wrap-beige.jpg" },
+  { id: "white", label: "White Wrap", src: "stickers/bouquet-white.jpg" },
+  { id: "black", label: "Black Wrap", src: "stickers/bouquet-wrap-brack.jpg" },
+  { id: "pink", label: "Pink Wrap", src: "stickers/bouquet-wrap-pink.jpg" },
+  { id: "newspaper", label: "Newspaper Wrap", src: "stickers/bouquet-newspaper.jpg" },
 ];
-const BOUQUET_MIN = 6;
 const BOUQUET_MAX = 10;
+const BOUQUET_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000; // saved for a week, then it deletes itself
+const BOUQUET_STAGE_W = 600;
+const BOUQUET_STAGE_H = 720;
+
 let bouquetDb = null;
 let bouquetSyncLive = false;
-let bouquets = []; // all docs, newest first
-let bouquetSelection = []; // flower ids currently chosen in the builder
-let bouquetBowChoice = BOUQUET_BOWS[0].id;
+let bouquets = []; // Firestore docs, newest first — kept to at most one live entry
+let bouquetItems = []; // builder state: [{ uid, flowerId, x, y, scale, rot }] x/y are 0..1 fractions of the stage
+let bouquetWrapChoice = BOUQUET_WRAPS[0].id; // exactly one wrap, always
+let bouquetSelectedUid = null;
+let bouquetDragUid = null;
+let bouquetDragOffset = { x: 0, y: 0 };
+let bouquetUidSeq = 1;
+const bouquetImgCache = {};
 
 function bouquetFlowerById(id) {
   return BOUQUET_FLOWERS.find((f) => f.id === id) || null;
 }
-function bouquetBowById(id) {
-  return BOUQUET_BOWS.find((b) => b.id === id) || BOUQUET_BOWS[0];
-}
-function bouquetHash(str) {
-  let h = 0;
-  for (let i = 0; i < String(str).length; i++) {
-    h = (h * 31 + String(str).charCodeAt(i)) >>> 0;
-  }
-  return h;
+function bouquetWrapById(id) {
+  return BOUQUET_WRAPS.find((w) => w.id === id) || BOUQUET_WRAPS[0];
 }
 
-// End-of-week (Sunday 23:59:59.999, local time) for a bouquet made at fromMs
-function bouquetWeekEnd(fromMs) {
-  const d = new Date(fromMs);
-  const day = d.getDay(); // 0 = Sunday
-  const add = (7 - day) % 7;
-  const end = new Date(
-    d.getFullYear(),
-    d.getMonth(),
-    d.getDate() + add,
-    23,
-    59,
-    59,
-    999,
-  );
-  return end.getTime();
+function bouquetComputeWeekEnd(fromMs) {
+  return (fromMs || Date.now()) + BOUQUET_LIFETIME_MS;
 }
 
 function bouquetIsWilted(b) {
   if (!b) return false;
-  const end =
-    b.weekEnd || bouquetWeekEnd(itemTimeMs(b.createdAt) || Date.now());
+  const end = b.weekEnd || bouquetComputeWeekEnd(itemTimeMs(b.createdAt));
   return Date.now() > end;
 }
 
 function bouquetRemainingLabel(b) {
   const isPt = currentLanguage() === "pt";
   if (bouquetIsWilted(b)) return "🥀 " + (isPt ? "Murcho" : "Wilted");
-  const end =
-    b.weekEnd || bouquetWeekEnd(itemTimeMs(b.createdAt) || Date.now());
+  const end = b.weekEnd || bouquetComputeWeekEnd(itemTimeMs(b.createdAt));
   const left = end - Date.now();
   const days = Math.floor(left / 86400000);
   const hours = Math.floor((left % 86400000) / 3600000);
@@ -12863,68 +12843,290 @@ function bouquetSetSyncPill() {
   }
 }
 
-// Draws the fan of stems + paper wrap + bow into `el` for one bouquet.
-function bouquetRenderVisual(el, flowerIds, bowId, opts) {
-  opts = opts || {};
-  if (!el) return;
-  el.innerHTML = "";
-  el.classList.toggle("bouquet-visual-sm", !!opts.small);
-  const list = Array.isArray(flowerIds) ? flowerIds : [];
-  const stemsWrap = document.createElement("div");
-  stemsWrap.className = "bouquet-stems";
-  const n = list.length;
-  const spread = Math.min(72, 9 * Math.max(1, n));
-  const start = -spread / 2;
-  list.forEach((fid, i) => {
-    const f = bouquetFlowerById(fid);
-    if (!f) return;
-    const t = n > 1 ? i / (n - 1) : 0.5;
-    const jitter = (bouquetHash(fid + i) % 9) - 4; // small organic wobble, -4..4
-    const angle = start + spread * t + jitter * 0.6;
-    const centerDist = Math.abs(t - 0.5) * 2; // 0 = center, 1 = edges
-    const lift = -(1 - centerDist) * 20 - (jitter % 3) * 2;
-    const img = document.createElement("img");
-    img.src = f.src;
-    img.alt = tr(f.label);
-    img.className = "bouquet-stem";
-    img.style.setProperty("--angle", angle.toFixed(1) + "deg");
-    img.style.setProperty("--lift", lift.toFixed(1) + "px");
-    img.style.setProperty("--x", (t * 100).toFixed(1) + "%");
-    img.style.zIndex = String(20 - Math.round(centerDist * 10));
-    stemsWrap.appendChild(img);
+// ---- image preloading ----
+function bouquetPreloadImages(cb) {
+  const all = BOUQUET_FLOWERS.concat(BOUQUET_WRAPS);
+  let remaining = all.length;
+  if (!remaining) {
+    if (cb) cb();
+    return;
+  }
+  const done = () => {
+    remaining -= 1;
+    if (remaining <= 0 && cb) cb();
+  };
+  all.forEach((d) => {
+    if (bouquetImgCache[d.src]) {
+      done();
+      return;
+    }
+    const img = new Image();
+    img.onload = done;
+    img.onerror = done;
+    img.src = d.src;
+    bouquetImgCache[d.src] = img;
   });
-  const paper = document.createElement("div");
-  paper.className = "bouquet-paper";
-  const bow = bouquetBowById(bowId);
-  const bowImg = document.createElement("img");
-  bowImg.className = "bouquet-bow";
-  bowImg.src = bow.src;
-  bowImg.alt = tr(bow.label);
-  el.appendChild(stemsWrap);
-  el.appendChild(paper);
-  el.appendChild(bowImg);
+}
+
+// ---- notebook-paper background, matching the photo booth's Notebook backdrop ----
+function bouquetPaintNotebook(ctx, W, H) {
+  ctx.fillStyle = "#fbf8f1";
+  ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = "rgba(110,160,200,0.4)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let y = 36; y < H; y += 36) {
+    ctx.moveTo(0, y + 0.5);
+    ctx.lineTo(W, y + 0.5);
+  }
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(235,120,120,0.55)";
+  ctx.beginPath();
+  ctx.moveTo(44.5, 0);
+  ctx.lineTo(44.5, H);
+  ctx.stroke();
+}
+
+// Draws the whole scene — optional notebook background, one wrap, then every
+// flower item on top at its own x/y/scale/rot — into a 2D context sized W×H.
+function bouquetDrawScene(ctx, W, H, wrapId, items, opts) {
+  opts = opts || {};
+  ctx.clearRect(0, 0, W, H);
+  if (opts.withBackground !== false) bouquetPaintNotebook(ctx, W, H);
+  const wrap = bouquetWrapById(wrapId);
+  const wrapImg = wrap && bouquetImgCache[wrap.src];
+  if (wrapImg && wrapImg.complete && wrapImg.naturalWidth) {
+    const wW = W * 0.72;
+    const wH = wW * (wrapImg.naturalHeight / wrapImg.naturalWidth);
+    ctx.drawImage(wrapImg, (W - wW) / 2, H - wH - H * 0.03, wW, wH);
+  }
+  (items || []).forEach((it) => {
+    const f = bouquetFlowerById(it.flowerId);
+    const img = f && bouquetImgCache[f.src];
+    if (!img || !img.complete || !img.naturalWidth) return;
+    const bW = W * 0.22 * (it.scale || 1);
+    const bH = bW * (img.naturalHeight / img.naturalWidth);
+    ctx.save();
+    ctx.translate((it.x || 0.5) * W, (it.y || 0.4) * H);
+    ctx.rotate(((it.rot || 0) * Math.PI) / 180);
+    ctx.drawImage(img, -bW / 2, -bH / 2, bW, bH);
+    if (opts.selectedUid && opts.selectedUid === it.uid) {
+      ctx.strokeStyle = "rgba(201,166,107,0.95)";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      ctx.strokeRect(-bW / 2 - 5, -bH / 2 - 5, bW + 10, bH + 10);
+    }
+    ctx.restore();
+  });
+}
+
+function bouquetRenderBuilderStage() {
+  const canvas = document.getElementById("bouquetStage");
+  if (!canvas) return;
+  bouquetDrawScene(canvas.getContext("2d"), BOUQUET_STAGE_W, BOUQUET_STAGE_H, bouquetWrapChoice, bouquetItems, {
+    withBackground: true,
+    selectedUid: bouquetSelectedUid,
+  });
+}
+
+function bouquetRenderToolbar() {
+  const bar = document.getElementById("bouquetItemToolbar");
+  if (!bar) return;
+  bar.hidden = !bouquetItems.find((x) => x.uid === bouquetSelectedUid);
+}
+
+function renderBouquetPaletteCounts() {
+  const label = document.getElementById("bouquetCountLabel");
+  if (!label) return;
+  const n = bouquetItems.length;
+  const isPt = currentLanguage() === "pt";
+  label.textContent = isPt
+    ? `${n} de ${BOUQUET_MAX} flores`
+    : `${n} of ${BOUQUET_MAX} blooms`;
+  label.classList.toggle("out-of-range", n >= BOUQUET_MAX);
+}
+
+function bouquetAddFlower(flowerId) {
+  const isPt = currentLanguage() === "pt";
+  if (bouquetItems.length >= BOUQUET_MAX) {
+    showToast(
+      isPt ? `Máximo de ${BOUQUET_MAX} flores.` : `Max ${BOUQUET_MAX} blooms.`,
+      "updated",
+    );
+    return;
+  }
+  const uid = "f" + bouquetUidSeq++;
+  bouquetItems.push({
+    uid,
+    flowerId,
+    x: 0.5 + (Math.random() - 0.5) * 0.34,
+    y: 0.36 + (Math.random() - 0.5) * 0.18,
+    scale: 1,
+    rot: (Math.random() - 0.5) * 20,
+  });
+  bouquetSelectedUid = uid;
+  bouquetRenderBuilderStage();
+  bouquetRenderToolbar();
+  renderBouquetPaletteCounts();
+}
+
+function renderBouquetPalette() {
+  const pal = document.getElementById("bouquetPalette");
+  if (!pal) return;
+  pal.innerHTML = "";
+  BOUQUET_FLOWERS.forEach((f) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "bouquet-flower-btn";
+    btn.innerHTML = `<img src="${f.src}" alt=""><span>${tr(f.label)}</span>`;
+    btn.addEventListener("click", () => bouquetAddFlower(f.id));
+    pal.appendChild(btn);
+  });
+  renderBouquetPaletteCounts();
+}
+
+function renderBouquetWrapSwatches() {
+  const wrap = document.getElementById("bouquetWrapSwatches");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+  BOUQUET_WRAPS.forEach((w) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className =
+      "bouquet-wrap-swatch" + (bouquetWrapChoice === w.id ? " active" : "");
+    btn.innerHTML = `<img src="${w.src}" alt="">`;
+    btn.title = tr(w.label);
+    btn.addEventListener("click", () => {
+      bouquetWrapChoice = w.id;
+      renderBouquetWrapSwatches();
+      bouquetRenderBuilderStage();
+    });
+    wrap.appendChild(btn);
+  });
+}
+
+function bouquetAdjustSelected(prop, delta) {
+  const it = bouquetItems.find((x) => x.uid === bouquetSelectedUid);
+  if (!it) return;
+  if (prop === "scale") it.scale = Math.min(1.8, Math.max(0.5, (it.scale || 1) + delta));
+  if (prop === "rot") it.rot = ((it.rot || 0) + delta + 360) % 360;
+  bouquetRenderBuilderStage();
+}
+
+function bouquetRemoveSelected() {
+  bouquetItems = bouquetItems.filter((x) => x.uid !== bouquetSelectedUid);
+  bouquetSelectedUid = null;
+  bouquetRenderBuilderStage();
+  bouquetRenderToolbar();
+  renderBouquetPaletteCounts();
+}
+
+// ---- drag to arrange, straight on the canvas — like a sticker in the photo booth ----
+function bouquetEventToStage(canvas, evt) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (evt.clientX - rect.left) / rect.width,
+    y: (evt.clientY - rect.top) / rect.height,
+  };
+}
+
+function bouquetHitTest(pt) {
+  const px = pt.x * BOUQUET_STAGE_W;
+  const py = pt.y * BOUQUET_STAGE_H;
+  for (let i = bouquetItems.length - 1; i >= 0; i--) {
+    const it = bouquetItems[i];
+    const ix = it.x * BOUQUET_STAGE_W;
+    const iy = it.y * BOUQUET_STAGE_H;
+    const half = (BOUQUET_STAGE_W * 0.22 * (it.scale || 1)) / 2 + 6;
+    if (Math.abs(px - ix) <= half && Math.abs(py - iy) <= half) return it;
+  }
+  return null;
+}
+
+function bouquetStagePointerDown(evt) {
+  const canvas = evt.currentTarget;
+  const pt = bouquetEventToStage(canvas, evt);
+  const hit = bouquetHitTest(pt);
+  if (hit) {
+    bouquetItems = bouquetItems.filter((x) => x !== hit).concat(hit); // bring to front
+    bouquetSelectedUid = hit.uid;
+    bouquetDragUid = hit.uid;
+    bouquetDragOffset = { x: pt.x - hit.x, y: pt.y - hit.y };
+    try {
+      canvas.setPointerCapture(evt.pointerId);
+    } catch (e) {}
+    evt.preventDefault();
+  } else {
+    bouquetSelectedUid = null;
+  }
+  bouquetRenderBuilderStage();
+  bouquetRenderToolbar();
+}
+
+function bouquetStagePointerMove(evt) {
+  if (!bouquetDragUid) return;
+  const canvas = evt.currentTarget;
+  const pt = bouquetEventToStage(canvas, evt);
+  const it = bouquetItems.find((x) => x.uid === bouquetDragUid);
+  if (!it) return;
+  it.x = Math.min(0.95, Math.max(0.05, pt.x - bouquetDragOffset.x));
+  it.y = Math.min(0.95, Math.max(0.05, pt.y - bouquetDragOffset.y));
+  bouquetRenderBuilderStage();
+  evt.preventDefault();
+}
+
+function bouquetStagePointerUp() {
+  bouquetDragUid = null;
+}
+
+// ---- save the finished bouquet to the device, with or without the notebook page ----
+function bouquetDownload(b, withBackground) {
+  const scale = 2;
+  const off = document.createElement("canvas");
+  off.width = BOUQUET_STAGE_W * scale;
+  off.height = BOUQUET_STAGE_H * scale;
+  const ctx = off.getContext("2d");
+  ctx.scale(scale, scale);
+  bouquetDrawScene(ctx, BOUQUET_STAGE_W, BOUQUET_STAGE_H, b.wrap, b.items || [], {
+    withBackground,
+  });
+  off.toBlob((blob) => {
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "bouquet" + (withBackground ? "" : "-no-background") + ".png";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }, "image/png");
 }
 
 function renderBouquetCurrent() {
-  const wrap = document.getElementById("bouquetCurrent");
+  const wrapEl = document.getElementById("bouquetCurrent");
   const emptyEl = document.getElementById("bouquetEmpty");
-  const visual = document.getElementById("bouquetCurrentVisual");
+  const canvas = document.getElementById("bouquetCurrentStage");
   const fromEl = document.getElementById("bouquetCurrentFrom");
   const countdownEl = document.getElementById("bouquetCountdown");
   const noteEl = document.getElementById("bouquetCurrentNote");
   const delBtn = document.getElementById("bouquetDeleteBtn");
-  if (!wrap || !visual) return;
+  const saveBgBtn = document.getElementById("bouquetSaveBgBtn");
+  const saveNoBgBtn = document.getElementById("bouquetSaveNoBgBtn");
+  if (!wrapEl || !canvas) return;
   const current = bouquets[0];
   if (!current) {
-    wrap.hidden = true;
+    wrapEl.hidden = true;
     if (emptyEl) emptyEl.hidden = false;
     return;
   }
-  wrap.hidden = false;
+  wrapEl.hidden = false;
   if (emptyEl) emptyEl.hidden = true;
-  bouquetRenderVisual(visual, current.flowers || [], current.bow);
+  bouquetDrawScene(canvas.getContext("2d"), BOUQUET_STAGE_W, BOUQUET_STAGE_H, current.wrap, current.items || [], {
+    withBackground: true,
+  });
   const wilted = bouquetIsWilted(current);
-  visual.classList.toggle("wilted", wilted);
+  canvas.classList.toggle("wilted", wilted);
   const who = current.from === "her" ? "her" : "me";
   if (fromEl)
     fromEl.textContent =
@@ -12944,125 +13146,25 @@ function renderBouquetCurrent() {
     delBtn.textContent = tr("Delete");
     delBtn.onclick = () => deleteBouquet(current);
   }
+  if (saveBgBtn) saveBgBtn.onclick = () => bouquetDownload(current, true);
+  if (saveNoBgBtn) saveNoBgBtn.onclick = () => bouquetDownload(current, false);
 }
 
-function renderBouquetHistory() {
-  const wrapEl = document.getElementById("bouquetHistoryWrap");
-  const list = document.getElementById("bouquetHistory");
-  if (!list || !wrapEl) return;
-  const past = bouquets.slice(1, 9);
-  list.innerHTML = "";
-  wrapEl.hidden = past.length === 0;
-  past.forEach((b) => {
-    const item = document.createElement("div");
-    item.className = "bouquet-history-item";
-    const visual = document.createElement("div");
-    visual.className = "bouquet-visual bouquet-visual-sm";
-    bouquetRenderVisual(visual, b.flowers || [], b.bow, { small: true });
-    if (bouquetIsWilted(b)) visual.classList.add("wilted");
-    const dateEl = document.createElement("span");
-    dateEl.className = "bouquet-history-date";
-    const ms = itemTimeMs(b.createdAt);
-    dateEl.textContent = ms
-      ? new Date(ms).toLocaleDateString(
-          currentLanguage() === "pt" ? "pt-BR" : "en-US",
-          { month: "short", day: "numeric" },
-        )
-      : "";
-    item.appendChild(visual);
-    item.appendChild(dateEl);
-    list.appendChild(item);
-  });
-}
-
-function renderBouquetPalette() {
-  const pal = document.getElementById("bouquetPalette");
-  if (!pal) return;
-  pal.innerHTML = "";
-  BOUQUET_FLOWERS.forEach((f) => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "bouquet-flower-btn";
-    const count = bouquetSelection.filter((id) => id === f.id).length;
-    btn.innerHTML =
-      `<img src="${f.src}" alt="">` +
-      `<span>${tr(f.label)}</span>` +
-      (count ? `<em class="bouquet-count-badge">${count}</em>` : "");
-    btn.addEventListener("click", () => {
-      if (bouquetSelection.length >= BOUQUET_MAX) {
-        showToast(
-          currentLanguage() === "pt"
-            ? `Máximo de ${BOUQUET_MAX} flores.`
-            : `Max ${BOUQUET_MAX} blooms.`,
-          "updated",
-        );
-        return;
+// deletes any doc older than its week, straight out of the database
+function bouquetPurgeExpired() {
+  const now = Date.now();
+  const expired = bouquets.filter(
+    (b) => (b.weekEnd || bouquetComputeWeekEnd(itemTimeMs(b.createdAt))) < now,
+  );
+  if (!expired.length) return;
+  if (bouquetSyncLive && bouquetDb) {
+    expired.forEach((b) => {
+      if (b.id && !String(b.id).startsWith("local-")) {
+        bouquetDb.collection("bouquets").doc(b.id).delete().catch(() => {});
       }
-      bouquetSelection.push(f.id);
-      renderBouquetBuilder();
     });
-    pal.appendChild(btn);
-  });
-}
-
-function renderBouquetChips() {
-  const chips = document.getElementById("bouquetChips");
-  const countLabel = document.getElementById("bouquetCountLabel");
-  if (!chips) return;
-  chips.innerHTML = "";
-  bouquetSelection.forEach((id, idx) => {
-    const f = bouquetFlowerById(id);
-    if (!f) return;
-    const chip = document.createElement("button");
-    chip.type = "button";
-    chip.className = "bouquet-chip";
-    chip.innerHTML = `<img src="${f.src}" alt="">×`;
-    chip.title = currentLanguage() === "pt" ? "Remover" : "Remove";
-    chip.addEventListener("click", () => {
-      bouquetSelection.splice(idx, 1);
-      renderBouquetBuilder();
-    });
-    chips.appendChild(chip);
-  });
-  if (countLabel) {
-    const n = bouquetSelection.length;
-    const isPt = currentLanguage() === "pt";
-    countLabel.textContent = isPt
-      ? `${n} selecionada${n === 1 ? "" : "s"}`
-      : `${n} selected`;
-    countLabel.classList.toggle(
-      "in-range",
-      n >= BOUQUET_MIN && n <= BOUQUET_MAX,
-    );
-    countLabel.classList.toggle(
-      "out-of-range",
-      n > 0 && (n < BOUQUET_MIN || n > BOUQUET_MAX),
-    );
   }
-}
-
-function renderBouquetBowSwatches() {
-  const wrap = document.getElementById("bouquetBowSwatches");
-  if (!wrap) return;
-  wrap.innerHTML = "";
-  BOUQUET_BOWS.forEach((b) => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className =
-      "bouquet-bow-swatch" + (bouquetBowChoice === b.id ? " active" : "");
-    btn.innerHTML = `<img src="${b.src}" alt="">`;
-    btn.title = tr(b.label);
-    btn.addEventListener("click", () => {
-      bouquetBowChoice = b.id;
-      renderBouquetBowSwatches();
-    });
-    wrap.appendChild(btn);
-  });
-}
-
-function renderBouquetBuilder() {
-  renderBouquetPalette();
-  renderBouquetChips();
+  bouquets = bouquets.filter((b) => expired.indexOf(b) === -1);
 }
 
 async function sendBouquet() {
@@ -13070,12 +13172,9 @@ async function sendBouquet() {
   const fromSel = document.getElementById("bouquetFrom");
   const noteEl = document.getElementById("bouquetNote");
   const isPt = currentLanguage() === "pt";
-  const n = bouquetSelection.length;
-  if (n < BOUQUET_MIN || n > BOUQUET_MAX) {
+  if (!bouquetItems.length) {
     showToast(
-      isPt
-        ? "Escolha entre 6 e 10 flores."
-        : "Pick between 6 and 10 blooms.",
+      isPt ? "Adicione ao menos uma flor." : "Add at least one flower.",
       "updated",
     );
     return;
@@ -13084,21 +13183,31 @@ async function sendBouquet() {
   const note = (noteEl && noteEl.value ? noteEl.value : "").trim();
   const now = Date.now();
   const payload = {
-    flowers: bouquetSelection.slice(),
-    bow: bouquetBowChoice,
+    items: bouquetItems.map((it) => ({
+      flowerId: it.flowerId,
+      x: it.x,
+      y: it.y,
+      scale: it.scale || 1,
+      rot: it.rot || 0,
+    })),
+    wrap: bouquetWrapChoice,
     note,
     from,
     createdAt: now,
-    weekEnd: bouquetWeekEnd(now),
+    weekEnd: bouquetComputeWeekEnd(now),
   };
   if (btn) btn.disabled = true;
+  const previous = bouquets.slice(); // a new bouquet always replaces the old one
 
   function afterSend() {
-    bouquetSelection = [];
-    bouquetBowChoice = BOUQUET_BOWS[0].id;
+    bouquetItems = [];
+    bouquetSelectedUid = null;
+    bouquetWrapChoice = BOUQUET_WRAPS[0].id;
     if (noteEl) noteEl.value = "";
-    renderBouquetBuilder();
-    renderBouquetBowSwatches();
+    renderBouquetWrapSwatches();
+    bouquetRenderBuilderStage();
+    bouquetRenderToolbar();
+    renderBouquetPaletteCounts();
     if (btn) btn.disabled = false;
     showToast(isPt ? "Buquê criado." : "Bouquet created.", "created");
     if (btn) spawnHeartBurst(btn, 6);
@@ -13106,24 +13215,27 @@ async function sendBouquet() {
   }
 
   if (bouquetSyncLive && bouquetDb) {
-    bouquetDb
-      .collection("bouquets")
-      .add({
-        ...payload,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      })
+    Promise.all(
+      previous
+        .filter((b) => b.id && !String(b.id).startsWith("local-"))
+        .map((b) => bouquetDb.collection("bouquets").doc(b.id).delete().catch(() => {})),
+    )
+      .then(() =>
+        bouquetDb.collection("bouquets").add({
+          ...payload,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        }),
+      )
       .then(() => afterSend())
       .catch(() => {
-        bouquets.unshift({ id: "local-" + now, ...payload });
+        bouquets = [{ id: "local-" + now, ...payload }];
         afterSend();
         renderBouquetCurrent();
-        renderBouquetHistory();
       });
   } else {
-    bouquets.unshift({ id: "local-" + now, ...payload });
+    bouquets = [{ id: "local-" + now, ...payload }];
     afterSend();
     renderBouquetCurrent();
-    renderBouquetHistory();
   }
 }
 
@@ -13151,13 +13263,11 @@ async function deleteBouquet(b) {
         bouquets = bouquets.filter((x) => x.id !== b.id);
         showToast(isPt ? "Buquê apagado." : "Bouquet deleted.", "deleted");
         renderBouquetCurrent();
-        renderBouquetHistory();
       });
   } else {
     bouquets = bouquets.filter((x) => x.id !== b.id);
     showToast(isPt ? "Buquê apagado." : "Bouquet deleted.", "deleted");
     renderBouquetCurrent();
-    renderBouquetHistory();
   }
 }
 
@@ -13169,18 +13279,48 @@ function initBouquetUI() {
             <option value="her">${currentLanguage() === "pt" ? "De" : "From"} ${CONFIG.names.her}</option>
           `;
   }
-  renderBouquetBuilder();
-  renderBouquetBowSwatches();
+  bouquetPreloadImages(() => {
+    renderBouquetPalette();
+    renderBouquetWrapSwatches();
+    bouquetRenderBuilderStage();
+    renderBouquetCurrent();
+  });
+  const stage = document.getElementById("bouquetStage");
+  if (stage) {
+    stage.addEventListener("pointerdown", bouquetStagePointerDown);
+    stage.addEventListener("pointermove", bouquetStagePointerMove);
+    stage.addEventListener("pointerup", bouquetStagePointerUp);
+    stage.addEventListener("pointercancel", bouquetStagePointerUp);
+  }
   document
     .getElementById("bouquetClearBtn")
     ?.addEventListener("click", () => {
-      bouquetSelection = [];
-      renderBouquetBuilder();
+      bouquetItems = [];
+      bouquetSelectedUid = null;
+      bouquetRenderBuilderStage();
+      bouquetRenderToolbar();
+      renderBouquetPaletteCounts();
     });
   document
     .getElementById("bouquetSendBtn")
     ?.addEventListener("click", sendBouquet);
+  document
+    .getElementById("bouquetBiggerBtn")
+    ?.addEventListener("click", () => bouquetAdjustSelected("scale", 0.12));
+  document
+    .getElementById("bouquetSmallerBtn")
+    ?.addEventListener("click", () => bouquetAdjustSelected("scale", -0.12));
+  document
+    .getElementById("bouquetRotLeftBtn")
+    ?.addEventListener("click", () => bouquetAdjustSelected("rot", -12));
+  document
+    .getElementById("bouquetRotRightBtn")
+    ?.addEventListener("click", () => bouquetAdjustSelected("rot", 12));
+  document
+    .getElementById("bouquetRemoveBtn")
+    ?.addEventListener("click", bouquetRemoveSelected);
   setInterval(() => {
+    bouquetPurgeExpired();
     if (activeTab === "bouquet") renderBouquetCurrent();
   }, 60000);
 }
@@ -13201,28 +13341,25 @@ function initBouquetUI() {
           }));
           next.sort((a, b) => itemTimeMs(b.createdAt) - itemTimeMs(a.createdAt));
           bouquets = next;
+          bouquetPurgeExpired();
           renderBouquetCurrent();
-          renderBouquetHistory();
           refreshTabDotsFromData("bouquet", bouquets);
         },
         () => {
           bouquetSyncLive = false;
           bouquetSetSyncPill();
           renderBouquetCurrent();
-          renderBouquetHistory();
         },
       );
     } catch (e) {
       bouquetSyncLive = false;
       bouquetSetSyncPill();
       renderBouquetCurrent();
-      renderBouquetHistory();
     }
   } else {
     bouquetSyncLive = false;
     bouquetSetSyncPill();
     renderBouquetCurrent();
-    renderBouquetHistory();
   }
 })();
 

@@ -865,11 +865,12 @@
       <section class="section">
         <div class="container">
           <div class="section-head">
-            <p class="eyebrow">Fresh every week</p>
+            <p class="eyebrow">Fresh for a week</p>
             <h2>Bouquet</h2>
             <p>
-              A little bouquet just for you. It stays fresh until Sunday at
-              midnight, then it's time to pick a new one.
+              A little bouquet just for you. Arrange up to 10 blooms on the
+              page — it stays fresh for a week, then it wilts away, or gets
+              replaced the moment you make a new one.
             </p>
           </div>
           <span
@@ -879,13 +880,24 @@
           ></span>
 
           <div class="bouquet-current" id="bouquetCurrent">
-            <div class="bouquet-visual" id="bouquetCurrentVisual"></div>
+            <canvas
+              class="bouquet-current-stage"
+              id="bouquetCurrentStage"
+              width="600"
+              height="720"
+            ></canvas>
             <div class="bouquet-meta">
               <span class="daycard-from" id="bouquetCurrentFrom"></span>
               <span class="bouquet-badge" id="bouquetCountdown"></span>
             </div>
             <p class="bouquet-note" id="bouquetCurrentNote" hidden></p>
             <div class="bouquet-actions">
+              <button type="button" class="btn outline" id="bouquetSaveBgBtn">
+                Save with page
+              </button>
+              <button type="button" class="btn outline" id="bouquetSaveNoBgBtn">
+                Save, no background
+              </button>
               <button
                 type="button"
                 class="danger"
@@ -897,14 +909,58 @@
             </div>
           </div>
           <p class="bouquet-empty" id="bouquetEmpty" hidden>
-            No bouquet yet — build this week's below 💐
+            No bouquet yet — build one below 💐
           </p>
 
           <form class="bouquet-form" id="bouquetForm">
-            <label class="bouquet-form-label">Pick 6 to 10 blooms</label>
+            <label class="bouquet-form-label">Choose one wrap</label>
+            <div class="bouquet-wrap-swatches" id="bouquetWrapSwatches"></div>
+
+            <label class="bouquet-form-label"
+              >Tap a flower to add it, then drag it into place</label
+            >
+            <div class="bouquet-stage-wrap">
+              <canvas
+                class="bouquet-stage"
+                id="bouquetStage"
+                width="600"
+                height="720"
+              ></canvas>
+              <div class="bouquet-item-toolbar" id="bouquetItemToolbar" hidden>
+                <button type="button" id="bouquetSmallerBtn" title="Smaller">
+                  −
+                </button>
+                <button type="button" id="bouquetBiggerBtn" title="Bigger">
+                  +
+                </button>
+                <button
+                  type="button"
+                  id="bouquetRotLeftBtn"
+                  title="Rotate left"
+                >
+                  ↺
+                </button>
+                <button
+                  type="button"
+                  id="bouquetRotRightBtn"
+                  title="Rotate right"
+                >
+                  ↻
+                </button>
+                <button
+                  type="button"
+                  id="bouquetRemoveBtn"
+                  class="bouquet-item-remove"
+                  title="Remove"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
             <div class="bouquet-palette" id="bouquetPalette"></div>
             <div class="bouquet-count-row">
-              <span id="bouquetCountLabel">0 selected</span>
+              <span id="bouquetCountLabel">0 of 10 blooms</span>
               <button
                 type="button"
                 class="btn outline"
@@ -913,10 +969,6 @@
                 Clear
               </button>
             </div>
-            <div class="bouquet-chips" id="bouquetChips"></div>
-
-            <label class="bouquet-form-label">Wrap it with a bow</label>
-            <div class="bouquet-bow-swatches" id="bouquetBowSwatches"></div>
 
             <label for="bouquetNote" class="bouquet-form-label"
               >A little note (optional)</label
@@ -933,15 +985,10 @@
                 <option value="her">From Fiel</option>
               </select>
               <button type="button" class="btn" id="bouquetSendBtn">
-                Create this week's bouquet
+                Create this bouquet
               </button>
             </div>
           </form>
-
-          <div class="bouquet-history-wrap" id="bouquetHistoryWrap" hidden>
-            <p class="bouquet-form-label">Past bouquets</p>
-            <div class="bouquet-history" id="bouquetHistory"></div>
-          </div>
         </div>
       </section>
     </div>
