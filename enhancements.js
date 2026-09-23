@@ -754,11 +754,10 @@
     { id: "calAddForm", label: "+ Add to the calendar", labelPt: "+ Adicionar ao calendário" },
     { id: "memoryUploadForm", label: "+ Add a photo", labelPt: "+ Adicionar uma foto" },
     { id: "albumCreateForm", label: "+ New album", labelPt: "+ Novo álbum" },
-    {
-      id: "bouquetForm",
-      label: "+ Build this week's bouquet",
-      labelPt: "+ Montar o buquê desta semana",
-    },
+    // NOTE: bouquetForm intentionally NOT listed here — it has its own
+    // dedicated toggle button (see bouquetBuildToggle / initBouquetBuildToggle
+    // in app.js). Listing it here too used to inject a second, plainer
+    // "+ Build this week's bouquet" button right on top of that one.
   ];
 
   var closeLabel = "Close";

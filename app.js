@@ -3668,6 +3668,10 @@ const PT_TRANSLATIONS = {
   "This week's bouquet": "O buquê desta semana",
   "Choose one wrap": "Escolha um embrulho",
   "Tap a flower to add it, then drag it into place": "Toque numa flor para adicioná-la, depois arraste até o lugar",
+  Bows: "Laços",
+  "Brown Satin Bow": "Laço de Cetim Marrom",
+  "Blue Striped Bow": "Laço Listrado Azul",
+  "Green Plaid Bow": "Laço Xadrez Verde",
   Clear: "Limpar",
   "A little note (optional)": "Um bilhetinho (opcional)",
   "Something sweet to go with it…": "Algo fofo para acompanhar…",
@@ -12776,6 +12780,14 @@ const BOUQUET_WRAPS = [
   { id: "pink", label: "Pink Wrap", src: "stickers/bouquet-wrap-pink.png" },
   { id: "newspaper", label: "Newspaper Wrap", src: "stickers/bouquet-newspaper.png" },
 ];
+// Bows sit in the same palette as the flowers — same drag/resize/rotate
+// behavior, just a different picture. bouquetFlowerById() looks them up
+// alongside BOUQUET_FLOWERS so the drawing code needs no changes.
+const BOUQUET_BOWS = [
+  { id: "brown-satin-bow", label: "Brown Satin Bow", src: "stickers/brown-satin-bow.png" },
+  { id: "blue-striped-bow", label: "Blue Striped Bow", src: "stickers/blue-striped-bow.png" },
+  { id: "green-plaid-bow", label: "Green Plaid Bow", src: "stickers/green-plaid-bow.png" },
+];
 const BOUQUET_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000; // saved for a week, then it deletes itself
 const BOUQUET_STAGE_W = 600;
 const BOUQUET_STAGE_H = 720;
@@ -12798,7 +12810,11 @@ const bouquetImagesWaiters = [];
 let bouquetBuilderBgCanvas = null; // offscreen cache: notebook + wrap only, redrawn just on wrap change
 
 function bouquetFlowerById(id) {
-  return BOUQUET_FLOWERS.find((f) => f.id === id) || null;
+  return (
+    BOUQUET_FLOWERS.find((f) => f.id === id) ||
+    BOUQUET_BOWS.find((f) => f.id === id) ||
+    null
+  );
 }
 function bouquetWrapById(id) {
   return BOUQUET_WRAPS.find((w) => w.id === id) || BOUQUET_WRAPS[0];
@@ -12864,7 +12880,7 @@ function bouquetEnsureImages(cb) {
   if (cb) bouquetImagesWaiters.push(cb);
   if (bouquetImagesLoading) return;
   bouquetImagesLoading = true;
-  const all = BOUQUET_FLOWERS.concat(BOUQUET_WRAPS);
+  const all = BOUQUET_FLOWERS.concat(BOUQUET_WRAPS, BOUQUET_BOWS);
   let remaining = all.length;
   const done = () => {
     remaining -= 1;
@@ -12926,7 +12942,7 @@ function bouquetDrawItem(ctx, W, H, it, selected) {
   const f = bouquetFlowerById(it.flowerId);
   const img = f && bouquetImgCache[f.src];
   if (!img || !img.complete || !img.naturalWidth) return;
-  const bW = W * 0.22 * (it.scale || 1);
+  const bW = W * 0.34 * (it.scale || 1);
   const bH = bW * (img.naturalHeight / img.naturalWidth);
   ctx.save();
   ctx.translate((it.x || 0.5) * W, (it.y || 0.4) * H);
@@ -13038,6 +13054,18 @@ function renderBouquetPalette() {
   if (!pal) return;
   pal.innerHTML = "";
   BOUQUET_FLOWERS.forEach((f) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "bouquet-flower-btn";
+    btn.innerHTML = `<img src="${f.src}" alt="" loading="lazy"><span>${tr(f.label)}</span>`;
+    btn.addEventListener("click", () => bouquetAddFlower(f.id));
+    pal.appendChild(btn);
+  });
+  const bowLabel = document.createElement("div");
+  bowLabel.className = "bouquet-palette-divider";
+  bowLabel.textContent = tr("Bows");
+  pal.appendChild(bowLabel);
+  BOUQUET_BOWS.forEach((f) => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "bouquet-flower-btn";

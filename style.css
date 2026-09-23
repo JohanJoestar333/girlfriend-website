@@ -4102,9 +4102,20 @@
         background: var(--sage-dim);
       }
       .bouquet-flower-btn img {
-        width: 40px;
-        height: 40px;
+        width: 52px;
+        height: 52px;
         object-fit: contain;
+      }
+      .bouquet-palette-divider {
+        grid-column: 1 / -1;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--ink-soft);
+        margin-top: 6px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(43, 38, 34, 0.1);
       }
       .bouquet-flower-btn span {
         font-size: 0.68rem;
