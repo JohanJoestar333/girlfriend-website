@@ -3878,6 +3878,303 @@
         font-weight: 600;
         text-decoration: underline;
       }
+
+      /* ---------------- Bouquet ---------------- */
+      .bouquet-current {
+        max-width: 420px;
+        margin: 0 auto 22px;
+        background: #fff;
+        border-radius: var(--radius-md);
+        padding: 18px 20px 20px;
+        box-shadow: var(--shadow-tiny);
+        border: 1px solid rgba(43, 38, 34, 0.06);
+        text-align: center;
+      }
+      html[data-theme="dark"] .bouquet-current,
+      html[data-theme="dark"] .bouquet-form {
+        background: var(--cream-dim);
+      }
+      .bouquet-empty {
+        text-align: center;
+        color: var(--ink-soft);
+        font-style: italic;
+        padding: 20px 12px 28px;
+      }
+      .bouquet-visual {
+        position: relative;
+        height: 230px;
+        margin: 6px auto 4px;
+        max-width: 260px;
+      }
+      .bouquet-visual.bouquet-visual-sm {
+        height: 92px;
+        max-width: 110px;
+        margin: 0 auto;
+      }
+      .bouquet-stems {
+        position: absolute;
+        inset: 0;
+      }
+      .bouquet-stem {
+        position: absolute;
+        bottom: 32%;
+        left: var(--x, 50%);
+        width: 46%;
+        transform: translateX(-50%) translateY(var(--lift, 0px))
+          rotate(var(--angle, 0deg));
+        transform-origin: bottom center;
+        filter: drop-shadow(0 3px 5px rgba(43, 38, 34, 0.18));
+      }
+      .bouquet-paper {
+        position: absolute;
+        left: 50%;
+        bottom: 0;
+        transform: translateX(-50%);
+        width: 58%;
+        height: 36%;
+        background: linear-gradient(
+          180deg,
+          rgba(250, 246, 240, 0) 0%,
+          var(--cream-dim) 45%,
+          var(--cream-dim) 100%
+        );
+        clip-path: polygon(32% 0%, 68% 0%, 100% 100%, 0% 100%);
+        box-shadow: inset 0 0 0 1px rgba(43, 38, 34, 0.08);
+      }
+      .bouquet-bow {
+        position: absolute;
+        left: 50%;
+        bottom: 26%;
+        transform: translateX(-50%);
+        width: 24%;
+        filter: drop-shadow(0 2px 5px rgba(43, 38, 34, 0.25));
+      }
+      .bouquet-visual.wilted {
+        filter: grayscale(0.75) sepia(0.25) brightness(0.9);
+        opacity: 0.75;
+      }
+      .bouquet-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 12px;
+        align-items: center;
+        justify-content: center;
+        margin-top: 8px;
+        font-size: 0.78rem;
+      }
+      .bouquet-badge {
+        padding: 3px 10px;
+        border-radius: 999px;
+        background: var(--sage-dim);
+        color: var(--green-deep);
+        font-weight: 700;
+        font-size: 0.72rem;
+      }
+      .bouquet-badge.wilted {
+        background: rgba(43, 38, 34, 0.08);
+        color: var(--ink-soft);
+      }
+      .bouquet-note {
+        font-family: var(--serif);
+        font-size: 1.05rem;
+        line-height: 1.6;
+        color: var(--ink);
+        margin-top: 12px;
+        white-space: pre-wrap;
+      }
+      .bouquet-actions {
+        margin-top: 12px;
+      }
+      .bouquet-actions button {
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 0.76rem;
+        font-weight: 700;
+        background: var(--cream-dim);
+        color: var(--ink-soft);
+        transition: all 0.2s ease;
+      }
+      .bouquet-actions button:hover {
+        background: var(--blush-soft);
+        color: #a34a4a;
+      }
+      .bouquet-form {
+        max-width: 480px;
+        margin: 0 auto 24px;
+        background: #fff;
+        border-radius: var(--radius-md);
+        padding: 20px;
+        box-shadow: var(--shadow-tiny);
+        border: 1px solid rgba(43, 38, 34, 0.06);
+      }
+      .bouquet-form-label {
+        display: block;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 700;
+        color: var(--ink-soft);
+        margin: 16px 0 8px;
+      }
+      .bouquet-form-label:first-child {
+        margin-top: 0;
+      }
+      .bouquet-palette {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+        gap: 8px;
+      }
+      .bouquet-flower-btn {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 8px 4px 6px;
+        border-radius: var(--radius-sm);
+        background: var(--cream);
+        border: 1.5px solid rgba(43, 38, 34, 0.1);
+        transition: all 0.15s ease;
+      }
+      .bouquet-flower-btn:hover {
+        border-color: var(--sage);
+        background: var(--sage-dim);
+      }
+      .bouquet-flower-btn img {
+        width: 40px;
+        height: 40px;
+        object-fit: contain;
+      }
+      .bouquet-flower-btn span {
+        font-size: 0.68rem;
+        color: var(--ink-soft);
+        text-align: center;
+        line-height: 1.2;
+      }
+      .bouquet-count-badge {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: var(--green-deep);
+        color: #fff;
+        font-style: normal;
+        font-size: 0.68rem;
+        font-weight: 700;
+        min-width: 17px;
+        height: 17px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 3px;
+      }
+      .bouquet-count-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .bouquet-count-row span {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--ink-soft);
+      }
+      .bouquet-count-row span.in-range {
+        color: var(--green-deep);
+      }
+      .bouquet-count-row span.out-of-range {
+        color: #a34a4a;
+      }
+      .bouquet-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 10px;
+        min-height: 0;
+      }
+      .bouquet-chip {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px 3px 3px;
+        border-radius: 999px;
+        background: var(--cream-dim);
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--ink-soft);
+      }
+      .bouquet-chip img {
+        width: 20px;
+        height: 20px;
+        object-fit: contain;
+        border-radius: 50%;
+        background: #fff;
+      }
+      .bouquet-chip:hover {
+        background: var(--blush-soft);
+        color: #a34a4a;
+      }
+      .bouquet-bow-swatches {
+        display: flex;
+        gap: 10px;
+      }
+      .bouquet-bow-swatch {
+        padding: 6px;
+        border-radius: var(--radius-sm);
+        background: var(--cream);
+        border: 1.5px solid rgba(43, 38, 34, 0.1);
+      }
+      .bouquet-bow-swatch img {
+        width: 36px;
+        height: 36px;
+        object-fit: contain;
+        display: block;
+      }
+      .bouquet-bow-swatch.active {
+        border-color: var(--gold);
+        background: rgba(201, 166, 107, 0.15);
+      }
+      .bouquet-form textarea {
+        width: 100%;
+        min-height: 70px;
+        border-radius: var(--radius-sm);
+        border: 1.5px solid rgba(43, 38, 34, 0.12);
+        padding: 12px 14px;
+        font-family: var(--serif);
+        font-size: 1rem;
+        line-height: 1.6;
+        resize: vertical;
+        background: var(--cream);
+        color: var(--ink);
+      }
+      .bouquet-form textarea:focus {
+        outline: none;
+        border-color: var(--green);
+      }
+      .bouquet-history-wrap {
+        max-width: 480px;
+        margin: 0 auto;
+      }
+      .bouquet-history {
+        display: flex;
+        gap: 14px;
+        overflow-x: auto;
+        padding: 4px 2px 10px;
+      }
+      .bouquet-history-item {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+      }
+      .bouquet-history-date {
+        font-size: 0.68rem;
+        color: var(--ink-soft);
+        font-weight: 600;
+      }
+
       .cal-event-body {
         flex: 1;
         min-width: 0;

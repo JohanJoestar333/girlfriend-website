@@ -85,6 +85,9 @@
               hidden
             ></span>
           </button>
+          <button class="tab-btn" data-tab="bouquet">
+            Bouquet<span class="tab-dot" data-dot-for="bouquet" hidden></span>
+          </button>
           <button class="tab-btn" data-tab="quizzes">Quizzes</button>
           <button class="tab-btn" data-tab="music">
             Music<span class="tab-dot" data-dot-for="music" hidden></span>
@@ -212,6 +215,9 @@
             data-dot-for="bucketlist"
             hidden
           ></span>
+        </button>
+        <button class="tab-btn" data-tab="bouquet">
+          Bouquet<span class="tab-dot" data-dot-for="bouquet" hidden></span>
         </button>
         <button class="tab-btn" data-tab="quizzes">Quizzes</button>
         <button class="tab-btn" data-tab="music">
@@ -849,6 +855,92 @@
 
             <div class="movie-list" id="movieToWatchList"></div>
             <div class="movie-list" id="movieWatchedList" hidden></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============================= TAB: BOUQUET ============================= -->
+    <div class="tab-panel" id="tab-bouquet">
+      <section class="section">
+        <div class="container">
+          <div class="section-head">
+            <p class="eyebrow">Fresh every week</p>
+            <h2>Bouquet</h2>
+            <p>
+              A little bouquet just for you. It stays fresh until Sunday at
+              midnight, then it's time to pick a new one.
+            </p>
+          </div>
+          <span
+            class="bucket-sync-pill"
+            tabindex="0"
+            id="bouquetSyncPill"
+          ></span>
+
+          <div class="bouquet-current" id="bouquetCurrent">
+            <div class="bouquet-visual" id="bouquetCurrentVisual"></div>
+            <div class="bouquet-meta">
+              <span class="daycard-from" id="bouquetCurrentFrom"></span>
+              <span class="bouquet-badge" id="bouquetCountdown"></span>
+            </div>
+            <p class="bouquet-note" id="bouquetCurrentNote" hidden></p>
+            <div class="bouquet-actions">
+              <button
+                type="button"
+                class="danger"
+                id="bouquetDeleteBtn"
+                hidden
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+          <p class="bouquet-empty" id="bouquetEmpty" hidden>
+            No bouquet yet — build this week's below 💐
+          </p>
+
+          <form class="bouquet-form" id="bouquetForm">
+            <label class="bouquet-form-label">Pick 6 to 10 blooms</label>
+            <div class="bouquet-palette" id="bouquetPalette"></div>
+            <div class="bouquet-count-row">
+              <span id="bouquetCountLabel">0 selected</span>
+              <button
+                type="button"
+                class="btn outline"
+                id="bouquetClearBtn"
+              >
+                Clear
+              </button>
+            </div>
+            <div class="bouquet-chips" id="bouquetChips"></div>
+
+            <label class="bouquet-form-label">Wrap it with a bow</label>
+            <div class="bouquet-bow-swatches" id="bouquetBowSwatches"></div>
+
+            <label for="bouquetNote" class="bouquet-form-label"
+              >A little note (optional)</label
+            >
+            <textarea
+              id="bouquetNote"
+              maxlength="200"
+              placeholder="Something sweet to go with it…"
+            ></textarea>
+
+            <div class="daycard-compose-row">
+              <select id="bouquetFrom" aria-label="From">
+                <option value="me">From Thommy</option>
+                <option value="her">From Fiel</option>
+              </select>
+              <button type="button" class="btn" id="bouquetSendBtn">
+                Create this week's bouquet
+              </button>
+            </div>
+          </form>
+
+          <div class="bouquet-history-wrap" id="bouquetHistoryWrap" hidden>
+            <p class="bouquet-form-label">Past bouquets</p>
+            <div class="bouquet-history" id="bouquetHistory"></div>
           </div>
         </div>
       </section>

@@ -330,6 +330,7 @@ calendar
 albums
 daycards
 moods
+bouquets
 thommyPersonal
 photoboothCalls
   ├── callerCandidates
@@ -381,6 +382,11 @@ service cloud.firestore {
 
     // MOODS
     match /moods/{docId} {
+      allow read, write: if true;
+    }
+
+    // BOUQUET
+    match /bouquets/{docId} {
       allow read, write: if true;
     }
 

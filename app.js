@@ -3656,6 +3656,36 @@ const PT_TRANSLATIONS = {
   // Photo Booth
   Filter: "Filtro",
   "Pattern color": "Cor do padrão",
+  // Bouquet
+  "Fresh every week": "Fresco toda semana",
+  Bouquet: "Buquê",
+  "A little bouquet just for you. It stays fresh until Sunday at midnight, then it's time to pick a new one.":
+    "Um buquezinho só para você. Ele fica fresco até domingo à meia-noite, depois é hora de escolher um novo.",
+  "No bouquet yet — build this week's below 💐":
+    "Ainda sem buquê — monte o desta semana logo abaixo 💐",
+  "Pick 6 to 10 blooms": "Escolha de 6 a 10 flores",
+  "0 selected": "0 selecionadas",
+  Clear: "Limpar",
+  "Wrap it with a bow": "Embrulhe com um laço",
+  "A little note (optional)": "Um bilhetinho (opcional)",
+  "Something sweet to go with it…": "Algo fofo para acompanhar…",
+  "Create this week's bouquet": "Criar o buquê desta semana",
+  "Past bouquets": "Buquês anteriores",
+  "Pink Lily": "Lírio Rosa",
+  Hibiscus: "Hibisco",
+  Orchid: "Orquídea",
+  Periwinkle: "Vinca",
+  "Gerbera Daisy": "Margarida Gérbera",
+  "Iridescent Bloom": "Flor Iridescente",
+  "Blue Stripe": "Listrado Azul",
+  "Green Plaid": "Xadrez Verde",
+  "Satin Bow": "Laço de Cetim",
+  Wilted: "Murcho",
+  "Make a new one below": "Monte um novo abaixo",
+  "Delete this bouquet?": "Apagar este buquê?",
+  "Bouquet created.": "Buquê criado.",
+  "Bouquet deleted.": "Buquê apagado.",
+  "Pick between 6 and 10 blooms.": "Escolha entre 6 e 10 flores.",
 };
 
 const PT_FIRST_DESC = {
@@ -4121,6 +4151,17 @@ const CHANGE_TOAST_CONFIG = {
         ? "Novo Cartão do Dia adicionado"
         : n + " novos Cartões do Dia adicionados",
   },
+  bouquet: {
+    icon: "💐",
+    en: (n) =>
+      n === 1
+        ? "A new bouquet is waiting for you"
+        : n + " new bouquets are waiting for you",
+    pt: (n) =>
+      n === 1
+        ? "Um novo buquê está esperando por você"
+        : n + " novos buquês estão esperando por você",
+  },
 };
 
 function itemTimeMs(value) {
@@ -4237,6 +4278,7 @@ const VALID_TABS = [
   "us",
   "openwhen",
   "bucketlist",
+  "bouquet",
   "quizzes",
   "music",
   "photobooth",
@@ -12685,6 +12727,502 @@ function initDaycardsUI() {
     daycardsSyncLive = false;
     setDaycardsSyncPill();
     renderDaycards();
+  }
+})();
+
+// ================================================================
+// BOUQUET — a weekly digital bouquet, picked from 6–10 blooms and
+// wrapped with a bow. Stays fresh until Sunday 23:59:59 (local
+// time), then it wilts and it's time to make a new one.
+// Firestore: "bouquets".
+// ================================================================
+const BOUQUET_FLOWERS = [
+  { id: "lily", label: "Pink Lily", src: "stickers/white-pink-lily.png" },
+  {
+    id: "hibiscus",
+    label: "Hibiscus",
+    src: "stickers/bright-pink-hibiscus.png",
+  },
+  { id: "orchid", label: "Orchid", src: "stickers/pale-pink-orchid.png" },
+  {
+    id: "periwinkle",
+    label: "Periwinkle",
+    src: "stickers/blue-periwinkle-flower-1.png",
+  },
+  {
+    id: "gerbera",
+    label: "Gerbera Daisy",
+    src: "stickers/green-gerbera-daisy-1.png",
+  },
+  {
+    id: "glass",
+    label: "Iridescent Bloom",
+    src: "stickers/iridescent-glass-flower.png",
+  },
+];
+const BOUQUET_BOWS = [
+  {
+    id: "brown-satin",
+    label: "Satin Bow",
+    src: "stickers/brown-satin-bow.png",
+  },
+  {
+    id: "blue-stripe",
+    label: "Blue Stripe",
+    src: "stickers/blue-striped-bow.png",
+  },
+  {
+    id: "green-plaid",
+    label: "Green Plaid",
+    src: "stickers/green-plaid-bow.png",
+  },
+];
+const BOUQUET_MIN = 6;
+const BOUQUET_MAX = 10;
+let bouquetDb = null;
+let bouquetSyncLive = false;
+let bouquets = []; // all docs, newest first
+let bouquetSelection = []; // flower ids currently chosen in the builder
+let bouquetBowChoice = BOUQUET_BOWS[0].id;
+
+function bouquetFlowerById(id) {
+  return BOUQUET_FLOWERS.find((f) => f.id === id) || null;
+}
+function bouquetBowById(id) {
+  return BOUQUET_BOWS.find((b) => b.id === id) || BOUQUET_BOWS[0];
+}
+function bouquetHash(str) {
+  let h = 0;
+  for (let i = 0; i < String(str).length; i++) {
+    h = (h * 31 + String(str).charCodeAt(i)) >>> 0;
+  }
+  return h;
+}
+
+// End-of-week (Sunday 23:59:59.999, local time) for a bouquet made at fromMs
+function bouquetWeekEnd(fromMs) {
+  const d = new Date(fromMs);
+  const day = d.getDay(); // 0 = Sunday
+  const add = (7 - day) % 7;
+  const end = new Date(
+    d.getFullYear(),
+    d.getMonth(),
+    d.getDate() + add,
+    23,
+    59,
+    59,
+    999,
+  );
+  return end.getTime();
+}
+
+function bouquetIsWilted(b) {
+  if (!b) return false;
+  const end =
+    b.weekEnd || bouquetWeekEnd(itemTimeMs(b.createdAt) || Date.now());
+  return Date.now() > end;
+}
+
+function bouquetRemainingLabel(b) {
+  const isPt = currentLanguage() === "pt";
+  if (bouquetIsWilted(b)) return "🥀 " + (isPt ? "Murcho" : "Wilted");
+  const end =
+    b.weekEnd || bouquetWeekEnd(itemTimeMs(b.createdAt) || Date.now());
+  const left = end - Date.now();
+  const days = Math.floor(left / 86400000);
+  const hours = Math.floor((left % 86400000) / 3600000);
+  if (days > 0)
+    return isPt
+      ? `Fresco por mais ${days}d ${hours}h`
+      : `Fresh for ${days}d ${hours}h more`;
+  const mins = Math.floor((left % 3600000) / 60000);
+  if (hours > 0)
+    return isPt
+      ? `Fresco por mais ${hours}h ${mins}m`
+      : `Fresh for ${hours}h ${mins}m more`;
+  return isPt
+    ? `Murchando em ${Math.max(0, mins)}m`
+    : `Wilting in ${Math.max(0, mins)}m`;
+}
+
+function bouquetSetSyncPill() {
+  const pill = document.getElementById("bouquetSyncPill");
+  if (!pill) return;
+  if (bouquetSyncLive) {
+    pill.textContent =
+      currentLanguage() === "pt"
+        ? "Sincronizado — os dois veem o buquê"
+        : "Synced — both of you see the bouquet";
+    pill.className = "bucket-sync-pill live";
+  } else {
+    pill.textContent =
+      currentLanguage() === "pt"
+        ? "Ainda não sincronizado (só neste aparelho)"
+        : "Not synced yet (this device only)";
+    pill.className = "bucket-sync-pill local";
+  }
+}
+
+// Draws the fan of stems + paper wrap + bow into `el` for one bouquet.
+function bouquetRenderVisual(el, flowerIds, bowId, opts) {
+  opts = opts || {};
+  if (!el) return;
+  el.innerHTML = "";
+  el.classList.toggle("bouquet-visual-sm", !!opts.small);
+  const list = Array.isArray(flowerIds) ? flowerIds : [];
+  const stemsWrap = document.createElement("div");
+  stemsWrap.className = "bouquet-stems";
+  const n = list.length;
+  const spread = Math.min(72, 9 * Math.max(1, n));
+  const start = -spread / 2;
+  list.forEach((fid, i) => {
+    const f = bouquetFlowerById(fid);
+    if (!f) return;
+    const t = n > 1 ? i / (n - 1) : 0.5;
+    const jitter = (bouquetHash(fid + i) % 9) - 4; // small organic wobble, -4..4
+    const angle = start + spread * t + jitter * 0.6;
+    const centerDist = Math.abs(t - 0.5) * 2; // 0 = center, 1 = edges
+    const lift = -(1 - centerDist) * 20 - (jitter % 3) * 2;
+    const img = document.createElement("img");
+    img.src = f.src;
+    img.alt = tr(f.label);
+    img.className = "bouquet-stem";
+    img.style.setProperty("--angle", angle.toFixed(1) + "deg");
+    img.style.setProperty("--lift", lift.toFixed(1) + "px");
+    img.style.setProperty("--x", (t * 100).toFixed(1) + "%");
+    img.style.zIndex = String(20 - Math.round(centerDist * 10));
+    stemsWrap.appendChild(img);
+  });
+  const paper = document.createElement("div");
+  paper.className = "bouquet-paper";
+  const bow = bouquetBowById(bowId);
+  const bowImg = document.createElement("img");
+  bowImg.className = "bouquet-bow";
+  bowImg.src = bow.src;
+  bowImg.alt = tr(bow.label);
+  el.appendChild(stemsWrap);
+  el.appendChild(paper);
+  el.appendChild(bowImg);
+}
+
+function renderBouquetCurrent() {
+  const wrap = document.getElementById("bouquetCurrent");
+  const emptyEl = document.getElementById("bouquetEmpty");
+  const visual = document.getElementById("bouquetCurrentVisual");
+  const fromEl = document.getElementById("bouquetCurrentFrom");
+  const countdownEl = document.getElementById("bouquetCountdown");
+  const noteEl = document.getElementById("bouquetCurrentNote");
+  const delBtn = document.getElementById("bouquetDeleteBtn");
+  if (!wrap || !visual) return;
+  const current = bouquets[0];
+  if (!current) {
+    wrap.hidden = true;
+    if (emptyEl) emptyEl.hidden = false;
+    return;
+  }
+  wrap.hidden = false;
+  if (emptyEl) emptyEl.hidden = true;
+  bouquetRenderVisual(visual, current.flowers || [], current.bow);
+  const wilted = bouquetIsWilted(current);
+  visual.classList.toggle("wilted", wilted);
+  const who = current.from === "her" ? "her" : "me";
+  if (fromEl)
+    fromEl.textContent =
+      (currentLanguage() === "pt" ? "De " : "From ") +
+      (who === "her" ? CONFIG.names.her : CONFIG.names.me);
+  if (countdownEl) {
+    countdownEl.textContent = bouquetRemainingLabel(current);
+    countdownEl.classList.toggle("wilted", wilted);
+  }
+  const hasNote = !!(current.note && String(current.note).trim());
+  if (noteEl) {
+    noteEl.hidden = !hasNote;
+    if (hasNote) noteEl.textContent = current.note;
+  }
+  if (delBtn) {
+    delBtn.hidden = false;
+    delBtn.textContent = tr("Delete");
+    delBtn.onclick = () => deleteBouquet(current);
+  }
+}
+
+function renderBouquetHistory() {
+  const wrapEl = document.getElementById("bouquetHistoryWrap");
+  const list = document.getElementById("bouquetHistory");
+  if (!list || !wrapEl) return;
+  const past = bouquets.slice(1, 9);
+  list.innerHTML = "";
+  wrapEl.hidden = past.length === 0;
+  past.forEach((b) => {
+    const item = document.createElement("div");
+    item.className = "bouquet-history-item";
+    const visual = document.createElement("div");
+    visual.className = "bouquet-visual bouquet-visual-sm";
+    bouquetRenderVisual(visual, b.flowers || [], b.bow, { small: true });
+    if (bouquetIsWilted(b)) visual.classList.add("wilted");
+    const dateEl = document.createElement("span");
+    dateEl.className = "bouquet-history-date";
+    const ms = itemTimeMs(b.createdAt);
+    dateEl.textContent = ms
+      ? new Date(ms).toLocaleDateString(
+          currentLanguage() === "pt" ? "pt-BR" : "en-US",
+          { month: "short", day: "numeric" },
+        )
+      : "";
+    item.appendChild(visual);
+    item.appendChild(dateEl);
+    list.appendChild(item);
+  });
+}
+
+function renderBouquetPalette() {
+  const pal = document.getElementById("bouquetPalette");
+  if (!pal) return;
+  pal.innerHTML = "";
+  BOUQUET_FLOWERS.forEach((f) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "bouquet-flower-btn";
+    const count = bouquetSelection.filter((id) => id === f.id).length;
+    btn.innerHTML =
+      `<img src="${f.src}" alt="">` +
+      `<span>${tr(f.label)}</span>` +
+      (count ? `<em class="bouquet-count-badge">${count}</em>` : "");
+    btn.addEventListener("click", () => {
+      if (bouquetSelection.length >= BOUQUET_MAX) {
+        showToast(
+          currentLanguage() === "pt"
+            ? `Máximo de ${BOUQUET_MAX} flores.`
+            : `Max ${BOUQUET_MAX} blooms.`,
+          "updated",
+        );
+        return;
+      }
+      bouquetSelection.push(f.id);
+      renderBouquetBuilder();
+    });
+    pal.appendChild(btn);
+  });
+}
+
+function renderBouquetChips() {
+  const chips = document.getElementById("bouquetChips");
+  const countLabel = document.getElementById("bouquetCountLabel");
+  if (!chips) return;
+  chips.innerHTML = "";
+  bouquetSelection.forEach((id, idx) => {
+    const f = bouquetFlowerById(id);
+    if (!f) return;
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "bouquet-chip";
+    chip.innerHTML = `<img src="${f.src}" alt="">×`;
+    chip.title = currentLanguage() === "pt" ? "Remover" : "Remove";
+    chip.addEventListener("click", () => {
+      bouquetSelection.splice(idx, 1);
+      renderBouquetBuilder();
+    });
+    chips.appendChild(chip);
+  });
+  if (countLabel) {
+    const n = bouquetSelection.length;
+    const isPt = currentLanguage() === "pt";
+    countLabel.textContent = isPt
+      ? `${n} selecionada${n === 1 ? "" : "s"}`
+      : `${n} selected`;
+    countLabel.classList.toggle(
+      "in-range",
+      n >= BOUQUET_MIN && n <= BOUQUET_MAX,
+    );
+    countLabel.classList.toggle(
+      "out-of-range",
+      n > 0 && (n < BOUQUET_MIN || n > BOUQUET_MAX),
+    );
+  }
+}
+
+function renderBouquetBowSwatches() {
+  const wrap = document.getElementById("bouquetBowSwatches");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+  BOUQUET_BOWS.forEach((b) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className =
+      "bouquet-bow-swatch" + (bouquetBowChoice === b.id ? " active" : "");
+    btn.innerHTML = `<img src="${b.src}" alt="">`;
+    btn.title = tr(b.label);
+    btn.addEventListener("click", () => {
+      bouquetBowChoice = b.id;
+      renderBouquetBowSwatches();
+    });
+    wrap.appendChild(btn);
+  });
+}
+
+function renderBouquetBuilder() {
+  renderBouquetPalette();
+  renderBouquetChips();
+}
+
+async function sendBouquet() {
+  const btn = document.getElementById("bouquetSendBtn");
+  const fromSel = document.getElementById("bouquetFrom");
+  const noteEl = document.getElementById("bouquetNote");
+  const isPt = currentLanguage() === "pt";
+  const n = bouquetSelection.length;
+  if (n < BOUQUET_MIN || n > BOUQUET_MAX) {
+    showToast(
+      isPt
+        ? "Escolha entre 6 e 10 flores."
+        : "Pick between 6 and 10 blooms.",
+      "updated",
+    );
+    return;
+  }
+  const from = fromSel && fromSel.value === "her" ? "her" : "me";
+  const note = (noteEl && noteEl.value ? noteEl.value : "").trim();
+  const now = Date.now();
+  const payload = {
+    flowers: bouquetSelection.slice(),
+    bow: bouquetBowChoice,
+    note,
+    from,
+    createdAt: now,
+    weekEnd: bouquetWeekEnd(now),
+  };
+  if (btn) btn.disabled = true;
+
+  function afterSend() {
+    bouquetSelection = [];
+    bouquetBowChoice = BOUQUET_BOWS[0].id;
+    if (noteEl) noteEl.value = "";
+    renderBouquetBuilder();
+    renderBouquetBowSwatches();
+    if (btn) btn.disabled = false;
+    showToast(isPt ? "Buquê criado." : "Bouquet created.", "created");
+    if (btn) spawnHeartBurst(btn, 6);
+    markSelfWrite("bouquet");
+  }
+
+  if (bouquetSyncLive && bouquetDb) {
+    bouquetDb
+      .collection("bouquets")
+      .add({
+        ...payload,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      })
+      .then(() => afterSend())
+      .catch(() => {
+        bouquets.unshift({ id: "local-" + now, ...payload });
+        afterSend();
+        renderBouquetCurrent();
+        renderBouquetHistory();
+      });
+  } else {
+    bouquets.unshift({ id: "local-" + now, ...payload });
+    afterSend();
+    renderBouquetCurrent();
+    renderBouquetHistory();
+  }
+}
+
+async function deleteBouquet(b) {
+  if (!b) return;
+  const isPt = currentLanguage() === "pt";
+  const ok = await customConfirm(
+    isPt ? "Apagar este buquê?" : "Delete this bouquet?",
+  );
+  if (!ok) return;
+  if (
+    bouquetSyncLive &&
+    bouquetDb &&
+    b.id &&
+    !String(b.id).startsWith("local-")
+  ) {
+    bouquetDb
+      .collection("bouquets")
+      .doc(b.id)
+      .delete()
+      .then(() => {
+        showToast(isPt ? "Buquê apagado." : "Bouquet deleted.", "deleted");
+      })
+      .catch(() => {
+        bouquets = bouquets.filter((x) => x.id !== b.id);
+        showToast(isPt ? "Buquê apagado." : "Bouquet deleted.", "deleted");
+        renderBouquetCurrent();
+        renderBouquetHistory();
+      });
+  } else {
+    bouquets = bouquets.filter((x) => x.id !== b.id);
+    showToast(isPt ? "Buquê apagado." : "Bouquet deleted.", "deleted");
+    renderBouquetCurrent();
+    renderBouquetHistory();
+  }
+}
+
+function initBouquetUI() {
+  const fromSel = document.getElementById("bouquetFrom");
+  if (fromSel) {
+    fromSel.innerHTML = `
+            <option value="me">${currentLanguage() === "pt" ? "De" : "From"} ${CONFIG.names.me}</option>
+            <option value="her">${currentLanguage() === "pt" ? "De" : "From"} ${CONFIG.names.her}</option>
+          `;
+  }
+  renderBouquetBuilder();
+  renderBouquetBowSwatches();
+  document
+    .getElementById("bouquetClearBtn")
+    ?.addEventListener("click", () => {
+      bouquetSelection = [];
+      renderBouquetBuilder();
+    });
+  document
+    .getElementById("bouquetSendBtn")
+    ?.addEventListener("click", sendBouquet);
+  setInterval(() => {
+    if (activeTab === "bouquet") renderBouquetCurrent();
+  }, 60000);
+}
+
+(function initBouquetSync() {
+  initBouquetUI();
+  const db = getSharedFirestore();
+  if (db) {
+    try {
+      bouquetDb = db;
+      bouquetSyncLive = true;
+      bouquetSetSyncPill();
+      bouquetDb.collection("bouquets").onSnapshot(
+        (snapshot) => {
+          let next = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          next.sort((a, b) => itemTimeMs(b.createdAt) - itemTimeMs(a.createdAt));
+          bouquets = next;
+          renderBouquetCurrent();
+          renderBouquetHistory();
+          refreshTabDotsFromData("bouquet", bouquets);
+        },
+        () => {
+          bouquetSyncLive = false;
+          bouquetSetSyncPill();
+          renderBouquetCurrent();
+          renderBouquetHistory();
+        },
+      );
+    } catch (e) {
+      bouquetSyncLive = false;
+      bouquetSetSyncPill();
+      renderBouquetCurrent();
+      renderBouquetHistory();
+    }
+  } else {
+    bouquetSyncLive = false;
+    bouquetSetSyncPill();
+    renderBouquetCurrent();
+    renderBouquetHistory();
   }
 })();
 
