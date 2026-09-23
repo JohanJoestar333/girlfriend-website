@@ -4307,6 +4307,30 @@ const VALID_TABS = [
   "games",
 ];
 
+// ---- lazy per-tab Firestore sync ----
+// Bucket List, Movies, Music, Memories and Albums don't feed the Today
+// widget, so there's no reason to open a live Firestore connection to
+// those collections until the person actually opens that tab. Before this,
+// every one of those listeners started the instant the page loaded, which
+// meant a full read of every collection even for a visit that only ever
+// looked at the Today digest. Calendar, Day Cards, Bouquet and Mood stay
+// eager below since the Today widget needs them right away.
+const LAZY_TAB_SYNC = {};
+function registerLazyTabSync(tab, startFn) {
+  if (!LAZY_TAB_SYNC[tab]) LAZY_TAB_SYNC[tab] = [];
+  LAZY_TAB_SYNC[tab].push({ started: false, start: startFn });
+}
+function ensureLazyTabSync(tab) {
+  (LAZY_TAB_SYNC[tab] || []).forEach((entry) => {
+    if (!entry.started) {
+      entry.started = true;
+      try {
+        entry.start();
+      } catch (e) {}
+    }
+  });
+}
+
 function closeNavMore() {
   const menu = document.getElementById("navMoreMenu");
   const btn = document.getElementById("navMoreBtn");
@@ -4351,6 +4375,7 @@ function switchTab(name, opts) {
   }
 
   activeTab = name;
+  ensureLazyTabSync(name);
   clearTabDot(name);
   if (typeof musicUpdateMiniVisibility === "function") {
     try {
@@ -8294,7 +8319,7 @@ function getSharedFirestore() {
   }
 }
 
-(function initBucketList() {
+function startBucketListSync() {
   const db = getSharedFirestore();
   if (db) {
     try {
@@ -8357,7 +8382,8 @@ function getSharedFirestore() {
     );
     renderBucketList();
   }
-})();
+}
+registerLazyTabSync("bucketlist", startBucketListSync);
 
 /* ================================================================
    MOVIE NIGHTS — lives inside the Bucket List tab. Two lists ("To
@@ -8837,7 +8863,7 @@ document.querySelectorAll("#movieSubtabs .movie-subtab-btn").forEach((btn) => {
   });
 });
 
-(function initMovies() {
+function startMovieSync() {
   const db = getSharedFirestore();
   if (db) {
     try {
@@ -8916,7 +8942,8 @@ document.querySelectorAll("#movieSubtabs .movie-subtab-btn").forEach((btn) => {
     );
     renderMovieLists();
   }
-})();
+}
+registerLazyTabSync("bucketlist", startMovieSync);
 
 document.getElementById("footerNames").textContent =
   `${CONFIG.names.me} ♥ ${CONFIG.names.her}`;
@@ -10911,7 +10938,7 @@ async function deleteMusicSong(song) {
   }
 }
 
-(function initMusicSync() {
+function startMusicSync() {
   const db = getSharedFirestore();
   if (db) {
     try {
@@ -10985,8 +11012,10 @@ async function deleteMusicSong(song) {
     setMusicSyncPill();
     musicSongs = seedMusicFromConfig();
   }
-  initMusic();
-})();
+}
+musicSongs = seedMusicFromConfig();
+initMusic();
+registerLazyTabSync("music", startMusicSync);
 
 // ================================================================
 // OUR MEMORIES — live photo uploads (Firestore stores the caption/
@@ -11374,8 +11403,10 @@ document
   .getElementById("memoryCancelEditBtn")
   ?.addEventListener("click", clearMemoryForm);
 
-(function initMemories() {
-  fillMemoryAlbumSelect();
+fillMemoryAlbumSelect();
+setMemoriesSyncPill();
+renderMemories();
+function startMemoriesSync() {
   const db = getSharedFirestore();
   if (db) {
     try {
@@ -11408,10 +11439,11 @@ document
     setMemoriesSyncPill();
     renderMemories();
   }
-})();
+}
+registerLazyTabSync("album", startMemoriesSync);
 
 // Custom album folders (collection "albums") — same Firestore app as memories
-(function initCustomAlbums() {
+function startAlbumsSync() {
   const db = getSharedFirestore();
   if (db) {
     try {
@@ -11436,7 +11468,8 @@ document
   } else {
     albumsSyncLive = false;
   }
-})();
+}
+registerLazyTabSync("album", startAlbumsSync);
 
 // ================================================================
 // SHARED CALENDAR — month view + events for each person, synced
@@ -12795,7 +12828,7 @@ const BOUQUET_STAGE_H = 720;
 let bouquetDb = null;
 let bouquetSyncLive = false;
 let bouquets = []; // Firestore docs, newest first — kept to at most one live entry
-let bouquetItems = []; // builder state: [{ uid, flowerId, x, y, scale, rot }] x/y are 0..1 fractions of the stage
+let bouquetItems = []; // builder state: [{ uid, flowerId, x, y, scale, rot, behindWrap }] x/y are 0..1 fractions of the stage
 let bouquetWrapChoice = BOUQUET_WRAPS[0].id; // exactly one wrap, always
 let bouquetSelectedUid = null;
 let bouquetDragUid = null;
@@ -12959,20 +12992,31 @@ function bouquetDrawItem(ctx, W, H, it, selected) {
 
 // Ground-truth full render — background + wrap + every item, from scratch.
 // Used for the current-bouquet card, the Today widget and PNG export, none
-// of which redraw more than a few times a minute.
+// of which redraw more than a few times a minute. Items flagged
+// `behindWrap` are drawn before the wrap image (tucked stems), everything
+// else is drawn on top of it, front-to-back order within each group taken
+// straight from the items array (last = frontmost).
 function bouquetDrawScene(ctx, W, H, wrapId, items, opts) {
   opts = opts || {};
   ctx.clearRect(0, 0, W, H);
   if (opts.withBackground !== false) bouquetPaintNotebook(ctx, W, H);
+  (items || [])
+    .filter((it) => it.behindWrap)
+    .forEach((it) => {
+      bouquetDrawItem(ctx, W, H, it, opts.selectedUid && opts.selectedUid === it.uid);
+    });
   bouquetDrawWrap(ctx, W, H, wrapId);
-  (items || []).forEach((it) => {
-    bouquetDrawItem(ctx, W, H, it, opts.selectedUid && opts.selectedUid === it.uid);
-  });
+  (items || [])
+    .filter((it) => !it.behindWrap)
+    .forEach((it) => {
+      bouquetDrawItem(ctx, W, H, it, opts.selectedUid && opts.selectedUid === it.uid);
+    });
 }
 
-// ---- the interactive builder stage: background+wrap is cached to an
+// ---- the interactive builder stage: the notebook paper is cached to an
 // offscreen canvas so dragging a flower only costs one cheap blit plus the
-// items themselves, instead of repainting the notebook lines every frame ----
+// items and wrap themselves, instead of repainting the notebook lines
+// every frame ----
 function bouquetRebuildBuilderBg() {
   if (!bouquetBuilderBgCanvas) {
     bouquetBuilderBgCanvas = document.createElement("canvas");
@@ -12982,7 +13026,6 @@ function bouquetRebuildBuilderBg() {
   const ctx = bouquetBuilderBgCanvas.getContext("2d");
   ctx.clearRect(0, 0, BOUQUET_STAGE_W, BOUQUET_STAGE_H);
   bouquetPaintNotebook(ctx, BOUQUET_STAGE_W, BOUQUET_STAGE_H);
-  bouquetDrawWrap(ctx, BOUQUET_STAGE_W, BOUQUET_STAGE_H, bouquetWrapChoice);
 }
 
 function bouquetRenderBuilderStage() {
@@ -12999,9 +13042,17 @@ function bouquetRenderBuilderStage() {
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, BOUQUET_STAGE_W, BOUQUET_STAGE_H);
   ctx.drawImage(bouquetBuilderBgCanvas, 0, 0);
-  bouquetItems.forEach((it) => {
-    bouquetDrawItem(ctx, BOUQUET_STAGE_W, BOUQUET_STAGE_H, it, it.uid === bouquetSelectedUid);
-  });
+  bouquetItems
+    .filter((it) => it.behindWrap)
+    .forEach((it) => {
+      bouquetDrawItem(ctx, BOUQUET_STAGE_W, BOUQUET_STAGE_H, it, it.uid === bouquetSelectedUid);
+    });
+  bouquetDrawWrap(ctx, BOUQUET_STAGE_W, BOUQUET_STAGE_H, bouquetWrapChoice);
+  bouquetItems
+    .filter((it) => !it.behindWrap)
+    .forEach((it) => {
+      bouquetDrawItem(ctx, BOUQUET_STAGE_W, BOUQUET_STAGE_H, it, it.uid === bouquetSelectedUid);
+    });
 }
 
 function bouquetRequestBuilderRender() {
@@ -13016,7 +13067,21 @@ function bouquetRequestBuilderRender() {
 function bouquetRenderToolbar() {
   const bar = document.getElementById("bouquetItemToolbar");
   if (!bar) return;
-  bar.hidden = !bouquetItems.find((x) => x.uid === bouquetSelectedUid);
+  const it = bouquetItems.find((x) => x.uid === bouquetSelectedUid);
+  bar.hidden = !it;
+  const behindBtn = document.getElementById("bouquetBehindWrapBtn");
+  if (behindBtn) {
+    const isBehind = !!(it && it.behindWrap);
+    behindBtn.classList.toggle("active", isBehind);
+    const isPt = currentLanguage() === "pt";
+    behindBtn.title = isBehind
+      ? isPt
+        ? "Trazer para a frente do embrulho"
+        : "Bring in front of wrap"
+      : isPt
+        ? "Esconder atrás do embrulho"
+        : "Tuck behind wrap";
+  }
 }
 
 function renderBouquetPaletteCounts() {
@@ -13105,6 +13170,25 @@ function bouquetAdjustSelected(prop, delta) {
   bouquetRenderBuilderStage();
 }
 
+// ---- layering: manual front/back order among flowers, plus tucking a
+// flower behind the paper wrap entirely (drawn before the wrap image) ----
+function bouquetReorderSelected(dir) {
+  const idx = bouquetItems.findIndex((x) => x.uid === bouquetSelectedUid);
+  if (idx === -1) return;
+  const [it] = bouquetItems.splice(idx, 1);
+  if (dir === "front") bouquetItems.push(it);
+  else bouquetItems.unshift(it);
+  bouquetRenderBuilderStage();
+}
+
+function bouquetToggleBehindWrap() {
+  const it = bouquetItems.find((x) => x.uid === bouquetSelectedUid);
+  if (!it) return;
+  it.behindWrap = !it.behindWrap;
+  bouquetRenderBuilderStage();
+  bouquetRenderToolbar();
+}
+
 function bouquetRemoveSelected() {
   bouquetItems = bouquetItems.filter((x) => x.uid !== bouquetSelectedUid);
   bouquetSelectedUid = null;
@@ -13129,7 +13213,10 @@ function bouquetHitTest(pt) {
     const it = bouquetItems[i];
     const ix = it.x * BOUQUET_STAGE_W;
     const iy = it.y * BOUQUET_STAGE_H;
-    const half = (BOUQUET_STAGE_W * 0.22 * (it.scale || 1)) / 2 + 6;
+    // Kept tighter than the flower's drawn size (0.34 wide) so overlapping
+    // blooms are each easy to grab individually instead of one big blob
+    // of shared hit area.
+    const half = (BOUQUET_STAGE_W * 0.15 * (it.scale || 1)) / 2 + 3;
     if (Math.abs(px - ix) <= half && Math.abs(py - iy) <= half) return it;
   }
   return null;
@@ -13141,7 +13228,6 @@ function bouquetStagePointerDown(evt) {
   const hit = bouquetHitTest(pt);
   bouquetDragMoved = false;
   if (hit) {
-    bouquetItems = bouquetItems.filter((x) => x !== hit).concat(hit); // bring to front
     bouquetSelectedUid = hit.uid;
     bouquetDragUid = hit.uid;
     bouquetDragOffset = { x: pt.x - hit.x, y: pt.y - hit.y };
@@ -13346,6 +13432,7 @@ async function sendBouquet() {
       y: it.y,
       scale: it.scale || 1,
       rot: it.rot || 0,
+      behindWrap: !!it.behindWrap,
     })),
     wrap: bouquetWrapChoice,
     note,
@@ -13475,6 +13562,15 @@ function initBouquetUI() {
   document
     .getElementById("bouquetRemoveBtn")
     ?.addEventListener("click", bouquetRemoveSelected);
+  document
+    .getElementById("bouquetToBackBtn")
+    ?.addEventListener("click", () => bouquetReorderSelected("back"));
+  document
+    .getElementById("bouquetToFrontBtn")
+    ?.addEventListener("click", () => bouquetReorderSelected("front"));
+  document
+    .getElementById("bouquetBehindWrapBtn")
+    ?.addEventListener("click", bouquetToggleBehindWrap);
   renderBouquetCurrent();
   setInterval(() => {
     bouquetPurgeExpired();
