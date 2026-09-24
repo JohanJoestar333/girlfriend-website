@@ -27101,14 +27101,14 @@ function initThommyPersonal() {
     unlockBtn.addEventListener("click", function () {
       var v = (document.getElementById("tpPassInput") || {}).value || "";
       var err = document.getElementById("tpPassErr");
-      if (v === TP_PASS) {
+      if (v === TP_PASSWORD) {
         tpSetUnlocked();
         if (err) err.textContent = "";
         tpMaybeFirebaseLoad().then(function () {
           tpRender();
         });
         tpRender();
-      } else if (v === TP_OLD_PASS) {
+      } else if (v === TP_OLD_PASSWORD) {
         if (err) err.textContent = "";
         tpRunCrashGag(true);
       } else {
