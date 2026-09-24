@@ -51,10 +51,17 @@ jobs:
           TP_OLD_PASSWORD: ${{ secrets.TP_OLD_PASSWORD }}
         run: |
           REQUIRED="TP_PASSWORD"
-          OPTIONAL="FIREBASE_API_KEY FIREBASE_AUTH_DOMAIN FIREBASE_PROJECT_ID \\
-                    FIREBASE_STORAGE_BUCKET FIREBASE_MESSAGING_SENDER_ID FIREBASE_APP_ID \\
-                    CLOUDINARY_CLOUD_NAME CLOUDINARY_UPLOAD_PRESET TMDB_ACCESS_TOKEN \\
-                    METERED_TURN_DOMAIN METERED_TURN_API_KEY"
+          OPTIONAL="FIREBASE_API_KEY
+                    FIREBASE_AUTH_DOMAIN
+                    FIREBASE_PROJECT_ID
+                    FIREBASE_STORAGE_BUCKET
+                    FIREBASE_MESSAGING_SENDER_ID
+                    FIREBASE_APP_ID
+                    CLOUDINARY_CLOUD_NAME
+                    CLOUDINARY_UPLOAD_PRESET
+                    TMDB_ACCESS_TOKEN
+                    METERED_TURN_DOMAIN
+                    METERED_TURN_API_KEY"
 
           # TP_PASSWORD (the personal-area password) must be set: without it
           # the site would ship with a guessable "__TP_PASSWORD__" placeholder.
@@ -82,6 +89,9 @@ jobs:
               echo "::warning::Secret $name is not set; that feature will be disabled."
               continue
             fi
+            # The placeholders sit inside JS "double-quoted" strings, so escape
+            # backslashes and double quotes first, then escape what sed needs.
+            value=$(printf '%s' "$value" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')
             # Escape characters that are special in a sed replacement.
             escaped=$(printf '%s' "$value" | sed -e 's/[\\|&]/\\&/g')
             sed -i "s|__${name}__|${escaped}|g" _site/js/data/config.js _site/js/app.js
