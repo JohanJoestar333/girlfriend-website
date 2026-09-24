@@ -4,7 +4,7 @@
   Bump CACHE_VERSION whenever you deploy a change to make sure everyone's
   browser drops the old cached files instead of getting stuck on them.
 */
-const CACHE_VERSION = "v1.5.1";
+const CACHE_VERSION = "v1.5.2";
 const CORE_CACHE = "for-you-core-" + CACHE_VERSION;
 const RUNTIME_CACHE = "for-you-runtime-" + CACHE_VERSION;
 
@@ -70,9 +70,12 @@ self.addEventListener("fetch", (event) => {
   if (isCoreAsset) {
     // Network-first: always try to get the latest version first (so a new
     // deploy shows up right away), falling back to the cached copy when
-    // there's no connection.
+    // there's no connection. `cache: "no-store"` matters here — without it
+    // the browser's own HTTP cache can quietly hand back a stale response
+    // (per whatever Cache-Control the host sends) without ever touching the
+    // network, which is what made deploys look like they weren't updating.
     event.respondWith(
-      fetch(req)
+      fetch(req, { cache: "no-store" })
         .then((res) => {
           const copy = res.clone();
           caches.open(CORE_CACHE).then((cache) => cache.put(req, copy));

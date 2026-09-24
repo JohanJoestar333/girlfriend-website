@@ -7060,4 +7060,78 @@ html[data-theme="dark"] .music-mini-btn:hover { background: rgba(255, 255, 255, 
   }
 }
 
+/* ---- "New version available" banner — shown when a freshly deployed
+   service worker takes over a page that's already open, so a new deploy
+   never just sits there unnoticed until the tab happens to fully reload. */
+#swUpdateBanner {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100vw - 24px);
+  padding: 10px 10px 10px 16px;
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: var(--radius-md, 14px);
+  box-shadow: var(--shadow-med, 0 8px 24px rgba(43, 38, 34, 0.18));
+  border: 1px solid rgba(43, 38, 34, 0.08);
+  font-size: 0.88rem;
+  animation: swUpdateIn 0.25s ease;
+}
+@keyframes swUpdateIn {
+  from { opacity: 0; transform: translate(-50%, 10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+#swUpdateBanner .sw-update-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#swUpdateBanner .sw-update-btn {
+  flex-shrink: 0;
+  border: none;
+  border-radius: 999px;
+  padding: 7px 14px;
+  background: var(--green-deep, #4f6f52);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.84rem;
+  cursor: pointer;
+}
+#swUpdateBanner .sw-update-btn:hover {
+  filter: brightness(1.08);
+}
+#swUpdateBanner .sw-update-dismiss {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--ink-soft, inherit);
+  opacity: 0.6;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 4px;
+  line-height: 1;
+}
+#swUpdateBanner .sw-update-dismiss:hover {
+  opacity: 1;
+}
+@media (max-width: 520px) {
+  #swUpdateBanner {
+    left: 12px;
+    right: 12px;
+    bottom: 14px;
+    transform: none;
+    max-width: none;
+  }
+  @keyframes swUpdateIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+
 

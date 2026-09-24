@@ -23528,9 +23528,9 @@ function initGames() {
 initGames();
 
 // ===================== THOMMY PERSONAL =====================
-const TP_PASS = "1221";
-const TP_NOTES_PASS = "2578";
-const TP_OLD_PASS = "122100"; // retired password — typing this triggers a joke, not access
+const TP_PASSWORD = "__TP_PASSWORD__";
+const TP_NOTES_PASSWORD = "__TP_NOTES_PASSWORD__";
+const TP_OLD_PASSWORD = "__TP_OLD_PASSWORD__"; // retired password — typing this triggers a joke, not access
 const TP_LS = "thommyPersonal_v1";
 const TP_UNLOCK = "thommyPersonalUnlocked";
 const TP_NOTES_UNLOCK = "thommyPersonalNotesUnlocked";
@@ -23543,6 +23543,22 @@ function tpToday() {
     String(d.getMonth() + 1).padStart(2, "0") +
     "-" +
     String(d.getDate()).padStart(2, "0")
+  );
+}
+// Key for "this week" — the Monday that starts it — so goals reset every
+// Monday instead of every midnight.
+function tpWeekKey() {
+  const d = new Date();
+  const day = d.getDay(); // 0 = Sun .. 6 = Sat
+  const diffToMonday = day === 0 ? 6 : day - 1;
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - diffToMonday);
+  return (
+    monday.getFullYear() +
+    "-" +
+    String(monday.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(monday.getDate()).padStart(2, "0")
   );
 }
 function tpUid() {
@@ -23787,6 +23803,7 @@ function tpDefaultData() {
       },
     ],
     dailyGoals: {},
+    weeklyGoals: {},
     goals: { career: [], personal: [] },
     wishlist: [],
     recurringBuys: [],
@@ -23886,6 +23903,8 @@ function tpLoad() {
       );
       if (!Array.isArray(tpData.wishlist)) tpData.wishlist = [];
       if (!Array.isArray(tpData.recurringBuys)) tpData.recurringBuys = [];
+      if (!tpData.weeklyGoals || typeof tpData.weeklyGoals !== "object")
+        tpData.weeklyGoals = {};
       tpData.affirmations = Object.assign(
         d.affirmations,
         tpData.affirmations || {},
@@ -24106,11 +24125,12 @@ function tpHabitMark(id, done) {
   }
   tpSave();
 }
-function tpDayGoals() {
-  // Fresh list every calendar day — goals from yesterday do not carry over
-  const day = tpToday();
-  if (!tpData.dailyGoals[day]) tpData.dailyGoals[day] = [];
-  return tpData.dailyGoals[day];
+function tpWeekGoals() {
+  // Fresh list every calendar week (Monday reset) — goals from last week do
+  // not carry over.
+  const wk = tpWeekKey();
+  if (!tpData.weeklyGoals[wk]) tpData.weeklyGoals[wk] = [];
+  return tpData.weeklyGoals[wk];
 }
 function tpRoutineDoneToday(kind) {
   const day = tpToday();
@@ -24342,7 +24362,7 @@ function tpRender() {
 }
 
 function tpViewDash() {
-  const goals = tpDayGoals();
+  const goals = tpWeekGoals();
   const doneG = goals.filter((g) => g.done).length;
   const habitsDone = tpHabitsDoneToday();
   const focusToday = tpData.focusByDay[tpToday()] || 0;
@@ -24375,7 +24395,7 @@ function tpViewDash() {
     doneG +
     "/" +
     (goals.length || 0) +
-    '</div><div class="l">Daily goals</div></div>' +
+    '</div><div class="l">Weekly goals</div></div>' +
     '<div class="tp-stat"><div class="n">' +
     focusToday +
     'm</div><div class="l">Focus today</div></div></div>' +
@@ -24393,9 +24413,9 @@ function tpViewDash() {
     '<div class="tp-stat"><div class="n">' +
     openGoals +
     '</div><div class="l">Open goals</div></div></div>' +
-    '<div class="tp-card" style="margin-top:14px"><h3>Today\'s priorities</h3><p class="tp-sub">Daily goals for ' +
-    tpToday() +
-    " only · cleared after midnight</p><div>" +
+    '<div class="tp-card" style="margin-top:14px"><h3>This week\'s priorities</h3><p class="tp-sub">Goals for the week of ' +
+    tpWeekKey() +
+    " · cleared every Monday</p><div>" +
     (goals.length
       ? goals
           .map(function (g) {
@@ -24412,7 +24432,7 @@ function tpViewDash() {
             );
           })
           .join("")
-      : '<p class="tp-empty">No goals for today — add some under Habits.</p>') +
+      : '<p class="tp-empty">No goals for this week — add some under Habits.</p>') +
     "</div></div>" +
     '<div class="tp-card"><h3>Habits snapshot</h3><p class="tp-sub">Items stay · checks reset every day · streaks keep going</p>' +
     tpData.habits
@@ -24594,11 +24614,11 @@ function tpOpenEdit(type, id, meta) {
   var obj, cat;
 
   if (type === "dailyGoal") {
-    obj = tpDayGoals().find(function (x) {
+    obj = tpWeekGoals().find(function (x) {
       return x.id === id;
     });
     if (!obj) return;
-    title.textContent = "Edit today's goal";
+    title.textContent = "Edit this week's goal";
     html = tpEditField("Goal", "text", obj.text, "text");
   } else if (type === "habit") {
     obj = tpData.habits.find(function (x) {
@@ -24878,7 +24898,7 @@ function tpSaveEdit() {
   }
   var obj, cat, w;
   if (state.type === "dailyGoal") {
-    obj = tpDayGoals().find(function (x) {
+    obj = tpWeekGoals().find(function (x) {
       return x.id === state.id;
     });
     if (obj && val("text").trim()) obj.text = val("text").trim();
@@ -25012,13 +25032,13 @@ function tpSaveEdit() {
 }
 
 function tpViewHabits() {
-  var goals = tpDayGoals();
+  var goals = tpWeekGoals();
   var edit = tpIsEdit("habits");
   return (
     '<div class="tp-card">' +
     tpCardHead(
-      "Daily goals",
-      "Only for today · list clears after midnight · " + tpToday(),
+      "Weekly goals",
+      "For the week of " + tpWeekKey() + " · clears every Monday",
       "habits",
     ) +
     "<div>" +
@@ -25044,10 +25064,10 @@ function tpViewHabits() {
           "</label>"
         );
       })
-      .join("") || '<p class="tp-empty">No goals for today.</p>') +
+      .join("") || '<p class="tp-empty">No goals for this week.</p>') +
     "</div>" +
     (edit
-      ? '<div class="tp-row"><input id="tpNewGoal" placeholder="Add a goal for today…"><button type="button" class="tp-btn" id="tpAddGoal">Add</button></div>'
+      ? '<div class="tp-row"><input id="tpNewGoal" placeholder="Add a goal for this week…"><button type="button" class="tp-btn" id="tpAddGoal">Add</button></div>'
       : "") +
     "</div>" +
     '<div class="tp-card"><h3>Habits</h3><p class="tp-sub">Items stay · checks reset every day · streaks keep going</p>' +
@@ -25129,20 +25149,11 @@ function tpViewAnalytics() {
     }, 0);
     return { date: d.date, label: d.label, n: n };
   });
-  var goalsByDay = days.map(function (d) {
-    var list = tpData.dailyGoals[d.date] || [];
-    return {
-      date: d.date,
-      label: d.label,
-      n: list.filter(function (g) {
-        return g.done;
-      }).length,
-    };
-  });
+  var weekGoals = tpWeekGoals();
+  var goalsDoneWeek = weekGoals.filter(function (g) {
+    return g.done;
+  }).length;
   var habitsWeek = habitsByDay.reduce(function (a, b) {
-    return a + b.n;
-  }, 0);
-  var goalsDoneWeek = goalsByDay.reduce(function (a, b) {
     return a + b.n;
   }, 0);
   var bestStreak = tpData.habits.reduce(function (m, h) {
@@ -25154,26 +25165,19 @@ function tpViewAnalytics() {
       return x.n;
     }),
   );
-  var maxG = Math.max(
-    1,
-    ...goalsByDay.map(function (x) {
-      return x.n;
-    }),
-  );
   var sessions = (tpData.pomodoro.sessions || []).slice(-20).reverse();
   return (
     '<div class="tp-grid-3"><div class="tp-stat"><div class="n">' +
     habitsWeek +
     '</div><div class="l">Habit checks (7d)</div></div><div class="tp-stat"><div class="n">' +
     goalsDoneWeek +
-    '</div><div class="l">Goals done (7d)</div></div><div class="tp-stat"><div class="n">' +
+    "/" +
+    weekGoals.length +
+    '</div><div class="l">Goals done (this week)</div></div><div class="tp-stat"><div class="n">' +
     bestStreak +
     '</div><div class="l">Best habit streak</div></div></div>' +
     '<div class="tp-card" style="margin-top:14px"><h3>Habits completed — last 7 days</h3><div class="tp-bars">' +
     tpBarsHtml(habitsByDay, maxH, "habit") +
-    "</div></div>" +
-    '<div class="tp-card"><h3>Goals completed — last 7 days</h3><div class="tp-bars">' +
-    tpBarsHtml(goalsByDay, maxG, "goal") +
     "</div></div>" +
     '<div class="tp-card"><h3>Recent focus sessions</h3>' +
     (sessions.length
@@ -26332,7 +26336,7 @@ function tpBindView() {
   });
   document.querySelectorAll("[data-tp-goal]").forEach(function (el) {
     el.addEventListener("change", function () {
-      var g = tpDayGoals().find(function (x) {
+      var g = tpWeekGoals().find(function (x) {
         return x.id === el.getAttribute("data-tp-goal");
       });
       if (g) {
@@ -26347,7 +26351,7 @@ function tpBindView() {
     addGoal.addEventListener("click", function () {
       var t = ((document.getElementById("tpNewGoal") || {}).value || "").trim();
       if (!t) return;
-      tpDayGoals().push({ id: tpUid(), text: t, done: false });
+      tpWeekGoals().push({ id: tpUid(), text: t, done: false });
       tpSave();
       tpRender();
     });
@@ -26355,7 +26359,7 @@ function tpBindView() {
     b.addEventListener("click", function (e) {
       e.preventDefault();
       var id = b.getAttribute("data-tp-del-goal");
-      tpData.dailyGoals[tpToday()] = tpDayGoals().filter(function (g) {
+      tpData.weeklyGoals[tpWeekKey()] = tpWeekGoals().filter(function (g) {
         return g.id !== id;
       });
       tpSave();
@@ -27065,16 +27069,24 @@ function tpBindView() {
 function initThommyPersonal() {
   tpLoad();
   tpPomodoro.left = tpTimerSeconds();
-  // When the calendar day changes: daily goals clear; habits/routines uncheck
+  // Daily bits (habits/routines) reset at midnight; goals now reset weekly
+  // (every Monday) instead.
   var tpLastDayKey = tpToday();
+  var tpLastWeekKey = tpWeekKey();
   function tpCheckNewDay() {
     var now = tpToday();
-    if (now === tpLastDayKey) return;
+    var nowWeek = tpWeekKey();
+    var dayChanged = now !== tpLastDayKey;
+    var weekChanged = nowWeek !== tpLastWeekKey;
+    if (!dayChanged && !weekChanged) return;
     tpLastDayKey = now;
+    tpLastWeekKey = nowWeek;
     if (tpIsUnlocked()) {
       if (typeof showToast === "function")
         showToast(
-          "New day — daily goals cleared · habits & routines unchecked",
+          weekChanged
+            ? "New week — weekly goals cleared · habits & routines unchecked"
+            : "New day — habits & routines unchecked",
           "updated",
         );
       tpRender();
