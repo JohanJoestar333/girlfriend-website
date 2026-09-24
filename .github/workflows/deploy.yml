@@ -1,3 +1,9 @@
+# Deploys the site to GitHub Pages on every push to main.
+#
+# Only the files the site needs are published (index.html, manifest,
+# service worker, css/, js/, assets/) — docs, the news backend and git
+# metadata stay out of the public site. Secrets are injected into the
+# staged copy, never into the files committed to the repo.
 name: Deploy to GitHub Pages
 
 on:
@@ -22,7 +28,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Inject Firebase, Cloudinary and other config from repository secrets
+      - name: Stage site files
+        run: |
+          mkdir _site
+          cp -r index.html manifest.json service-worker.js css js assets _site/
+
+      - name: Inject config from repository secrets
         env:
           FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
           FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
@@ -35,91 +46,89 @@ jobs:
           TMDB_ACCESS_TOKEN: ${{ secrets.TMDB_ACCESS_TOKEN }}
           METERED_TURN_DOMAIN: ${{ secrets.METERED_TURN_DOMAIN }}
           METERED_TURN_API_KEY: ${{ secrets.METERED_TURN_API_KEY }}
-
+          TP_PASSWORD: ${{ secrets.TP_PASSWORD }}
+          TP_NOTES_PASSWORD: ${{ secrets.TP_NOTES_PASSWORD }}
+          TP_OLD_PASSWORD: ${{ secrets.TP_OLD_PASSWORD }}
         run: |
-          # Inject Firebase / Cloudinary / TMDB / Metered config into app.js
-          sed -i "s|__FIREBASE_API_KEY__|${FIREBASE_API_KEY}|g" app.js
-          sed -i "s|__FIREBASE_AUTH_DOMAIN__|${FIREBASE_AUTH_DOMAIN}|g" app.js
-          sed -i "s|__FIREBASE_PROJECT_ID__|${FIREBASE_PROJECT_ID}|g" app.js
-          sed -i "s|__FIREBASE_STORAGE_BUCKET__|${FIREBASE_STORAGE_BUCKET}|g" app.js
-          sed -i "s|__FIREBASE_MESSAGING_SENDER_ID__|${FIREBASE_MESSAGING_SENDER_ID}|g" app.js
-          sed -i "s|__FIREBASE_APP_ID__|${FIREBASE_APP_ID}|g" app.js
-          sed -i "s|__CLOUDINARY_CLOUD_NAME__|${CLOUDINARY_CLOUD_NAME}|g" app.js
-          sed -i "s|__CLOUDINARY_UPLOAD_PRESET__|${CLOUDINARY_UPLOAD_PRESET}|g" app.js
-          sed -i "s|__TMDB_ACCESS_TOKEN__|${TMDB_ACCESS_TOKEN}|g" app.js
-          sed -i "s|__METERED_TURN_DOMAIN__|${METERED_TURN_DOMAIN}|g" app.js
-          sed -i "s|__METERED_TURN_API_KEY__|${METERED_TURN_API_KEY}|g" app.js
+          REQUIRED="TP_PASSWORD"
+          OPTIONAL="FIREBASE_API_KEY FIREBASE_AUTH_DOMAIN FIREBASE_PROJECT_ID \\
+                    FIREBASE_STORAGE_BUCKET FIREBASE_MESSAGING_SENDER_ID FIREBASE_APP_ID \\
+                    CLOUDINARY_CLOUD_NAME CLOUDINARY_UPLOAD_PRESET TMDB_ACCESS_TOKEN \\
+                    METERED_TURN_DOMAIN METERED_TURN_API_KEY"
 
-          # Also inject into index.html in case any leftover placeholders remain
-          sed -i "s|__FIREBASE_API_KEY__|${FIREBASE_API_KEY}|g" index.html
-          sed -i "s|__FIREBASE_AUTH_DOMAIN__|${FIREBASE_AUTH_DOMAIN}|g" index.html
-          sed -i "s|__FIREBASE_PROJECT_ID__|${FIREBASE_PROJECT_ID}|g" index.html
-          sed -i "s|__FIREBASE_STORAGE_BUCKET__|${FIREBASE_STORAGE_BUCKET}|g" index.html
-          sed -i "s|__FIREBASE_MESSAGING_SENDER_ID__|${FIREBASE_MESSAGING_SENDER_ID}|g" index.html
-          sed -i "s|__FIREBASE_APP_ID__|${FIREBASE_APP_ID}|g" index.html
-          sed -i "s|__CLOUDINARY_CLOUD_NAME__|${CLOUDINARY_CLOUD_NAME}|g" index.html
-          sed -i "s|__CLOUDINARY_UPLOAD_PRESET__|${CLOUDINARY_UPLOAD_PRESET}|g" index.html
-          sed -i "s|__TMDB_ACCESS_TOKEN__|${TMDB_ACCESS_TOKEN}|g" index.html
-          sed -i "s|__METERED_TURN_DOMAIN__|${METERED_TURN_DOMAIN}|g" index.html
-          sed -i "s|__METERED_TURN_API_KEY__|${METERED_TURN_API_KEY}|g" index.html
+          # TP_PASSWORD (the personal-area password) must be set: without it
+          # the site would ship with a guessable "__TP_PASSWORD__" placeholder.
+          for name in $REQUIRED; do
+            if [ -z "${!name}" ]; then
+              echo "ERROR: GitHub Actions secret $name is missing."
+              echo "Add it under Settings -> Secrets and variables -> Actions."
+              exit 1
+            fi
+          done
 
-          # Make sure all required configuration placeholders were replaced
-          if grep -q "__FIREBASE_API_KEY__\|__FIREBASE_AUTH_DOMAIN__\|__FIREBASE_PROJECT_ID__\|__CLOUDINARY_CLOUD_NAME__\|__TMDB_ACCESS_TOKEN__\|__METERED_TURN_DOMAIN__\|__METERED_TURN_API_KEY__" app.js; then
-            echo "ERROR: One or more configuration placeholders remain in app.js"
-            echo "Check that the corresponding GitHub Actions secrets exist."
-            exit 1
+          # Two extras are optional. Notes fall back to TP_PASSWORD, so one
+          # password unlocks everything. The retired "old password" joke gets
+          # a random value that nobody can type, which switches it off.
+          if [ -z "$TP_NOTES_PASSWORD" ]; then TP_NOTES_PASSWORD="$TP_PASSWORD"; fi
+          if [ -z "$TP_OLD_PASSWORD" ]; then
+            TP_OLD_PASSWORD="retired-$(head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n')"
           fi
 
-          echo "SUCCESS: Application configuration injected."
+          # Optional services: a missing secret leaves the placeholder in
+          # place and that feature simply stays switched off.
+          for name in TP_PASSWORD TP_NOTES_PASSWORD TP_OLD_PASSWORD $OPTIONAL; do
+            value="${!name}"
+            if [ -z "$value" ]; then
+              echo "::warning::Secret $name is not set; that feature will be disabled."
+              continue
+            fi
+            # Escape characters that are special in a sed replacement.
+            escaped=$(printf '%s' "$value" | sed -e 's/[\\|&]/\\&/g')
+            sed -i "s|__${name}__|${escaped}|g" _site/js/data/config.js _site/js/app.js
+          done
+
+          if grep -q "__TP_[A-Z_]*__" _site/js/app.js; then
+            echo "ERROR: A personal-area password placeholder was not replaced."
+            exit 1
+          fi
+          echo "SUCCESS: configuration injected."
 
       - name: Inject password hash into gate.js
         env:
           GATE_PASSWORD: ${{ secrets.GATE_PASSWORD }}
         run: |
-          # Make sure the password secret exists
           if [ -z "$GATE_PASSWORD" ]; then
             echo "ERROR: GATE_PASSWORD GitHub Actions secret is missing."
             echo "Go to Settings -> Secrets and variables -> Actions and add GATE_PASSWORD."
             exit 1
           fi
 
-          # Generate SHA-256 hash without printing the password
+          # Hash without printing the password; only the hash is published.
           GATE_PASSWORD_HASH=$(printf '%s' "$GATE_PASSWORD" | sha256sum | cut -d ' ' -f 1)
+          sed -i "s|__GATE_PASSWORD_HASH__|${GATE_PASSWORD_HASH}|g" _site/js/gate.js
 
-          # Inject only the hash into gate.js
-          sed -i "s|__GATE_PASSWORD_HASH__|${GATE_PASSWORD_HASH}|g" gate.js
-
-          # Make sure the placeholder was replaced
-          if grep -q "__GATE_PASSWORD_HASH__" gate.js; then
+          if grep -q "__GATE_PASSWORD_HASH__" _site/js/gate.js; then
             echo "ERROR: Password hash placeholder was not replaced in gate.js"
             exit 1
           fi
-
-          # Safety check: the plaintext password must NOT appear in gate.js
-          if grep -Fq "$GATE_PASSWORD" gate.js; then
+          if grep -Fq "$GATE_PASSWORD" _site/js/gate.js; then
             echo "ERROR: Plaintext password was found in gate.js"
             exit 1
           fi
+          echo "SUCCESS: password gate configured."
 
-          echo "SUCCESS: Password protection configured."
-
-      - name: Verify password gate
+      - name: Version the service-worker cache
         run: |
-          if [ ! -f gate.js ]; then
-            echo "ERROR: gate.js was not found."
-            exit 1
-          fi
-
-          if ! grep -q "GATE_PASSWORD_HASH\|__GATE_PASSWORD_HASH__\|password" gate.js; then
-            echo "WARNING: Could not find expected password-gate code in gate.js."
-          fi
-
-          echo "SUCCESS: gate.js exists and is ready for deployment."
+          # A new cache name on every deploy, so installed copies of the
+          # app always pick up the latest files (no manual bumping needed).
+          sed -i "s|^const CACHE_VERSION = \".*\";|const CACHE_VERSION = \"${GITHUB_SHA::7}\";|" _site/service-worker.js
+          grep -q "CACHE_VERSION = \"${GITHUB_SHA::7}\"" _site/service-worker.js \
+            || { echo "ERROR: CACHE_VERSION was not updated"; exit 1; }
 
       - name: Upload site as Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
-          path: '.'
+          path: _site
 
   deploy:
     needs: build

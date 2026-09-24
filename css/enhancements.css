@@ -1,14 +1,14 @@
 /* ============================================================
    ENHANCEMENTS — enhancements.css
    ------------------------------------------------------------
-   Everything added on top of the original style.css:
+   Everything layered on top of style.css:
    scroll panes for the Bucket List / Movie lists, plus the
    depth, texture, and section-specific visual upgrades
-   ("premium" pass). Loaded after style.css so it overrides by
+   (visual polish pass). Loaded after style.css so it overrides by
    cascade order, not !important. Paired with enhancements.js.
 
-   SECTION 1 — scroll panes (was scroll-pane.css)
-   SECTION 2 — premium polish (was premium.css)
+   SECTION 1 — scroll panes
+   SECTION 2 — visual polish
    SECTION 3 — Thommy Personal polish (sliding nav indicator,
                view-swap transition, first-open shimmer)
    ============================================================ */
@@ -265,7 +265,7 @@
 
 
 /* ============================================================
-   SECTION 2 — PREMIUM POLISH
+   SECTION 2 — VISUAL POLISH
    ============================================================ */
 
 /* A single soft shadow reads flat. Three stacked at different

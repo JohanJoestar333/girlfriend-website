@@ -1,17 +1,16 @@
 /* ============================================================
    ENHANCEMENTS — enhancements.js
    ------------------------------------------------------------
-   Everything added on top of the original app.js: scroll panes
-   for the Bucket List / Movie lists, plus the premium visual
-   polish pass (constellation progress, filters, movie ambient
-   light, spin-the-reel, reading progress). Paired with
-   enhancements.css.
+   Extras layered on top of app.js: scroll panes for the Bucket List
+   and Movie lists, plus a visual polish pass (constellation progress,
+   filters, movie ambient light, spin-the-reel, reading progress).
+   Paired with css/enhancements.css.
 
-   Purely additive — reads and observes the DOM app.js produces,
-   never modifies or replaces its functions. Load AFTER app.js.
+   Purely additive — reads and observes the DOM app.js produces and
+   never replaces its functions. Load AFTER app.js.
 
-   SECTION 1 — scroll panes (was scroll-pane.js)
-   SECTION 2 — premium polish (was premium.js)
+   SECTION 1 — scroll panes
+   SECTION 2 — visual polish
    ============================================================ */
 
 
@@ -24,7 +23,7 @@
     { id: "movieWatchedList", label: "Movies we've watched" },
   ];
 
-  var FADE = 36; // keep in sync with --fade-size in scroll-pane.css
+  var FADE = 36; // keep in sync with --fade-size in css/enhancements.css
 
   function reducedMotion() {
     return (

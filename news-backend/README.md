@@ -32,7 +32,7 @@ https://gf-news.<teu-user>.workers.dev
 
 ## 3. Ligar ao site
 
-No `index.html`, em `CONFIG`:
+No `js/data/config.js`, em `CONFIG`:
 
 ```js
 newsBackendUrl: "https://gf-news.TEU_USER.workers.dev",

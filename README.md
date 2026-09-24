@@ -1,252 +1,234 @@
 # 💚 Girlfriend Website
 
-A private, bilingual (English / Portuguese) romantic website built for two people.  
-It is a single-page experience with a password gate, shared live data, photo memories, Photo Booth video calls, countdown timers, weather with local time, games, quizzes, music, calendar repeats, and more.
+A private, bilingual (English / Portuguese) website built for two people: a
+single-page app with a password gate, shared live data, photo memories, a
+Photo Booth video call, a weekly bouquet, games, quizzes, music, a shared
+calendar and more. It is plain HTML, CSS and JavaScript — **no build step**.
 
-This project is meant to be **personalized**. Almost everything you will ever change lives in one place: the `CONFIG` object inside `app.js`.
+Almost everything you will personalize lives in one file: the `CONFIG` object
+in [`js/data/config.js`](js/data/config.js).
 
 ---
 
 ## ✨ Features
 
-| Tab / Area          | What’s inside                                              | Data |
-|---------------------|------------------------------------------------------------|------|
-| **Our Story**       | Hero, relationship countdown, weather for both cities, “Things I Miss”, growth notes, little things, Today widget (news + quote + mood) | Mostly local + some Firebase |
-| **Our Album**       | Static photo categories + live “Our Memories” uploads      | Photos → Cloudinary<br>Metadata → Firebase |
-| **Us**              | Favorites, fun facts, firsts                               | Local |
-| **Open When...**    | Special messages to open on different days/moods           | Local |
-| **Bucket List**     | Shared to-do list both of you can edit                     | **Firebase** |
-| **Quizzes**         | Interactive quizzes                                        | Local |
-| **Music**           | Shared playlists (add / reorder songs)                     | **Firebase** |
-| **Calendar**        | Shared events with daily / weekly / monthly / yearly repeats | **Firebase** |
-| **Photobooth**      | Snap photos together remotely and download your split photostrip. | **Metered** |
-| **Day Cards**       | Special day cards                                          | **Firebase** |
-| **Our Games**       | Small games for the two of you                             | Local |
-| **Personal area**   | Extra private section (extra password)                     | Optional Firebase |
+| Tab / area | What's inside | Data |
+|---|---|---|
+| **Our Story** | Hero, relationship counter, reunion countdown, weather for both cities (current + 7-day forecast, local time, moon phase), "Things I Miss", growth notes, little things, and the **Today** widget (moods, calendar, day card, bouquet, quote, news) | Local + Firebase |
+| **Our Album** | Static photo categories + live "Our Memories" uploads, lightbox | Photos → Cloudinary, metadata → Firebase |
+| **Us** | Favorites, fun facts, "Our Firsts" timeline | Local |
+| **Open When…** | Letters to open on different days / moods | Local |
+| **Bucket List** | Shared to-do list, plus **Movie Nights**: To Watch / Watched lists, TMDB search with posters, and a 5-star rating from each of you | Firebase (+ TMDB) |
+| **Quizzes** | Interactive quizzes about each other | Local |
+| **Music** | Shared playlists (YouTube / SoundCloud) with a persistent **mini-player** that keeps playing while you browse | Firebase |
+| **Bouquet** 💐 | Arrange a digital bouquet on a notebook page (see below) | Firebase |
+| **Photo Booth** | Live two-camera video call, take a photo strip together, then style it in the strip editor | WebRTC (+ TURN) |
+| **Calendar** | Shared events with daily / weekly / monthly / yearly repeats | Firebase |
+| **Day Cards** | Short notes (optionally voice) that expire after 24 h unless saved; can be read aloud | Firebase |
+| **Our Games** | Five card decks for couples | Local |
+| **Personal area** | Private section with its own passwords (goals, notes) | Optional Firebase |
+
+### 💐 Bouquet
+
+Send each other flowers. Pick one of **5 wraps**, add any of **12 flowers and
+3 bows**, then drag, resize, rotate and reorder them on a notebook page (there
+is also "tuck behind wrap"), with an optional note. The bouquet:
+
+- stays fresh for **one week**, then wilts and deletes itself — or is replaced
+  the moment a new one is made (only one is live at a time);
+- shows up in the **Today** widget on the home page, with a freshness badge;
+- can be saved as a **PNG**, with or without the notebook page;
+- syncs live through the `bouquets` Firestore collection.
+
+Art lives in `assets/stickers/` (`flower-*`, `bouquet-wrap-*`, `*-bow`). To add
+a flower, drop a transparent PNG there and add a line to `BOUQUET_FLOWERS` in
+`js/app.js`.
 
 ### Extra touches
-- Password gate on first visit (`gate.js`) — password supplied securely at deploy time via GitHub Actions
-- **Installable as an app (PWA)** — add it to your phone's home screen or your computer's dock, opens full-screen with no browser bar, and the core site works offline
-- “While you were away” change notifications for recent shared updates (24-hour window)
-- Full English ↔ Portuguese toggle (choice is remembered)
-- Attention dots on tabs when new shared content arrives
-- Secret messages (click the footer heart 5× or the header brand 9×)
-- Weather for both locations + each location’s local time + moon phase
-- Countdown to the next reunion
-- Optional Cloudflare Worker for cleaner world-news headlines
 
----
-
-## 📲 Installable app (PWA)
-
-The site can be installed like a real app — on a phone it adds a home-screen
-icon and opens full-screen with no browser bar; on a computer it adds a
-dock/desktop icon and opens in its own window. This works via:
-
-- `manifest.json` — app name, icon, and colors used when installed
-- `service-worker.js` — caches the core code files so the site loads
-  instantly and its main pages still work offline
-- `icons/` — the generated icon set (regular + maskable + Apple touch icon)
-
-**⚠️ One important habit:** whenever you edit `index.html`, `style.css`,
-`app.js`, or `gate.js` and deploy, you need to bump `CACHE_VERSION` at the
-top of `service-worker.js` (e.g. `"v1"` → `"v1.1"` or `"v2"`) — otherwise
-installed copies of the app can keep showing the old version. You do **not**
-need to do this for content added through the site itself (day cards, bucket
-list, photo uploads, etc.) — that always loads live. Full details and
-examples are in **`website_tutorial.md`**, section 9.
+- **Password gate** on first visit (`js/gate.js`); the password is supplied at
+  deploy time and only its hash is published.
+- **Installable app (PWA)**: add it to your home screen or dock; it opens
+  full-screen and the core site works offline.
+- **"While you were away"** notifications for shared changes from the last 24 h,
+  plus attention dots on tabs.
+- **English ↔ Portuguese** toggle (remembered per device) and a **dark mode**.
+- **Haptics**: subtle vibration feedback on phones (Android and iOS 17.4+),
+  with an on/off switch in the footer.
+- **Secret messages**: click the footer heart 5× or the header brand 9×.
+- Optional Cloudflare Worker for cleaner world-news headlines.
 
 ---
 
 ## 📁 Project structure
 
-```
+```text
 girlfriend-website/
-├── index.html              # Page structure & tabs
-├── style.css               # All design (colors, layout, animations)
-├── app.js                  # CONFIG + all interactive logic  ← edit this most
-├── gate.js                 # Password lock screen
-├── photobooth-studio.js    # Photo Booth strip editor (stickers, text, filters, backdrop, export)
-├── photobooth-studio.css   # Styles for the strip editor
-├── manifest.json           # PWA app name/icon/colors (installable app)
-├── service-worker.js       # PWA offline caching — bump CACHE_VERSION on code changes!
-├── icons/                  # Generated app icons (PWA + Apple touch icon)
-├── photos/                 # Static images used by the site
-├── stickers/               # Your Photo Booth stickers (transparent PNGs)
-├── news-backend/           # Optional Cloudflare Worker for news
-├── .github/workflows/      # GitHub Actions deploy + secret injection
-├── website_tutorial.md     # Full beginner-friendly guide
-├── firebase_setup.md       # How to connect Firebase
-├── memories_setup.md       # How to connect Cloudinary (photo uploads)
-├── metered_turn_setup.md    # How to fix Photo Booth calls across networks
-├── SECURITY.md             # Security model & intentional trade-offs
-└── README.md               # This file
+├── index.html                 Page structure and tabs
+├── manifest.json              PWA name, icons, colors
+├── service-worker.js          PWA offline cache (must stay at the root)
+│
+├── css/
+│   ├── style.css              Base design + components
+│   ├── enhancements.css       Scroll panes, depth and motion polish
+│   ├── photobooth-studio.css  Photo Booth strip editor
+│   └── modern.css             Apple-style redesign — colour tokens live here
+│
+├── js/
+│   ├── data/
+│   │   ├── config.js          ⭐ CONFIG — names, dates, photos, keys (edit this)
+│   │   ├── translations.js    English → Portuguese strings
+│   │   ├── quotes.js          365 bundled daily quotes
+│   │   ├── quizzes.js         Quiz questions
+│   │   └── games.js           Game decks
+│   ├── gate.js                Password lock screen
+│   ├── app.js                 All site behaviour (start with its table of contents)
+│   ├── enhancements.js        Scroll panes and visual polish
+│   ├── photobooth-studio.js   Strip editor (stickers, text, filters, backdrop, export)
+│   ├── haptics.js             Vibration feedback
+│   └── pwa.js                 Service-worker registration + update banner
+│
+├── assets/
+│   ├── photos/                Hero and static photos
+│   ├── stickers/              Transparent PNGs: Photo Booth stickers + bouquet art
+│   └── icons/                 PWA and Apple touch icons
+│
+├── docs/                      Setup guides (see below)
+├── news-backend/              Optional Cloudflare Worker for news
+└── .github/workflows/         GitHub Actions deploy
 ```
+
+Scripts are loaded in the order listed in `index.html`: data files first, then
+`app.js`, then the add-ons. See [`docs/architecture.md`](docs/architecture.md).
 
 ---
 
 ## 🚀 Quick start (local)
 
-You only need a static file server (the site will not work correctly from `file://`).
+The site needs a static file server (it does not work from `file://`):
 
 ```bash
-# from the project root
-python3 -m http.server 8000
+python3 -m http.server 8000     # from the project root
 # then open http://localhost:8000
 ```
 
-Or use the **Live Server** extension in VS Code.
-
-Most personalization is done by editing the big `CONFIG` object at the top of `app.js`.  
-See **`website_tutorial.md`** for a complete walkthrough (names, dates, photos, messages, colors, etc.).
+Or use the **Live Server** extension in VS Code. Locally the gate password and
+the service keys are placeholders, so shared features run in local-only mode.
+Edit `js/data/config.js` and refresh to see your changes.
 
 ---
 
 ## 🔐 Password gate
 
-The site starts behind a password gate. The **real password is not stored in the source files**. GitHub Actions injects only a SHA-256 hash into `gate.js` during deployment.
+The real password is **not** in the source. The deploy hashes the
+`GATE_PASSWORD` secret (SHA-256) and puts only the hash in the published
+`gate.js`.
 
-### Change the password
+1. GitHub repo → **Settings → Secrets and variables → Actions**.
+2. Create or edit the repository secret `GATE_PASSWORD`.
+3. Push to `main` or re-run the deploy workflow.
 
-1. Open the GitHub repository.
-2. Go to **Settings → Secrets and variables → Actions**.
-3. Under **Repository secrets**, create or edit:
-   - Name: `GATE_PASSWORD`
-   - Value: your new password
-4. Push to `main` or manually run the deployment workflow.
-
-Do **not** put the real password in `gate.js`, `app.js`, `index.html`, or any committed file. The checked-in `gate.js` contains only the placeholder `__GATE_PASSWORD_HASH__`, which is replaced during deployment.
-
-The unlock state is remembered locally in each browser. If you want the password screen to appear again on a device, clear the site’s local storage or use a private/incognito window.
-
-> **Security note:** This is still a client-side access gate, not server-side authentication. It is designed to keep casual visitors out, not to protect sensitive data from someone deliberately inspecting or bypassing the site. See `SECURITY.md`.
+Unlock state is remembered per browser; use a private window to see the gate
+again. This is a client-side gate for keeping casual visitors out, not real
+authentication — see [`SECURITY.md`](SECURITY.md).
 
 ---
 
-## ☁️ Live sync (Firebase + Cloudinary)
+## ☁️ Live sync and other services
 
-Shared features (Bucket List, Music, Calendar, Day Cards, live photo memories) need a free Firebase project. Photo *files* themselves go to Cloudinary (free tier is more than enough).
+| Service | Used for | Guide |
+|---|---|---|
+| Firebase (Firestore) | All shared features | [`docs/firebase-setup.md`](docs/firebase-setup.md) |
+| Cloudinary | Memory photo uploads | [`docs/cloudinary-setup.md`](docs/cloudinary-setup.md) |
+| Metered TURN | Photo Booth across different networks | [`docs/turn-setup.md`](docs/turn-setup.md) |
+| TMDB | Movie search (optional) | `CONFIG.tmdb` comment in `config.js` |
+| Cloudflare Worker | News headlines (optional) | [`news-backend/README.md`](news-backend/README.md) |
 
-1. Follow **`firebase_setup.md`** — create a Firebase project, enable Firestore, set security rules, and add the config.
-2. Follow **`memories_setup.md`** — create a Cloudinary account and an unsigned upload preset.
-
-When deploying with the included GitHub Action, put the Firebase and Cloudinary values in repository secrets so they stay out of the public source.
-
----
-
-## 🔔 “While you were away” notifications
-
-The site can show a catch-up notification when you return after shared content has changed. These notifications are separate from normal action toasts.
-
-- Recent additions/edits can be reported when you come back.
-- A change is eligible for a catch-up alert for **24 hours only**.
-- After that window, the old change is ignored rather than appearing days later.
-- The notification remains visible longer than a normal toast so it is easier to notice.
-- The tracking is browser/device-local, while the shared content itself remains in Firebase.
-
-This is intentionally a lightweight “while you were away” system, not a push-notification service.
-
----
-
-## 📸 Photo Booth across different networks
-
-The Photo Booth provides a live browser-to-browser video call. When both people are on the same wifi it can usually connect directly; across different networks (for example, wifi ↔ mobile data), a TURN relay may be needed. Follow **`metered_turn_setup.md`** to configure the optional Metered TURN relay for reliable cross-network calls.
-
----
-
-## 🎞️ Photo Booth strip editor
-
-After the photos are taken, the strip opens in an editor (`photobooth-studio.js` + `photobooth-studio.css`):
-
-- **Tabs:** Frame · Stickers · Text · Dot art · Filters · Spot · Backdrop
-- **Toolbar:** Undo/Redo, Zoom, Eye line, Gutters, Cut strip, Reset
-- **Move things:** drag to move, pull the corner to resize, top handle to rotate, arrow keys to nudge, `Delete` to remove, `Ctrl/Cmd + Z` to undo, pinch on a touch screen
-- **Export:** Download PNG (1080×1920 when a backdrop is on)
-- If the editor script ever fails to load, the original strip preview is shown instead.
-
-### Adding your own stickers
-
-The Stickers tab has emoji plus whatever stickers you add yourself.
-
-Works like photos: put the file in a folder, then list it in `CONFIG`.
-
-1. Save transparent PNGs into the `stickers/` folder (only use images you made or have the right to use).
-2. In `app.js`, add them to `CONFIG.photoBoothStickers`:
-   ```js
-   photoBoothStickers: ["stickers/heart.png", "stickers/bow.png"],
-   ```
-3. Bump `CACHE_VERSION` in `service-worker.js`, commit and push.
-
-They show up under **Stickers → My stickers ⭐** on every device.
-
----
-
-## 📰 Optional news backend
-
-The “Today → World news” widget works with public CORS proxies by default. For cleaner results you can deploy the small Cloudflare Worker in `news-backend/`:
-
-```bash
-cd news-backend
-npm i -g wrangler   # once
-wrangler login
-wrangler deploy
-```
-
-Then put the worker URL into `CONFIG.newsBackendUrl` in `app.js`.  
-Full instructions are in `news-backend/README.md`.
+All of them are free tiers. Without Firebase the site still works, but each
+device only keeps its own data.
 
 ---
 
 ## 🌐 Deployment
 
-The repository includes a GitHub Actions workflow (`.github/workflows/deploy.yml`) that:
+`.github/workflows/deploy.yml` publishes to **GitHub Pages** on every push to
+`main`. It:
 
-- Builds / prepares the static site
-- Injects Firebase, Cloudinary, TMDB, Metered TURN, and password secrets at deploy time
-- Hashes `GATE_PASSWORD` before putting the result into the published `gate.js`
-- Publishes to **GitHub Pages**
+1. copies only the site files (`index.html`, manifest, service worker, `css/`,
+   `js/`, `assets/`) into a staging folder — docs and backend code are not
+   published;
+2. injects the `__PLACEHOLDER__` values from repository secrets. `TP_PASSWORD`
+   (the personal-area password) is **required** — the deploy fails without it.
+   Everything else is optional: a missing secret only switches that feature
+   off, with a warning in the log;
+3. hashes `GATE_PASSWORD` into `gate.js`;
+4. stamps the service-worker cache with the commit id, so installed copies of
+   the app always update — **you no longer bump `CACHE_VERSION` by hand**.
 
-After the first successful run, the site will be available at the usual `https://<user>.github.io/<repo>/` URL (or a custom domain if you configure one).
+Repository secrets: `GATE_PASSWORD` and `TP_PASSWORD` (required);
+`TP_NOTES_PASSWORD` (notes password; defaults to `TP_PASSWORD`),
+`TP_OLD_PASSWORD` (joke password; off if unset); `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN`,
+`FIREBASE_PROJECT_ID`, `FIREBASE_STORAGE_BUCKET`,
+`FIREBASE_MESSAGING_SENDER_ID`, `FIREBASE_APP_ID`, `CLOUDINARY_CLOUD_NAME`,
+`CLOUDINARY_UPLOAD_PRESET`, `TMDB_ACCESS_TOKEN`, `METERED_TURN_DOMAIN`,
+`METERED_TURN_API_KEY` (optional).
+
+---
+
+## 🎞️ Photo Booth strip editor
+
+After the photos are taken, the strip opens in an editor
+(`js/photobooth-studio.js`):
+
+- **Tabs:** Frame · Stickers · Text · Dot art · Filters · Spot · Backdrop
+- **Toolbar:** Undo/Redo, Zoom, Eye line, Gutters, Cut strip, Reset
+- **Controls:** drag to move, corner to resize, top handle to rotate, arrow
+  keys to nudge, `Delete` to remove, `Ctrl/Cmd + Z` to undo, pinch on touch
+- **Export:** PNG (1080×1920 with a backdrop)
+
+**Your own stickers:** save transparent PNGs in `assets/stickers/`, then list
+them in `CONFIG.photoBoothStickers`:
+
+```js
+photoBoothStickers: ["assets/stickers/heart.png", "assets/stickers/bow.png"],
+```
+
+They appear under **Stickers → My stickers ⭐** on every device. Only use
+images you made or have the right to use.
 
 ---
 
 ## 🛠️ Common customizations
 
-| What you want to change          | Where to edit                          |
-|----------------------------------|----------------------------------------|
-| Names                            | `CONFIG.names` in `app.js`             |
-| Relationship / reunion dates     | `relationshipStart`, `reunionDate`     |
-| Cities & weather                 | `myLocation`, `herLocation`            |
-| Hero text & message              | `CONFIG.hero`                          |
-| Static photos                    | `CONFIG.photos` + `CONFIG.album` + files in `photos/` |
-| “Open When…” messages            | `CONFIG.openWhen`                      |
-| Secret messages                  | `secretMessage` / `brandSecret`        |
-| Starting bucket-list items       | `CONFIG.bucketList`                    |
-| Music playlists                  | `CONFIG.playlists`                     |
-| Site password                    | GitHub Actions secret `GATE_PASSWORD` |
-| Colors, fonts, spacing           | CSS variables at the top of `style.css`|
+| To change | Edit |
+|---|---|
+| Names, dates, cities | `CONFIG.names`, `relationshipStart`, `reunionDate`, `myLocation`, `herLocation` |
+| Hero text and photo | `CONFIG.hero`, `CONFIG.photos.hero` |
+| Album | `CONFIG.photos` + `CONFIG.album` + files in `assets/photos/` |
+| Open When letters | `CONFIG.openWhen` |
+| Secret messages | `secretMessage`, `brandSecret` |
+| Starting bucket-list items | `CONFIG.bucketList` |
+| Playlists | `CONFIG.playlists` |
+| Portuguese text | `js/data/translations.js` |
+| Colors, fonts | Section 1 of `css/modern.css` |
+| Gate password | GitHub secret `GATE_PASSWORD` |
 
-For deeper changes (new tabs, new Firebase collections, design overhaul) read the full guide in `website_tutorial.md`.
-
----
-
-## 🔒 Security
-
-This is a personal hobby project, not a multi-user product. The security model (client-side password, public Firebase config with intentionally permissive rules for a few low-sensitivity collections, unsigned Cloudinary preset) is documented in **`SECURITY.md`**.
-
-If you later add more sensitive data, tighten the Firestore rules and/or add real authentication.
+For new tabs, new Firestore collections or a design overhaul, read the
+[tutorial](docs/tutorial.md).
 
 ---
 
 ## 📖 Documentation map
 
-| File                    | Purpose                                      |
-|-------------------------|----------------------------------------------|
-| `website_tutorial.md`   | Complete beginner guide — start here         |
-| `firebase_setup.md`     | Firebase / Firestore setup                   |
-| `memories_setup.md`     | Cloudinary photo-upload setup                |
-| `news-backend/README.md`| Cloudflare Worker for news                   |
-| `SECURITY.md`           | Security model and known trade-offs          |
+| File | Purpose |
+|---|---|
+| [`docs/tutorial.md`](docs/tutorial.md) | Beginner guide — start here |
+| [`docs/architecture.md`](docs/architecture.md) | How the code is organized |
+| [`docs/firebase-setup.md`](docs/firebase-setup.md) | Firebase / Firestore setup and rules |
+| [`docs/cloudinary-setup.md`](docs/cloudinary-setup.md) | Photo upload setup |
+| [`docs/turn-setup.md`](docs/turn-setup.md) | Photo Booth across networks |
+| [`news-backend/README.md`](news-backend/README.md) | News Cloudflare Worker |
+| [`SECURITY.md`](SECURITY.md) | Security model and trade-offs |
 
 ---
 

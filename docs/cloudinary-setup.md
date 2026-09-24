@@ -20,7 +20,7 @@ Cloudinary instead.
 
 ## 1. Create a free Cloudinary account
 
-1. Go to **https://cloudinary.com** and sign up (no credit card needed).
+1. Go to **<https://cloudinary.com>** and sign up (no credit card needed).
 2. Once logged in, your **Dashboard** shows a "Cloud name" near the top —
    copy that, you'll need it in a moment.
 
@@ -39,10 +39,10 @@ browser, with no backend server and no secret key involved.
 5. Save. Copy the **preset name** it gives you (or the custom name you
    set).
 
-## 3. Add both values to `index.html`
+## 3. Add both values to the site
 
-Open `index.html`, find `CONFIG.cloudinary` near the top of the
-`<script>` section, and replace the placeholders:
+Open `js/data/config.js`, find `CONFIG.cloudinary`, and replace the
+placeholders:
 
 ```javascript
 cloudinary: {
@@ -60,13 +60,13 @@ cloudinary: {
 },
 ```
 
-Save, and push/upload the updated `index.html` the same way you normally
-deploy the site.
+Save, commit and push. (The deploy workflow can also inject them from the
+`CLOUDINARY_CLOUD_NAME` and `CLOUDINARY_UPLOAD_PRESET` repository secrets, if
+you prefer to keep them out of the file.)
 
 ## A note on these two values being public
 
-Unlike the Firebase config values, **these two don't need to be hidden**
-or run through GitHub Actions secrets. An unsigned upload preset is
+Unlike the Firebase config values, **these two don't need to be hidden**. An unsigned upload preset is
 specifically designed by Cloudinary to be safe sitting in plain,
 public, client-side code — anyone can only *upload* through it (subject
 to whatever limits you set on the preset), not read, edit, or delete

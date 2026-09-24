@@ -19,9 +19,11 @@ fixes (if any are ever needed) would go straight into `main`.
   partner's star rating), **shared music playlist entries** (song title,
   artist, YouTube video ID, and a short note), and **shared photo
   memories** (a caption, an optional date, and a link to the photo) are
-  stored in a Firebase Firestore database, across four collections
-  (`bucketlist`, `movies`, `musicsongs`, and `memories`), so all four
-  sync across devices.
+  stored in a Firebase Firestore database so they sync across devices.
+  The same database holds the shared calendar (`calendar`), day cards
+  (`daycards`), daily moods (`moods`), custom album names (`albums`), the
+  weekly bouquet (`bouquets`: which flowers, their positions, and a note)
+  and the personal area's data (`thommyPersonal`).
 - **Uploaded photos themselves are hosted on Cloudinary** (a free
   third-party image host), not Firebase — only the resulting photo URL
   is stored in Firestore. Photos are resized/compressed in the browser
@@ -54,22 +56,29 @@ on purpose:
   for the database is enforced by **Firestore security rules**,
   configured separately in the Firebase console (not in this repo); the
   TMDB key is read-only search access to public movie data.
-- **Firestore rules are intentionally permissive** for the `bucketlist`,
-  `movies`, `musicsongs`, and `memories` collections, since the site has
+- **Firestore rules are intentionally permissive** for the collections
+  listed in `docs/firebase-setup.md`, since the site has
   no login system to scope access to. The Photo Booth signaling collections
   are also intentionally open enough for the two-browser WebRTC handshake
   to work. This means anyone who obtained the
   Firebase config could technically read or write to those collections.
-  Given the low sensitivity of the data across all four (a to-do-style
-  list, a movie watchlist with star ratings, a shared song list, and
-  photo captions/links, with no personal identifiers), this is an
+  Given the low sensitivity of the data (to-do items, movie ratings, song
+  lists, photo captions/links, calendar entries, short notes and
+  bouquets), this is an
   accepted trade-off rather than an oversight. Every other path in the
   database is denied by default via an explicit catch-all rule.
+- **The personal area and the site gate are casual locks.** The personal
+  area's passwords are injected at deploy time from repository secrets
+  (`TP_PASSWORD`), but like the site gate they are checked in the browser, so
+  anyone inspecting the published code could find them. Do not keep truly
+  sensitive information there. An older personal-area password was once
+  committed in plain text and remains in git history; treat it as
+  compromised and do not reuse it.
 - **The Photo Booth does not store live camera video in Firebase.** Firebase
   is used for WebRTC signaling documents; the actual media connection is
   browser-to-browser when possible, or uses the configured TURN relay when
-  necessary. Saved Photo Booth strips are a separate feature and can be
-  configured to expire after 24 hours.
+  necessary. Photo Booth strips are assembled and downloaded on the
+  device; they are not uploaded anywhere.
 - **The Cloudinary upload preset is public and unsigned by design.** This
   means anyone with the preset name could technically upload arbitrary
   images to the associated Cloudinary account, though they could not read,
@@ -85,7 +94,7 @@ broken.
 
 If you notice something that seems like a genuine problem beyond what's
 already listed above (for example, a way to access data outside the
-`bucketlist`, `movies`, `musicsongs`, or `memories` collections, or a way to break
+collections documented in `docs/firebase-setup.md`, or a way to break
 the site for other visitors), please open an issue on this repository, or
 reach out to me directly rather than exploiting or publicly disclosing it
 first.

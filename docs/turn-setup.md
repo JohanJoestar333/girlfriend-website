@@ -27,7 +27,7 @@ other on mobile data, or in different cities).
 
 ## 1. Create a free Metered account
 
-1. Go to **https://dashboard.metered.ca/signup** and sign up (email + password,
+1. Go to **<https://dashboard.metered.ca/signup>** and sign up (email + password,
    or Google login).
 2. Once logged in, click **"Add Application"**.
 3. Give it any name you like (e.g. "photobooth") and confirm.
@@ -49,8 +49,7 @@ Metered's `/api/v1/turn/credentials` endpoint specifically expects the API key g
 
 **If you're running the site locally or editing files directly:**
 
-Open `app.js` in this folder and find this block near the top (search for
-`meteredTurn`):
+Open `js/data/config.js` and find this block (search for `meteredTurn`):
 
 ```js
 meteredTurn: {
@@ -79,7 +78,7 @@ secrets:
 - `METERED_TURN_DOMAIN` — e.g. `photobooth123.metered.live`
 - `METERED_TURN_API_KEY` — the **TURN Credential API Key** you copied with **Show API Key**
 
-The deploy workflow will inject them into `app.js` automatically on the
+The deploy workflow will inject them into the published `config.js` automatically on the
 next push to `main`. This is optional — if you skip it, the placeholders
 stay in place and the booth just keeps working same-wifi-only until you add
 the secrets.

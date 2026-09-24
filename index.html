@@ -20,18 +20,18 @@
         } catch (e) {}
       })();
     </script>
-    <link rel="icon" type="image/jpeg" href="photos/icon.jpeg" />
+    <link rel="icon" type="image/jpeg" href="assets/photos/icon.jpeg" />
     <link rel="manifest" href="manifest.json" />
-    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
     <meta name="theme-color" content="#f2f6f3" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="For You" />
     <!-- Fonts are local: SF Pro on Apple devices, each device's own system font elsewhere. No external font host. -->
-    <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="enhancements.css" />
-    <link rel="stylesheet" href="photobooth-studio.css" />
-    <link rel="stylesheet" href="modern.css" />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/enhancements.css" />
+    <link rel="stylesheet" href="css/photobooth-studio.css" />
+    <link rel="stylesheet" href="css/modern.css" />
     <!-- Firebase — only used for the Bucket List's cross-device sync.
      Nothing loads or runs unless CONFIG.firebase below is filled in. -->
     <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
@@ -60,7 +60,7 @@
         <p class="gate-error" id="gateError"></p>
       </div>
     </div>
-    <script src="gate.js"></script>
+    <script src="js/gate.js"></script>
 
     <div id="particles"></div>
     <div class="grain-overlay" aria-hidden="true"></div>
@@ -2207,84 +2207,16 @@
     </button>
 
 
-    <script src="app.js"></script>
-    <script src="enhancements.js"></script>
-    <script src="photobooth-studio.js"></script>
-    <script src="haptics.js"></script>
-    <script>
-      // Registers the service worker so the site can be installed as an app
-      // and its core files work offline. Safe no-op in browsers/contexts
-      // that don't support it (e.g. file:// or older browsers).
-      //
-      // Also watches for a newer service worker taking over (i.e. a new
-      // deploy landed) and shows a small "Update available" banner instead
-      // of silently sitting on stale JS/HTML until the person happens to
-      // fully close and reopen the app.
-      if ("serviceWorker" in navigator) {
-        function showSwUpdateBanner() {
-          if (document.getElementById("swUpdateBanner")) return;
-          const bar = document.createElement("div");
-          bar.id = "swUpdateBanner";
-          bar.innerHTML =
-            '<span class="sw-update-text">A new version of the site is ready.</span>' +
-            '<button type="button" class="sw-update-btn">Update</button>' +
-            '<button type="button" class="sw-update-dismiss" aria-label="Dismiss">✕</button>';
-          bar.querySelector(".sw-update-btn").addEventListener("click", () => {
-            window.location.reload();
-          });
-          bar.querySelector(".sw-update-dismiss").addEventListener("click", () => {
-            bar.remove();
-          });
-          document.body.appendChild(bar);
-        }
-
-        let swRefreshing = false;
-        navigator.serviceWorker.addEventListener("controllerchange", () => {
-          // Fires once a new service worker takes control. The very first
-          // time a service worker ever activates on this page there's no
-          // reload needed (nothing was showing stale content yet) — only
-          // show the banner for genuine "you already had the app open, and
-          // it just changed under you" updates.
-          if (!navigator.serviceWorker.controller || swRefreshing) return;
-          if (window.__swHadController) showSwUpdateBanner();
-          window.__swHadController = true;
-        });
-
-        window.addEventListener("load", function () {
-          window.__swHadController = !!navigator.serviceWorker.controller;
-          navigator.serviceWorker
-            .register("service-worker.js")
-            .then(function (reg) {
-              if (reg.waiting && navigator.serviceWorker.controller) {
-                showSwUpdateBanner();
-              }
-              reg.addEventListener("updatefound", function () {
-                const installing = reg.installing;
-                if (!installing) return;
-                installing.addEventListener("statechange", function () {
-                  if (
-                    installing.state === "installed" &&
-                    navigator.serviceWorker.controller
-                  ) {
-                    showSwUpdateBanner();
-                  }
-                });
-              });
-              // Browsers already check for a new service-worker.js on
-              // navigation, but an app left open in a background tab for a
-              // while won't get that chance — so also check whenever the
-              // tab becomes visible again.
-              document.addEventListener("visibilitychange", function () {
-                if (document.visibilityState === "visible") {
-                  reg.update().catch(function () {});
-                }
-              });
-            })
-            .catch(function (err) {
-              console.warn("Service worker registration failed:", err);
-            });
-        });
-      }
-    </script>
+    <!-- Data first (CONFIG, translations, quotes, quizzes, games), then logic. -->
+    <script src="js/data/config.js"></script>
+    <script src="js/data/translations.js"></script>
+    <script src="js/data/quotes.js"></script>
+    <script src="js/data/quizzes.js"></script>
+    <script src="js/data/games.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/enhancements.js"></script>
+    <script src="js/photobooth-studio.js"></script>
+    <script src="js/haptics.js"></script>
+    <script src="js/pwa.js"></script>
   </body>
 </html>
