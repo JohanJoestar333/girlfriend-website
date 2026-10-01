@@ -1,0 +1,154 @@
+# Deploys the site to GitHub Pages on every push to main.
+#
+# Only the files the site needs are published (index.html, manifest,
+# service worker, css/, js/, assets/) — docs, the news backend and git
+# metadata stay out of the public site. Secrets are injected into the
+# staged copy, never into the files committed to the repo.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Stage site files
+        run: |
+          mkdir _site
+          cp -r index.html manifest.json service-worker.js css js assets _site/
+
+      - name: Inject config from repository secrets
+        env:
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+          FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
+          FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
+          TMDB_ACCESS_TOKEN: ${{ secrets.TMDB_ACCESS_TOKEN }}
+          METERED_TURN_DOMAIN: ${{ secrets.METERED_TURN_DOMAIN }}
+          METERED_TURN_API_KEY: ${{ secrets.METERED_TURN_API_KEY }}
+          TP_PASSWORD: ${{ secrets.TP_PASSWORD }}
+          TP_NOTES_PASSWORD: ${{ secrets.TP_NOTES_PASSWORD }}
+          TP_OLD_PASSWORD: ${{ secrets.TP_OLD_PASSWORD }}
+        run: |
+          REQUIRED="TP_PASSWORD"
+          OPTIONAL="FIREBASE_API_KEY
+                    FIREBASE_AUTH_DOMAIN
+                    FIREBASE_PROJECT_ID
+                    FIREBASE_STORAGE_BUCKET
+                    FIREBASE_MESSAGING_SENDER_ID
+                    FIREBASE_APP_ID
+                    CLOUDINARY_CLOUD_NAME
+                    CLOUDINARY_UPLOAD_PRESET
+                    TMDB_ACCESS_TOKEN
+                    METERED_TURN_DOMAIN
+                    METERED_TURN_API_KEY"
+
+          # TP_PASSWORD (the personal-area password) must be set: without it
+          # the site would ship with a guessable "__TP_PASSWORD__" placeholder.
+          for name in $REQUIRED; do
+            if [ -z "${!name}" ]; then
+              echo "ERROR: GitHub Actions secret $name is missing."
+              echo "Add it under Settings -> Secrets and variables -> Actions."
+              exit 1
+            fi
+          done
+
+          # Two extras are optional. Notes fall back to TP_PASSWORD, so one
+          # password unlocks everything. The retired "old password" joke gets
+          # a random value that nobody can type, which switches it off.
+          if [ -z "$TP_NOTES_PASSWORD" ]; then TP_NOTES_PASSWORD="$TP_PASSWORD"; fi
+          if [ -z "$TP_OLD_PASSWORD" ]; then
+            TP_OLD_PASSWORD="retired-$(head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+          fi
+
+          # Optional services: a missing secret leaves the placeholder in
+          # place and that feature simply stays switched off.
+          for name in TP_PASSWORD TP_NOTES_PASSWORD TP_OLD_PASSWORD $OPTIONAL; do
+            value="${!name}"
+            if [ -z "$value" ]; then
+              echo "::warning::Secret $name is not set; that feature will be disabled."
+              continue
+            fi
+            # The placeholders sit inside JS "double-quoted" strings, so escape
+            # backslashes and double quotes first, then escape what sed needs.
+            value=$(printf '%s' "$value" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')
+            # Escape characters that are special in a sed replacement.
+            escaped=$(printf '%s' "$value" | sed -e 's/[\\|&]/\\&/g')
+            sed -i "s|__${name}__|${escaped}|g" _site/js/data/config.js _site/js/app.js
+          done
+
+          if grep -q "__TP_[A-Z_]*__" _site/js/app.js; then
+            echo "ERROR: A personal-area password placeholder was not replaced."
+            exit 1
+          fi
+          echo "SUCCESS: configuration injected."
+
+      - name: Inject password hash into gate.js
+        env:
+          GATE_PASSWORD: ${{ secrets.GATE_PASSWORD }}
+        run: |
+          if [ -z "$GATE_PASSWORD" ]; then
+            echo "ERROR: GATE_PASSWORD GitHub Actions secret is missing."
+            echo "Go to Settings -> Secrets and variables -> Actions and add GATE_PASSWORD."
+            exit 1
+          fi
+
+          # Hash without printing the password; only the hash is published.
+          GATE_PASSWORD_HASH=$(printf '%s' "$GATE_PASSWORD" | sha256sum | cut -d ' ' -f 1)
+          sed -i "s|__GATE_PASSWORD_HASH__|${GATE_PASSWORD_HASH}|g" _site/js/gate.js
+
+          if grep -q "__GATE_PASSWORD_HASH__" _site/js/gate.js; then
+            echo "ERROR: Password hash placeholder was not replaced in gate.js"
+            exit 1
+          fi
+          if grep -Fq "$GATE_PASSWORD" _site/js/gate.js; then
+            echo "ERROR: Plaintext password was found in gate.js"
+            exit 1
+          fi
+          echo "SUCCESS: password gate configured."
+
+      - name: Version the service-worker cache
+        run: |
+          # A new cache name on every deploy, so installed copies of the
+          # app always pick up the latest files (no manual bumping needed).
+          sed -i "s|^const CACHE_VERSION = \".*\";|const CACHE_VERSION = \"${GITHUB_SHA::7}\";|" _site/service-worker.js
+          grep -q "CACHE_VERSION = \"${GITHUB_SHA::7}\"" _site/service-worker.js \
+            || { echo "ERROR: CACHE_VERSION was not updated"; exit 1; }
+
+      - name: Upload site as Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
