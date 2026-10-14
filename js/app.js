@@ -11046,7 +11046,7 @@ function tpViewWorkout() {
     var rname = routine ? routine.name : "Workout";
     html += '<div class="tp-card"><h3>Session · ' + rname + "</h3>";
     html +=
-      '<p class="tp-sub">Check exercises as you finish · adjust reps · ' +
+      '<p class="tp-sub">Check exercises as you finish · type your reps · ' +
       day +
       "</p>";
     var doneCount = 0;
@@ -11084,17 +11084,13 @@ function tpViewWorkout() {
         (ex.unit || "reps") +
         "</div>";
       html += "</span></label>";
-      html += '<span class="tp-reps">';
       html +=
-        '<button type="button" data-tp-session-reps="' +
+        '<input type="number" min="1" class="tp-reps-input" title="Reps" data-tp-session-reps="' +
         eid +
-        '" data-dir="-1">−</button>';
-      html += "<span>" + reps + "</span>";
-      html +=
-        '<button type="button" data-tp-session-reps="' +
-        eid +
-        '" data-dir="1">+</button>';
-      html += "</span></div>";
+        '" value="' +
+        reps +
+        '">';
+      html += "</div>";
       if (ex.description)
         html +=
           '<div class="meta tp-md" style="font-size:0.78rem;color:var(--ink-soft);margin-top:6px">' +
@@ -11141,11 +11137,11 @@ function tpViewWorkout() {
         '<button type="button" class="tp-btn sm" data-tp-start-routine="' +
         r.id +
         '">Start</button> ';
+      html +=
+        '<button type="button" class="tp-btn outline sm" data-tp-edit="workoutRoutine" data-id="' +
+        r.id +
+        '">Edit</button> ';
       if (wEdit) {
-        html +=
-          '<button type="button" class="tp-btn outline sm" data-tp-edit="workoutRoutine" data-id="' +
-          r.id +
-          '">Edit</button> ';
         html +=
           '<button type="button" class="tp-btn danger sm" data-tp-del-routine="' +
           r.id +
@@ -11196,8 +11192,8 @@ function tpViewWorkout() {
 
   // Exercises library
   html +=
-    '<div class="tp-card"><h3>Exercises</h3><p class="tp-sub">Bump target reps with + / −' +
-    (wEdit ? " · CRUD library" : "") +
+    '<div class="tp-card"><h3>Exercises</h3><p class="tp-sub">Tap Edit to change sets, reps or notes' +
+    (wEdit ? " · add or delete exercises" : "") +
     "</p>";
   if (!(w.exercises || []).length) {
     html += '<p class="tp-empty">No exercises yet.</p>';
@@ -11206,17 +11202,10 @@ function tpViewWorkout() {
       html += '<div class="tp-item">';
       html +=
         '<div class="tp-item-head"><strong>' + ex.name + "</strong><span>";
-      html += '<span class="tp-reps" title="Target reps">';
       html +=
-        '<button type="button" data-tp-ex-reps="' +
+        '<button type="button" class="tp-btn outline sm" data-tp-edit="exercise" data-id="' +
         ex.id +
-        '" data-dir="-1">−</button>';
-      html += "<span>" + (ex.targetReps || 10) + "</span>";
-      html +=
-        '<button type="button" data-tp-ex-reps="' +
-        ex.id +
-        '" data-dir="1">+</button>';
-      html += "</span> ";
+        '">Edit</button> ';
       if (wEdit)
         html +=
           '<button type="button" class="tp-btn danger sm" data-tp-del-ex="' +
@@ -11238,10 +11227,7 @@ function tpViewWorkout() {
           tpMd(ex.description) +
           "</div>";
       if (wEdit) {
-        html +=
-          '<div class="tp-row" style="margin-top:8px"><button type="button" class="tp-btn outline sm" data-tp-edit="exercise" data-id="' +
-          ex.id +
-          '">Edit exercise</button>';
+        html += '<div class="tp-row" style="margin-top:8px">';
         var linked = (w.routines || [])
           .filter(function (r) {
             return (r.exerciseIds || []).indexOf(ex.id) >= 0;
@@ -12057,20 +12043,6 @@ function tpBindView() {
       tpRender();
     });
   });
-  document.querySelectorAll("[data-tp-ex-reps]").forEach(function (b) {
-    b.addEventListener("click", function () {
-      var id = b.getAttribute("data-tp-ex-reps");
-      var dir = parseInt(b.getAttribute("data-dir"), 10) || 0;
-      var w = tpEnsureWorkouts();
-      var ex = w.exercises.find(function (x) {
-        return x.id === id;
-      });
-      if (!ex) return;
-      ex.targetReps = Math.max(1, (ex.targetReps || 10) + dir);
-      tpSave();
-      tpRender();
-    });
-  });
   var addRoutineWo = document.getElementById("tpAddRoutineWo");
   if (addRoutineWo)
     addRoutineWo.addEventListener("click", function () {
@@ -12146,16 +12118,16 @@ function tpBindView() {
       tpRender();
     });
   });
-  document.querySelectorAll("[data-tp-session-reps]").forEach(function (b) {
-    b.addEventListener("click", function () {
+  document.querySelectorAll("[data-tp-session-reps]").forEach(function (el) {
+    el.addEventListener("change", function () {
       var w = tpEnsureWorkouts();
       if (!w.session) return;
-      var eid = b.getAttribute("data-tp-session-reps");
-      var dir = parseInt(b.getAttribute("data-dir"), 10) || 0;
+      var eid = el.getAttribute("data-tp-session-reps");
+      var v = Math.max(1, parseInt(el.value, 10) || 1);
+      el.value = v;
       w.session.reps = w.session.reps || {};
-      w.session.reps[eid] = Math.max(1, (w.session.reps[eid] || 10) + dir);
+      w.session.reps[eid] = v;
       tpSave();
-      tpRender();
     });
   });
   var finish = document.getElementById("tpFinishSession");

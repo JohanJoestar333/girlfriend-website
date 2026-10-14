@@ -5393,6 +5393,15 @@ html[data-theme="dark"] .tp-reps button {
   border-color: rgba(255, 255, 255, 0.12); background: var(--cream-dim);
 }
 
+.tp-reps-input {
+  width: 64px; flex: 0 0 auto; text-align: center; font-weight: 700;
+  font-variant-numeric: tabular-nums; padding: 6px 8px; border-radius: 8px;
+  border: 1px solid rgba(43, 38, 34, 0.12); background: var(--cream-dim);
+  color: var(--ink);
+}
+.tp-reps-input:focus { outline: none; border-color: var(--green); }
+html[data-theme="dark"] .tp-reps-input { border-color: rgba(255, 255, 255, 0.12); }
+
 .tp-row textarea { min-height: 64px; width: 100%; flex: 1 1 100%; }
 .tp-edit-modal-box {
   text-align: left;
